@@ -12,8 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { api } from "@/convex/_generated/api";
-import { useApiMutation } from "@/hooks/use-api-mutation";
+import { boardHref, deleteBoard, useBoard } from "@/lib/local-boards";
 import { Button } from "@/components/ui/button";
 import { useRenameModal } from "@/store/use-rename-modal";
 
@@ -33,20 +32,23 @@ export const Actions = ({
   title,
 }: ActionsProps) => {
   const { onOpen } = useRenameModal();
-  const { mutate, pending } = useApiMutation(api.board.remove);
+  const board = useBoard(id);
 
   const onCopyLink = () => {
+    // Architecture boards live at /arch/:id, so the link has to follow the
+    // board's kind rather than assume the whiteboard route.
+    const path = board ? boardHref(board) : `/board/${id}`;
+
     navigator.clipboard.writeText(
-      `${window.location.origin}/board/${id}`,
+      `${window.location.origin}${path}`,
     )
       .then(() => toast.success("Link copied"))
       .catch(() => toast.error("Failed to copy link"))
   };
 
   const onDelete = () => {
-    mutate({ id })
-      .then(() => toast.success("Board deleted"))
-      .catch(() => toast.error("Failed to delete board"));
+    deleteBoard(id);
+    toast.success("Board deleted");
   };
 
   return (
@@ -77,7 +79,6 @@ export const Actions = ({
         <ConfirmModal
           header="Delete board?"
           description="This will delete the board and all of its contents."
-          disabled={pending}
           onConfirm={onDelete}
         >
           <Button

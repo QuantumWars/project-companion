@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "name": "Archboard",
+  "createdAt": "2026-08-28T02:30:36.435Z",
+  "diagrams": [
+    {
+      "id": "archboard-architecture",
+      "title": "Archboard architecture",
+      "type": "architecture",
+      "updatedAt": "2026-08-28T20:34:06.787Z"
+    },
+    {
+      "id": "sprint-sketches",
+      "title": "Sprint sketches",
+      "type": "architecture",
+      "kind": "whiteboard",
+      "updatedAt": "2026-08-28T20:33:47.410Z"
+    },
+    {
+      "id": "ticketing-schema",
+      "title": "Ticketing schema",
+      "type": "dfd",
+      "updatedAt": "2026-08-28T20:32:08.478Z"
+    }
+  ]
+}

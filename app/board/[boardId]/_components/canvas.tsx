@@ -47,10 +47,12 @@ const MAX_LAYERS = 100;
 
 interface CanvasProps {
   boardId: string;
+  source?: "local" | "file";
 };
 
 export const Canvas = ({
   boardId,
+  source = "local",
 }: CanvasProps) => {
   const layerIds = useStorage((root) => root.layerIds);
 
@@ -452,7 +454,7 @@ export const Canvas = ({
     <main
       className="h-full w-full relative bg-neutral-100 touch-none"
     >
-      <Info boardId={boardId} />
+      <Info boardId={boardId} source={source} />
       <Participants />
       <Toolbar
         canvasState={canvasState}

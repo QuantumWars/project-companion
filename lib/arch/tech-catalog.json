@@ -1,0 +1,2273 @@
+[
+  {
+    "id": "typescript",
+    "label": "TypeScript",
+    "category": "language",
+    "color": "#3178C6",
+    "icon": "logos:typescript-icon",
+    "aliases": [
+      "ts"
+    ]
+  },
+  {
+    "id": "javascript",
+    "label": "JavaScript",
+    "category": "language",
+    "color": "#F7DF1E",
+    "icon": "logos:javascript",
+    "aliases": [
+      "js"
+    ]
+  },
+  {
+    "id": "python",
+    "label": "Python",
+    "category": "language",
+    "color": "#3776AB",
+    "icon": "logos:python",
+    "aliases": [
+      "py"
+    ]
+  },
+  {
+    "id": "go",
+    "label": "Go",
+    "category": "language",
+    "color": "#00ADD8",
+    "icon": "logos:go",
+    "aliases": [
+      "golang"
+    ]
+  },
+  {
+    "id": "rust",
+    "label": "Rust",
+    "category": "language",
+    "color": "#DEA584",
+    "icon": "logos:rust"
+  },
+  {
+    "id": "java",
+    "label": "Java",
+    "category": "language",
+    "color": "#E76F00",
+    "icon": "logos:java"
+  },
+  {
+    "id": "kotlin",
+    "label": "Kotlin",
+    "category": "language",
+    "color": "#7F52FF",
+    "icon": "logos:kotlin-icon"
+  },
+  {
+    "id": "swift",
+    "label": "Swift",
+    "category": "language",
+    "color": "#FA7343",
+    "icon": "logos:swift"
+  },
+  {
+    "id": "ruby",
+    "label": "Ruby",
+    "category": "language",
+    "color": "#CC342D",
+    "icon": "logos:ruby"
+  },
+  {
+    "id": "php",
+    "label": "PHP",
+    "category": "language",
+    "color": "#777BB4",
+    "icon": "logos:php"
+  },
+  {
+    "id": "csharp",
+    "label": "C#",
+    "category": "language",
+    "color": "#239120",
+    "icon": "logos:c-sharp",
+    "aliases": [
+      "dotnet",
+      "c-sharp"
+    ]
+  },
+  {
+    "id": "cpp",
+    "label": "C++",
+    "category": "language",
+    "color": "#00599C",
+    "icon": "logos:c-plusplus",
+    "aliases": [
+      "cplusplus"
+    ]
+  },
+  {
+    "id": "c",
+    "label": "C",
+    "category": "language",
+    "color": "#A8B9CC",
+    "icon": "logos:c"
+  },
+  {
+    "id": "elixir",
+    "label": "Elixir",
+    "category": "language",
+    "color": "#4B275F",
+    "icon": "logos:elixir"
+  },
+  {
+    "id": "scala",
+    "label": "Scala",
+    "category": "language",
+    "color": "#DC322F",
+    "icon": "logos:scala"
+  },
+  {
+    "id": "dart",
+    "label": "Dart",
+    "category": "language",
+    "color": "#0175C2",
+    "icon": "logos:dart"
+  },
+  {
+    "id": "lua",
+    "label": "Lua",
+    "category": "language",
+    "color": "#2C2D72",
+    "icon": "logos:lua"
+  },
+  {
+    "id": "r",
+    "label": "R",
+    "category": "language",
+    "color": "#276DC3",
+    "icon": "logos:r-lang"
+  },
+  {
+    "id": "haskell",
+    "label": "Haskell",
+    "category": "language",
+    "color": "#5D4F85",
+    "icon": "logos:haskell-icon"
+  },
+  {
+    "id": "zig",
+    "label": "Zig",
+    "category": "language",
+    "color": "#F7A41D",
+    "icon": "logos:zig"
+  },
+  {
+    "id": "perl",
+    "label": "Perl",
+    "category": "language",
+    "color": "#39457E",
+    "icon": "logos:perl"
+  },
+  {
+    "id": "erlang",
+    "label": "Erlang",
+    "category": "language",
+    "color": "#A90533",
+    "icon": "logos:erlang"
+  },
+  {
+    "id": "react",
+    "label": "React",
+    "category": "frontend",
+    "color": "#61DAFB",
+    "icon": "logos:react"
+  },
+  {
+    "id": "nextjs",
+    "label": "Next.js",
+    "category": "frontend",
+    "color": "#000000",
+    "icon": "logos:nextjs-icon",
+    "aliases": [
+      "next"
+    ]
+  },
+  {
+    "id": "vue",
+    "label": "Vue",
+    "category": "frontend",
+    "color": "#4FC08D",
+    "icon": "logos:vue",
+    "aliases": [
+      "vuejs"
+    ]
+  },
+  {
+    "id": "nuxt",
+    "label": "Nuxt",
+    "category": "frontend",
+    "color": "#00DC82",
+    "icon": "logos:nuxt-icon",
+    "aliases": [
+      "nuxtjs"
+    ]
+  },
+  {
+    "id": "angular",
+    "label": "Angular",
+    "category": "frontend",
+    "color": "#DD0031",
+    "icon": "logos:angular-icon"
+  },
+  {
+    "id": "svelte",
+    "label": "Svelte",
+    "category": "frontend",
+    "color": "#FF3E00",
+    "icon": "logos:svelte-icon"
+  },
+  {
+    "id": "sveltekit",
+    "label": "SvelteKit",
+    "category": "frontend",
+    "color": "#FF3E00",
+    "icon": "logos:svelte-icon"
+  },
+  {
+    "id": "solidjs",
+    "label": "SolidJS",
+    "category": "frontend",
+    "color": "#2C4F7C",
+    "icon": "logos:solidjs-icon",
+    "aliases": [
+      "solid"
+    ]
+  },
+  {
+    "id": "remix",
+    "label": "Remix",
+    "category": "frontend",
+    "color": "#000000",
+    "icon": "logos:remix-icon"
+  },
+  {
+    "id": "astro",
+    "label": "Astro",
+    "category": "frontend",
+    "color": "#FF5D01",
+    "icon": "logos:astro-icon"
+  },
+  {
+    "id": "qwik",
+    "label": "Qwik",
+    "category": "frontend",
+    "color": "#AC7EF4",
+    "icon": "logos:qwik-icon"
+  },
+  {
+    "id": "tailwindcss",
+    "label": "Tailwind CSS",
+    "category": "frontend",
+    "color": "#06B6D4",
+    "icon": "logos:tailwindcss-icon",
+    "aliases": [
+      "tailwind"
+    ]
+  },
+  {
+    "id": "bootstrap",
+    "label": "Bootstrap",
+    "category": "frontend",
+    "color": "#7952B3",
+    "icon": "logos:bootstrap"
+  },
+  {
+    "id": "sass",
+    "label": "Sass",
+    "category": "frontend",
+    "color": "#CC6699",
+    "icon": "logos:sass",
+    "aliases": [
+      "scss"
+    ]
+  },
+  {
+    "id": "vite",
+    "label": "Vite",
+    "category": "frontend",
+    "color": "#646CFF",
+    "icon": "logos:vitejs"
+  },
+  {
+    "id": "webpack",
+    "label": "Webpack",
+    "category": "frontend",
+    "color": "#8DD6F9",
+    "icon": "logos:webpack"
+  },
+  {
+    "id": "storybook",
+    "label": "Storybook",
+    "category": "frontend",
+    "color": "#FF4785",
+    "icon": "logos:storybook-icon"
+  },
+  {
+    "id": "electron",
+    "label": "Electron",
+    "category": "frontend",
+    "color": "#47848F",
+    "icon": "logos:electron"
+  },
+  {
+    "id": "reactnative",
+    "label": "React Native",
+    "category": "frontend",
+    "color": "#61DAFB",
+    "icon": "logos:react",
+    "aliases": [
+      "rn"
+    ]
+  },
+  {
+    "id": "flutter",
+    "label": "Flutter",
+    "category": "frontend",
+    "color": "#02569B",
+    "icon": "logos:flutter"
+  },
+  {
+    "id": "threejs",
+    "label": "Three.js",
+    "category": "frontend",
+    "color": "#000000",
+    "icon": "logos:threejs",
+    "aliases": [
+      "three"
+    ]
+  },
+  {
+    "id": "d3",
+    "label": "D3.js",
+    "category": "frontend",
+    "color": "#F9A03C",
+    "icon": "logos:d3",
+    "aliases": [
+      "d3js"
+    ]
+  },
+  {
+    "id": "htmx",
+    "label": "htmx",
+    "category": "frontend",
+    "color": "#3366CC",
+    "icon": "logos:htmx"
+  },
+  {
+    "id": "jquery",
+    "label": "jQuery",
+    "category": "frontend",
+    "color": "#0769AD",
+    "icon": "logos:jquery"
+  },
+  {
+    "id": "nodejs",
+    "label": "Node.js",
+    "category": "backend",
+    "color": "#339933",
+    "icon": "logos:nodejs-icon",
+    "aliases": [
+      "node"
+    ]
+  },
+  {
+    "id": "express",
+    "label": "Express",
+    "category": "backend",
+    "color": "#000000",
+    "icon": "logos:express"
+  },
+  {
+    "id": "nestjs",
+    "label": "NestJS",
+    "category": "backend",
+    "color": "#E0234E",
+    "icon": "logos:nestjs",
+    "aliases": [
+      "nest"
+    ]
+  },
+  {
+    "id": "fastify",
+    "label": "Fastify",
+    "category": "backend",
+    "color": "#000000",
+    "icon": "logos:fastify-icon"
+  },
+  {
+    "id": "deno",
+    "label": "Deno",
+    "category": "backend",
+    "color": "#000000",
+    "icon": "logos:deno"
+  },
+  {
+    "id": "bun",
+    "label": "Bun",
+    "category": "backend",
+    "color": "#FBF0DF",
+    "icon": "logos:bun"
+  },
+  {
+    "id": "django",
+    "label": "Django",
+    "category": "backend",
+    "color": "#092E20",
+    "icon": "logos:django-icon"
+  },
+  {
+    "id": "flask",
+    "label": "Flask",
+    "category": "backend",
+    "color": "#000000",
+    "icon": "logos:flask"
+  },
+  {
+    "id": "fastapi",
+    "label": "FastAPI",
+    "category": "backend",
+    "color": "#009688",
+    "icon": "logos:fastapi-icon"
+  },
+  {
+    "id": "rails",
+    "label": "Ruby on Rails",
+    "category": "backend",
+    "color": "#CC0000",
+    "icon": "logos:rails",
+    "aliases": [
+      "rubyonrails"
+    ]
+  },
+  {
+    "id": "laravel",
+    "label": "Laravel",
+    "category": "backend",
+    "color": "#FF2D20",
+    "icon": "logos:laravel"
+  },
+  {
+    "id": "spring",
+    "label": "Spring",
+    "category": "backend",
+    "color": "#6DB33F",
+    "icon": "logos:spring-icon",
+    "aliases": [
+      "springboot"
+    ]
+  },
+  {
+    "id": "dotnet",
+    "label": ".NET",
+    "category": "backend",
+    "color": "#512BD4",
+    "icon": "logos:dotnet",
+    "aliases": [
+      "aspnet"
+    ]
+  },
+  {
+    "id": "gin",
+    "label": "Gin",
+    "category": "backend",
+    "color": "#00ADD8",
+    "icon": "logos:go"
+  },
+  {
+    "id": "phoenix",
+    "label": "Phoenix",
+    "category": "backend",
+    "color": "#FD4F00",
+    "icon": "logos:phoenix"
+  },
+  {
+    "id": "graphql",
+    "label": "GraphQL",
+    "category": "backend",
+    "color": "#E10098",
+    "icon": "logos:graphql"
+  },
+  {
+    "id": "trpc",
+    "label": "tRPC",
+    "category": "backend",
+    "color": "#2596BE",
+    "icon": "logos:trpc"
+  },
+  {
+    "id": "strapi",
+    "label": "Strapi",
+    "category": "backend",
+    "color": "#4945FF",
+    "icon": "logos:strapi-icon"
+  },
+  {
+    "id": "grpc",
+    "label": "gRPC",
+    "category": "backend",
+    "color": "#244B5A",
+    "icon": "logos:grpc"
+  },
+  {
+    "id": "socketio",
+    "label": "Socket.IO",
+    "category": "backend",
+    "color": "#010101",
+    "icon": "logos:socket-io",
+    "aliases": [
+      "websocket"
+    ]
+  },
+  {
+    "id": "postgresql",
+    "label": "PostgreSQL",
+    "category": "database",
+    "color": "#4169E1",
+    "icon": "logos:postgresql",
+    "aliases": [
+      "postgres",
+      "pg"
+    ]
+  },
+  {
+    "id": "mysql",
+    "label": "MySQL",
+    "category": "database",
+    "color": "#4479A1",
+    "icon": "logos:mysql-icon"
+  },
+  {
+    "id": "mariadb",
+    "label": "MariaDB",
+    "category": "database",
+    "color": "#003545",
+    "icon": "logos:mariadb-icon"
+  },
+  {
+    "id": "sqlite",
+    "label": "SQLite",
+    "category": "database",
+    "color": "#003B57",
+    "icon": "logos:sqlite"
+  },
+  {
+    "id": "mongodb",
+    "label": "MongoDB",
+    "category": "database",
+    "color": "#47A248",
+    "icon": "logos:mongodb-icon",
+    "aliases": [
+      "mongo"
+    ]
+  },
+  {
+    "id": "cassandra",
+    "label": "Cassandra",
+    "category": "database",
+    "color": "#1287B1",
+    "icon": "logos:cassandra"
+  },
+  {
+    "id": "couchdb",
+    "label": "CouchDB",
+    "category": "database",
+    "color": "#E42528",
+    "icon": "logos:couchdb-icon"
+  },
+  {
+    "id": "neo4j",
+    "label": "Neo4j",
+    "category": "database",
+    "color": "#008CC1",
+    "icon": "logos:neo4j",
+    "aliases": [
+      "graph"
+    ]
+  },
+  {
+    "id": "clickhouse",
+    "label": "ClickHouse",
+    "category": "database",
+    "color": "#FFCC01",
+    "icon": "logos:clickhouse"
+  },
+  {
+    "id": "cockroachdb",
+    "label": "CockroachDB",
+    "category": "database",
+    "color": "#6933FF",
+    "icon": "simple-icons:cockroachlabs",
+    "aliases": [
+      "cockroach"
+    ]
+  },
+  {
+    "id": "influxdb",
+    "label": "InfluxDB",
+    "category": "database",
+    "color": "#22ADF6",
+    "icon": "logos:influxdb-icon",
+    "aliases": [
+      "influx"
+    ]
+  },
+  {
+    "id": "dynamodb",
+    "label": "DynamoDB",
+    "category": "database",
+    "color": "#4053D6",
+    "icon": "logos:aws-dynamodb"
+  },
+  {
+    "id": "firestore",
+    "label": "Firestore",
+    "category": "database",
+    "color": "#FFCA28",
+    "icon": "logos:firebase"
+  },
+  {
+    "id": "supabase",
+    "label": "Supabase",
+    "category": "database",
+    "color": "#3FCF8E",
+    "icon": "logos:supabase-icon"
+  },
+  {
+    "id": "planetscale",
+    "label": "PlanetScale",
+    "category": "database",
+    "color": "#000000",
+    "icon": "logos:planetscale-icon"
+  },
+  {
+    "id": "prisma",
+    "label": "Prisma",
+    "category": "database",
+    "color": "#2D3748",
+    "icon": "logos:prisma"
+  },
+  {
+    "id": "elasticsearch",
+    "label": "Elasticsearch",
+    "category": "database",
+    "color": "#005571",
+    "icon": "logos:elasticsearch",
+    "aliases": [
+      "elastic",
+      "es"
+    ]
+  },
+  {
+    "id": "opensearch",
+    "label": "OpenSearch",
+    "category": "database",
+    "color": "#005EB8",
+    "icon": "logos:opensearch-icon"
+  },
+  {
+    "id": "duckdb",
+    "label": "DuckDB",
+    "category": "database",
+    "color": "#FFF000",
+    "icon": "logos:duckdb-icon"
+  },
+  {
+    "id": "surrealdb",
+    "label": "SurrealDB",
+    "category": "database",
+    "color": "#FF00A0",
+    "icon": "logos:surrealdb-icon",
+    "aliases": [
+      "surreal"
+    ]
+  },
+  {
+    "id": "oracle",
+    "label": "Oracle DB",
+    "category": "database",
+    "color": "#F80000",
+    "icon": "logos:oracle"
+  },
+  {
+    "id": "mssql",
+    "label": "SQL Server",
+    "category": "database",
+    "color": "#CC2927",
+    "icon": "logos:microsoft-icon",
+    "aliases": [
+      "sqlserver"
+    ]
+  },
+  {
+    "id": "pinecone",
+    "label": "Pinecone",
+    "category": "database",
+    "color": "#000000",
+    "icon": "logos:pinecone-icon",
+    "aliases": [
+      "vector"
+    ]
+  },
+  {
+    "id": "qdrant",
+    "label": "Qdrant",
+    "category": "database",
+    "color": "#DC244C",
+    "icon": "logos:qdrant-icon",
+    "aliases": [
+      "vector"
+    ]
+  },
+  {
+    "id": "redis",
+    "label": "Redis",
+    "category": "cache",
+    "color": "#DC382D",
+    "icon": "logos:redis"
+  },
+  {
+    "id": "memcached",
+    "label": "Memcached",
+    "category": "cache",
+    "color": "#288D82",
+    "icon": "logos:memcached"
+  },
+  {
+    "id": "valkey",
+    "label": "Valkey",
+    "category": "cache",
+    "color": "#DC382D",
+    "icon": "logos:redis"
+  },
+  {
+    "id": "kafka",
+    "label": "Apache Kafka",
+    "category": "queue",
+    "color": "#231F20",
+    "icon": "logos:kafka"
+  },
+  {
+    "id": "rabbitmq",
+    "label": "RabbitMQ",
+    "category": "queue",
+    "color": "#FF6600",
+    "icon": "logos:rabbitmq-icon",
+    "aliases": [
+      "amqp"
+    ]
+  },
+  {
+    "id": "nats",
+    "label": "NATS",
+    "category": "queue",
+    "color": "#27AAE1",
+    "icon": "logos:nats-icon"
+  },
+  {
+    "id": "pulsar",
+    "label": "Apache Pulsar",
+    "category": "queue",
+    "color": "#188FFF",
+    "icon": "logos:pulsar"
+  },
+  {
+    "id": "activemq",
+    "label": "ActiveMQ",
+    "category": "queue",
+    "color": "#D22128",
+    "icon": "logos:apache"
+  },
+  {
+    "id": "mqtt",
+    "label": "MQTT",
+    "category": "queue",
+    "color": "#660066",
+    "icon": "logos:mqtt-icon"
+  },
+  {
+    "id": "celery",
+    "label": "Celery",
+    "category": "queue",
+    "color": "#37814A",
+    "icon": "logos:celery-icon"
+  },
+  {
+    "id": "sidekiq",
+    "label": "Sidekiq",
+    "category": "queue",
+    "color": "#CC342D",
+    "icon": "logos:ruby"
+  },
+  {
+    "id": "temporal",
+    "label": "Temporal",
+    "category": "queue",
+    "color": "#000000",
+    "icon": "logos:temporal-icon",
+    "aliases": [
+      "workflow"
+    ]
+  },
+  {
+    "id": "zeromq",
+    "label": "ZeroMQ",
+    "category": "queue",
+    "color": "#DF0000",
+    "icon": "logos:zeromq"
+  },
+  {
+    "id": "docker",
+    "label": "Docker",
+    "category": "infra",
+    "color": "#2496ED",
+    "icon": "logos:docker-icon"
+  },
+  {
+    "id": "kubernetes",
+    "label": "Kubernetes",
+    "category": "infra",
+    "color": "#326CE5",
+    "icon": "logos:kubernetes",
+    "aliases": [
+      "k8s"
+    ]
+  },
+  {
+    "id": "helm",
+    "label": "Helm",
+    "category": "infra",
+    "color": "#0F1689",
+    "icon": "logos:helm"
+  },
+  {
+    "id": "terraform",
+    "label": "Terraform",
+    "category": "infra",
+    "color": "#7B42BC",
+    "icon": "logos:terraform-icon",
+    "aliases": [
+      "tf",
+      "iac"
+    ]
+  },
+  {
+    "id": "ansible",
+    "label": "Ansible",
+    "category": "infra",
+    "color": "#EE0000",
+    "icon": "logos:ansible"
+  },
+  {
+    "id": "podman",
+    "label": "Podman",
+    "category": "infra",
+    "color": "#892CA0",
+    "icon": "logos:podman-icon"
+  },
+  {
+    "id": "nomad",
+    "label": "Nomad",
+    "category": "infra",
+    "color": "#00CA8E",
+    "icon": "logos:nomad-icon"
+  },
+  {
+    "id": "consul",
+    "label": "Consul",
+    "category": "infra",
+    "color": "#F24C53",
+    "icon": "logos:consul"
+  },
+  {
+    "id": "vault",
+    "label": "Vault",
+    "category": "infra",
+    "color": "#FFEC6E",
+    "icon": "logos:vault-icon",
+    "aliases": [
+      "secrets"
+    ]
+  },
+  {
+    "id": "istio",
+    "label": "Istio",
+    "category": "infra",
+    "color": "#466BB0",
+    "icon": "logos:istio",
+    "aliases": [
+      "servicemesh"
+    ]
+  },
+  {
+    "id": "envoy",
+    "label": "Envoy",
+    "category": "infra",
+    "color": "#AC6199",
+    "icon": "logos:envoy",
+    "aliases": [
+      "proxy"
+    ]
+  },
+  {
+    "id": "linkerd",
+    "label": "Linkerd",
+    "category": "infra",
+    "color": "#2BEDA7",
+    "icon": "logos:linkerd"
+  },
+  {
+    "id": "traefik",
+    "label": "Traefik",
+    "category": "infra",
+    "color": "#24A1C1",
+    "icon": "devicon:traefikproxy",
+    "aliases": [
+      "proxy"
+    ]
+  },
+  {
+    "id": "nginx",
+    "label": "NGINX",
+    "category": "infra",
+    "color": "#009639",
+    "icon": "logos:nginx",
+    "aliases": [
+      "reverseproxy"
+    ]
+  },
+  {
+    "id": "apache",
+    "label": "Apache HTTP",
+    "category": "infra",
+    "color": "#D22128",
+    "icon": "logos:apache",
+    "aliases": [
+      "httpd"
+    ]
+  },
+  {
+    "id": "haproxy",
+    "label": "HAProxy",
+    "category": "infra",
+    "color": "#106DA9",
+    "icon": "logos:haproxy",
+    "aliases": [
+      "loadbalancer"
+    ]
+  },
+  {
+    "id": "caddy",
+    "label": "Caddy",
+    "category": "infra",
+    "color": "#1F88C0",
+    "icon": "logos:caddy"
+  },
+  {
+    "id": "openshift",
+    "label": "OpenShift",
+    "category": "infra",
+    "color": "#EE0000",
+    "icon": "logos:openshift"
+  },
+  {
+    "id": "rancher",
+    "label": "Rancher",
+    "category": "infra",
+    "color": "#0075A8",
+    "icon": "logos:rancher-icon"
+  },
+  {
+    "id": "pulumi",
+    "label": "Pulumi",
+    "category": "infra",
+    "color": "#8A3391",
+    "icon": "logos:pulumi-icon"
+  },
+  {
+    "id": "packer",
+    "label": "Packer",
+    "category": "infra",
+    "color": "#02A8EF",
+    "icon": "logos:packer"
+  },
+  {
+    "id": "vagrant",
+    "label": "Vagrant",
+    "category": "infra",
+    "color": "#1868F2",
+    "icon": "logos:vagrant-icon"
+  },
+  {
+    "id": "linux",
+    "label": "Linux",
+    "category": "infra",
+    "color": "#FCC624",
+    "icon": "logos:linux-tux"
+  },
+  {
+    "id": "ubuntu",
+    "label": "Ubuntu",
+    "category": "infra",
+    "color": "#E95420",
+    "icon": "logos:ubuntu"
+  },
+  {
+    "id": "prometheus",
+    "label": "Prometheus",
+    "category": "observability",
+    "color": "#E6522C",
+    "icon": "logos:prometheus",
+    "aliases": [
+      "metrics"
+    ]
+  },
+  {
+    "id": "grafana",
+    "label": "Grafana",
+    "category": "observability",
+    "color": "#F46800",
+    "icon": "logos:grafana",
+    "aliases": [
+      "dashboards"
+    ]
+  },
+  {
+    "id": "datadog",
+    "label": "Datadog",
+    "category": "observability",
+    "color": "#632CA6",
+    "icon": "logos:datadog"
+  },
+  {
+    "id": "sentry",
+    "label": "Sentry",
+    "category": "observability",
+    "color": "#362D59",
+    "icon": "logos:sentry-icon",
+    "aliases": [
+      "errors"
+    ]
+  },
+  {
+    "id": "opentelemetry",
+    "label": "OpenTelemetry",
+    "category": "observability",
+    "color": "#F5A800",
+    "icon": "logos:opentelemetry-icon",
+    "aliases": [
+      "otel",
+      "tracing"
+    ]
+  },
+  {
+    "id": "jaeger",
+    "label": "Jaeger",
+    "category": "observability",
+    "color": "#60D0E4",
+    "icon": "logos:jaeger",
+    "aliases": [
+      "tracing"
+    ]
+  },
+  {
+    "id": "kibana",
+    "label": "Kibana",
+    "category": "observability",
+    "color": "#E8478B",
+    "icon": "logos:kibana"
+  },
+  {
+    "id": "logstash",
+    "label": "Logstash",
+    "category": "observability",
+    "color": "#FEC514",
+    "icon": "logos:logstash"
+  },
+  {
+    "id": "newrelic",
+    "label": "New Relic",
+    "category": "observability",
+    "color": "#008C99",
+    "icon": "logos:new-relic-icon"
+  },
+  {
+    "id": "splunk",
+    "label": "Splunk",
+    "category": "observability",
+    "color": "#FF375E",
+    "icon": "logos:splunk"
+  },
+  {
+    "id": "loki",
+    "label": "Loki",
+    "category": "observability",
+    "color": "#F46800",
+    "icon": "logos:grafana",
+    "aliases": [
+      "logs"
+    ]
+  },
+  {
+    "id": "pagerduty",
+    "label": "PagerDuty",
+    "category": "observability",
+    "color": "#06AC38",
+    "icon": "logos:pagerduty",
+    "aliases": [
+      "oncall"
+    ]
+  },
+  {
+    "id": "sonarqube",
+    "label": "SonarQube",
+    "category": "observability",
+    "color": "#4E9BCD",
+    "icon": "logos:sonarqube"
+  },
+  {
+    "id": "github",
+    "label": "GitHub",
+    "category": "cicd",
+    "color": "#181717",
+    "icon": "logos:github-icon"
+  },
+  {
+    "id": "githubactions",
+    "label": "GitHub Actions",
+    "category": "cicd",
+    "color": "#2088FF",
+    "icon": "logos:github-actions",
+    "aliases": [
+      "ci"
+    ]
+  },
+  {
+    "id": "gitlab",
+    "label": "GitLab",
+    "category": "cicd",
+    "color": "#FC6D26",
+    "icon": "logos:gitlab"
+  },
+  {
+    "id": "jenkins",
+    "label": "Jenkins",
+    "category": "cicd",
+    "color": "#D24939",
+    "icon": "logos:jenkins"
+  },
+  {
+    "id": "circleci",
+    "label": "CircleCI",
+    "category": "cicd",
+    "color": "#343434",
+    "icon": "logos:circleci"
+  },
+  {
+    "id": "bitbucket",
+    "label": "Bitbucket",
+    "category": "cicd",
+    "color": "#0052CC",
+    "icon": "logos:bitbucket"
+  },
+  {
+    "id": "argocd",
+    "label": "Argo CD",
+    "category": "cicd",
+    "color": "#EF7B4D",
+    "icon": "logos:argo-icon",
+    "aliases": [
+      "gitops"
+    ]
+  },
+  {
+    "id": "buildkite",
+    "label": "Buildkite",
+    "category": "cicd",
+    "color": "#14CC80",
+    "icon": "logos:buildkite"
+  },
+  {
+    "id": "git",
+    "label": "Git",
+    "category": "cicd",
+    "color": "#F05032",
+    "icon": "logos:git-icon"
+  },
+  {
+    "id": "npm",
+    "label": "npm",
+    "category": "cicd",
+    "color": "#CB3837",
+    "icon": "logos:npm-icon"
+  },
+  {
+    "id": "pnpm",
+    "label": "pnpm",
+    "category": "cicd",
+    "color": "#F69220",
+    "icon": "logos:pnpm"
+  },
+  {
+    "id": "yarn",
+    "label": "Yarn",
+    "category": "cicd",
+    "color": "#2C8EBB",
+    "icon": "logos:yarn"
+  },
+  {
+    "id": "auth0",
+    "label": "Auth0",
+    "category": "auth",
+    "color": "#EB5424",
+    "icon": "logos:auth0-icon"
+  },
+  {
+    "id": "keycloak",
+    "label": "Keycloak",
+    "category": "auth",
+    "color": "#008AAA",
+    "icon": "logos:keycloak-icon"
+  },
+  {
+    "id": "okta",
+    "label": "Okta",
+    "category": "auth",
+    "color": "#007DC1",
+    "icon": "logos:okta-icon"
+  },
+  {
+    "id": "firebase",
+    "label": "Firebase",
+    "category": "auth",
+    "color": "#FFCA28",
+    "icon": "logos:firebase"
+  },
+  {
+    "id": "clerk",
+    "label": "Clerk",
+    "category": "auth",
+    "color": "#6C47FF",
+    "icon": "logos:clerk-icon"
+  },
+  {
+    "id": "jwt",
+    "label": "JWT",
+    "category": "auth",
+    "color": "#000000",
+    "icon": "logos:jwt-icon",
+    "aliases": [
+      "token"
+    ]
+  },
+  {
+    "id": "openai",
+    "label": "OpenAI",
+    "category": "ai",
+    "color": "#412991",
+    "icon": "logos:openai-icon",
+    "aliases": [
+      "gpt"
+    ]
+  },
+  {
+    "id": "anthropic",
+    "label": "Anthropic",
+    "category": "ai",
+    "color": "#D4A27F",
+    "icon": "logos:anthropic-icon",
+    "aliases": [
+      "claude"
+    ]
+  },
+  {
+    "id": "huggingface",
+    "label": "Hugging Face",
+    "category": "ai",
+    "color": "#FFD21E",
+    "icon": "logos:hugging-face-icon",
+    "aliases": [
+      "hf"
+    ]
+  },
+  {
+    "id": "pytorch",
+    "label": "PyTorch",
+    "category": "ai",
+    "color": "#EE4C2C",
+    "icon": "logos:pytorch-icon"
+  },
+  {
+    "id": "tensorflow",
+    "label": "TensorFlow",
+    "category": "ai",
+    "color": "#FF6F00",
+    "icon": "logos:tensorflow"
+  },
+  {
+    "id": "langchain",
+    "label": "LangChain",
+    "category": "ai",
+    "color": "#1C3C3C",
+    "icon": "logos:langchain-icon"
+  },
+  {
+    "id": "ollama",
+    "label": "Ollama",
+    "category": "ai",
+    "color": "#000000",
+    "icon": "logos:ollama"
+  },
+  {
+    "id": "mlflow",
+    "label": "MLflow",
+    "category": "ai",
+    "color": "#0194E2",
+    "icon": "logos:mlflow-icon"
+  },
+  {
+    "id": "jupyter",
+    "label": "Jupyter",
+    "category": "ai",
+    "color": "#F37626",
+    "icon": "logos:jupyter"
+  },
+  {
+    "id": "pandas",
+    "label": "pandas",
+    "category": "ai",
+    "color": "#150458",
+    "icon": "logos:pandas-icon"
+  },
+  {
+    "id": "spark",
+    "label": "Apache Spark",
+    "category": "data",
+    "color": "#E25A1C",
+    "icon": "logos:apache-spark"
+  },
+  {
+    "id": "airflow",
+    "label": "Apache Airflow",
+    "category": "data",
+    "color": "#017CEE",
+    "icon": "logos:airflow-icon",
+    "aliases": [
+      "orchestration"
+    ]
+  },
+  {
+    "id": "dbt",
+    "label": "dbt",
+    "category": "data",
+    "color": "#FF694B",
+    "icon": "logos:dbt-icon"
+  },
+  {
+    "id": "snowflake",
+    "label": "Snowflake",
+    "category": "data",
+    "color": "#29B5E8",
+    "icon": "logos:snowflake-icon",
+    "aliases": [
+      "warehouse"
+    ]
+  },
+  {
+    "id": "databricks",
+    "label": "Databricks",
+    "category": "data",
+    "color": "#FF3621",
+    "icon": "logos:databricks-icon"
+  },
+  {
+    "id": "hadoop",
+    "label": "Hadoop",
+    "category": "data",
+    "color": "#66CCFF",
+    "icon": "logos:hadoop"
+  },
+  {
+    "id": "flink",
+    "label": "Apache Flink",
+    "category": "data",
+    "color": "#E6526F",
+    "icon": "logos:apache-flink-icon",
+    "aliases": [
+      "streaming"
+    ]
+  },
+  {
+    "id": "superset",
+    "label": "Superset",
+    "category": "data",
+    "color": "#20A7C9",
+    "icon": "logos:apache-superset-icon",
+    "aliases": [
+      "bi"
+    ]
+  },
+  {
+    "id": "metabase",
+    "label": "Metabase",
+    "category": "data",
+    "color": "#509EE3",
+    "icon": "logos:metabase",
+    "aliases": [
+      "bi"
+    ]
+  },
+  {
+    "id": "cloudflare",
+    "label": "Cloudflare",
+    "category": "edge",
+    "color": "#F38020",
+    "icon": "logos:cloudflare-icon",
+    "aliases": [
+      "cdn"
+    ]
+  },
+  {
+    "id": "vercel",
+    "label": "Vercel",
+    "category": "edge",
+    "color": "#000000",
+    "icon": "logos:vercel-icon"
+  },
+  {
+    "id": "netlify",
+    "label": "Netlify",
+    "category": "edge",
+    "color": "#00C7B7",
+    "icon": "logos:netlify-icon"
+  },
+  {
+    "id": "fastly",
+    "label": "Fastly",
+    "category": "edge",
+    "color": "#FF282D",
+    "icon": "logos:fastly-icon",
+    "aliases": [
+      "cdn"
+    ]
+  },
+  {
+    "id": "akamai",
+    "label": "Akamai",
+    "category": "edge",
+    "color": "#0099CC",
+    "icon": "logos:akamai",
+    "aliases": [
+      "cdn"
+    ]
+  },
+  {
+    "id": "railway",
+    "label": "Railway",
+    "category": "edge",
+    "color": "#0B0D0E",
+    "icon": "logos:railway"
+  },
+  {
+    "id": "flyio",
+    "label": "Fly.io",
+    "category": "edge",
+    "color": "#7B3BE2",
+    "icon": "logos:fly-icon"
+  },
+  {
+    "id": "render",
+    "label": "Render",
+    "category": "edge",
+    "color": "#46E3B7",
+    "icon": "logos:render-icon"
+  },
+  {
+    "id": "heroku",
+    "label": "Heroku",
+    "category": "edge",
+    "color": "#430098",
+    "icon": "logos:heroku-icon"
+  },
+  {
+    "id": "digitalocean",
+    "label": "DigitalOcean",
+    "category": "edge",
+    "color": "#0080FF",
+    "icon": "logos:digital-ocean-icon"
+  },
+  {
+    "id": "stripe",
+    "label": "Stripe",
+    "category": "saas",
+    "color": "#635BFF",
+    "icon": "logos:stripe",
+    "aliases": [
+      "payments"
+    ]
+  },
+  {
+    "id": "twilio",
+    "label": "Twilio",
+    "category": "saas",
+    "color": "#F22F46",
+    "icon": "logos:twilio-icon",
+    "aliases": [
+      "sms"
+    ]
+  },
+  {
+    "id": "sendgrid",
+    "label": "SendGrid",
+    "category": "saas",
+    "color": "#1A82E2",
+    "icon": "logos:sendgrid-icon",
+    "aliases": [
+      "email"
+    ]
+  },
+  {
+    "id": "slack",
+    "label": "Slack",
+    "category": "saas",
+    "color": "#4A154B",
+    "icon": "logos:slack-icon"
+  },
+  {
+    "id": "shopify",
+    "label": "Shopify",
+    "category": "saas",
+    "color": "#7AB55C",
+    "icon": "logos:shopify"
+  },
+  {
+    "id": "algolia",
+    "label": "Algolia",
+    "category": "saas",
+    "color": "#5468FF",
+    "icon": "logos:algolia",
+    "aliases": [
+      "search"
+    ]
+  },
+  {
+    "id": "segment",
+    "label": "Segment",
+    "category": "saas",
+    "color": "#52BD95",
+    "icon": "logos:segment-icon",
+    "aliases": [
+      "analytics"
+    ]
+  },
+  {
+    "id": "contentful",
+    "label": "Contentful",
+    "category": "saas",
+    "color": "#2478CC",
+    "icon": "logos:contentful",
+    "aliases": [
+      "cms"
+    ]
+  },
+  {
+    "id": "sanity",
+    "label": "Sanity",
+    "category": "saas",
+    "color": "#F03E2F",
+    "icon": "logos:sanity",
+    "aliases": [
+      "cms"
+    ]
+  },
+  {
+    "id": "mailgun",
+    "label": "Mailgun",
+    "category": "saas",
+    "color": "#F06B66",
+    "icon": "logos:mailgun-icon",
+    "aliases": [
+      "email"
+    ]
+  },
+  {
+    "id": "oauth",
+    "label": "OAuth / OIDC",
+    "category": "saas",
+    "color": "#F78C40",
+    "icon": "logos:oauth",
+    "aliases": [
+      "openid",
+      "sso"
+    ]
+  },
+  {
+    "id": "client",
+    "label": "Client",
+    "category": "generic",
+    "color": "#64748B",
+    "aliases": [
+      "user",
+      "browser"
+    ]
+  },
+  {
+    "id": "browser",
+    "label": "Browser",
+    "category": "generic",
+    "color": "#64748B",
+    "aliases": [
+      "web"
+    ]
+  },
+  {
+    "id": "mobile",
+    "label": "Mobile App",
+    "category": "generic",
+    "color": "#64748B",
+    "aliases": [
+      "ios",
+      "android"
+    ]
+  },
+  {
+    "id": "load-balancer",
+    "label": "Load Balancer",
+    "category": "generic",
+    "color": "#64748B",
+    "aliases": [
+      "lb",
+      "nlb",
+      "alb"
+    ]
+  },
+  {
+    "id": "api",
+    "label": "API",
+    "category": "generic",
+    "color": "#64748B",
+    "aliases": [
+      "rest",
+      "endpoint"
+    ]
+  },
+  {
+    "id": "gateway",
+    "label": "API Gateway",
+    "category": "generic",
+    "color": "#64748B",
+    "aliases": [
+      "edge"
+    ]
+  },
+  {
+    "id": "queue",
+    "label": "Message Queue",
+    "category": "generic",
+    "color": "#64748B",
+    "aliases": [
+      "broker"
+    ]
+  },
+  {
+    "id": "database",
+    "label": "Database",
+    "category": "generic",
+    "color": "#64748B",
+    "aliases": [
+      "db",
+      "sql"
+    ]
+  },
+  {
+    "id": "cache",
+    "label": "Cache",
+    "category": "generic",
+    "color": "#64748B"
+  },
+  {
+    "id": "object-storage",
+    "label": "Object Storage",
+    "category": "generic",
+    "color": "#64748B",
+    "aliases": [
+      "blob",
+      "bucket"
+    ]
+  },
+  {
+    "id": "cdn",
+    "label": "CDN",
+    "category": "generic",
+    "color": "#64748B",
+    "aliases": [
+      "edge"
+    ]
+  },
+  {
+    "id": "worker",
+    "label": "Worker",
+    "category": "generic",
+    "color": "#64748B",
+    "aliases": [
+      "consumer",
+      "job"
+    ]
+  },
+  {
+    "id": "cron",
+    "label": "Scheduled Job",
+    "category": "generic",
+    "color": "#64748B",
+    "aliases": [
+      "cronjob",
+      "timer"
+    ]
+  },
+  {
+    "id": "firewall",
+    "label": "Firewall / WAF",
+    "category": "generic",
+    "color": "#64748B",
+    "aliases": [
+      "security"
+    ]
+  },
+  {
+    "id": "external",
+    "label": "External Service",
+    "category": "generic",
+    "color": "#64748B",
+    "aliases": [
+      "third-party"
+    ]
+  },
+  {
+    "id": "webhook",
+    "label": "Webhook",
+    "category": "generic",
+    "color": "#64748B"
+  },
+  {
+    "id": "aws-ec2",
+    "label": "EC2",
+    "category": "cloud",
+    "icon": "logos:aws-ec2",
+    "color": "#FF9900",
+    "provider": "aws",
+    "aliases": [
+      "compute",
+      "vm"
+    ]
+  },
+  {
+    "id": "aws-lambda",
+    "label": "Lambda",
+    "category": "cloud",
+    "icon": "logos:aws-lambda",
+    "color": "#FF9900",
+    "provider": "aws",
+    "aliases": [
+      "serverless"
+    ]
+  },
+  {
+    "id": "aws-s3",
+    "label": "S3",
+    "category": "cloud",
+    "icon": "logos:aws-s3",
+    "color": "#569A31",
+    "provider": "aws",
+    "aliases": [
+      "storage",
+      "bucket"
+    ]
+  },
+  {
+    "id": "aws-rds",
+    "label": "RDS",
+    "category": "cloud",
+    "icon": "logos:aws-rds",
+    "color": "#527FFF",
+    "provider": "aws",
+    "aliases": [
+      "database"
+    ]
+  },
+  {
+    "id": "aws-dynamodb",
+    "label": "DynamoDB",
+    "category": "cloud",
+    "icon": "logos:aws-dynamodb",
+    "color": "#4053D6",
+    "provider": "aws"
+  },
+  {
+    "id": "aws-ecs",
+    "label": "ECS",
+    "category": "cloud",
+    "icon": "logos:aws-ecs",
+    "color": "#FF9900",
+    "provider": "aws",
+    "aliases": [
+      "containers"
+    ]
+  },
+  {
+    "id": "aws-eks",
+    "label": "EKS",
+    "category": "cloud",
+    "icon": "logos:aws-eks",
+    "color": "#FF9900",
+    "provider": "aws",
+    "aliases": [
+      "kubernetes"
+    ]
+  },
+  {
+    "id": "aws-fargate",
+    "label": "Fargate",
+    "category": "cloud",
+    "icon": "logos:aws-fargate",
+    "color": "#FF9900",
+    "provider": "aws"
+  },
+  {
+    "id": "aws-cloudfront",
+    "label": "CloudFront",
+    "category": "cloud",
+    "icon": "logos:aws-cloudfront",
+    "color": "#8C4FFF",
+    "provider": "aws",
+    "aliases": [
+      "cdn"
+    ]
+  },
+  {
+    "id": "aws-api-gateway",
+    "label": "API Gateway",
+    "category": "cloud",
+    "icon": "logos:aws-api-gateway",
+    "color": "#FF4F8B",
+    "provider": "aws"
+  },
+  {
+    "id": "aws-sqs",
+    "label": "SQS",
+    "category": "cloud",
+    "icon": "logos:aws-sqs",
+    "color": "#FF4F8B",
+    "provider": "aws",
+    "aliases": [
+      "queue"
+    ]
+  },
+  {
+    "id": "aws-sns",
+    "label": "SNS",
+    "category": "cloud",
+    "icon": "logos:aws-sns",
+    "color": "#FF4F8B",
+    "provider": "aws",
+    "aliases": [
+      "pubsub"
+    ]
+  },
+  {
+    "id": "aws-elasticache",
+    "label": "ElastiCache",
+    "category": "cloud",
+    "icon": "logos:aws-elasticache",
+    "color": "#C925D1",
+    "provider": "aws",
+    "aliases": [
+      "redis"
+    ]
+  },
+  {
+    "id": "aws-route53",
+    "label": "Route 53",
+    "category": "cloud",
+    "icon": "logos:aws-route53",
+    "color": "#8C4FFF",
+    "provider": "aws",
+    "aliases": [
+      "dns"
+    ]
+  },
+  {
+    "id": "aws-cloudwatch",
+    "label": "CloudWatch",
+    "category": "cloud",
+    "icon": "logos:aws-cloudwatch",
+    "color": "#FF4F8B",
+    "provider": "aws",
+    "aliases": [
+      "monitoring"
+    ]
+  },
+  {
+    "id": "aws-iam",
+    "label": "IAM",
+    "category": "cloud",
+    "icon": "logos:aws-iam",
+    "color": "#DD344C",
+    "provider": "aws",
+    "aliases": [
+      "auth"
+    ]
+  },
+  {
+    "id": "aws-aurora",
+    "label": "Aurora",
+    "category": "cloud",
+    "icon": "logos:aws-aurora",
+    "color": "#527FFF",
+    "provider": "aws",
+    "aliases": [
+      "database"
+    ]
+  },
+  {
+    "id": "aws-eventbridge",
+    "label": "EventBridge",
+    "category": "cloud",
+    "icon": "logos:aws-eventbridge",
+    "color": "#FF4F8B",
+    "provider": "aws",
+    "aliases": [
+      "events"
+    ]
+  },
+  {
+    "id": "aws-kinesis",
+    "label": "Kinesis",
+    "category": "cloud",
+    "icon": "logos:aws-kinesis",
+    "color": "#8C4FFF",
+    "provider": "aws",
+    "aliases": [
+      "streaming"
+    ]
+  },
+  {
+    "id": "aws-glue",
+    "label": "Glue",
+    "category": "cloud",
+    "icon": "logos:aws-glue",
+    "color": "#8C4FFF",
+    "provider": "aws",
+    "aliases": [
+      "etl"
+    ]
+  },
+  {
+    "id": "aws-athena",
+    "label": "Athena",
+    "category": "cloud",
+    "icon": "logos:aws-athena",
+    "color": "#8C4FFF",
+    "provider": "aws",
+    "aliases": [
+      "query"
+    ]
+  },
+  {
+    "id": "aws-redshift",
+    "label": "Redshift",
+    "category": "cloud",
+    "icon": "logos:aws-redshift",
+    "color": "#8C4FFF",
+    "provider": "aws",
+    "aliases": [
+      "warehouse"
+    ]
+  },
+  {
+    "id": "aws-cognito",
+    "label": "Cognito",
+    "category": "cloud",
+    "icon": "logos:aws-cognito",
+    "color": "#DD344C",
+    "provider": "aws",
+    "aliases": [
+      "auth"
+    ]
+  },
+  {
+    "id": "aws-secrets-manager",
+    "label": "Secrets Manager",
+    "category": "cloud",
+    "icon": "logos:aws-secrets-manager",
+    "color": "#DD344C",
+    "provider": "aws",
+    "aliases": [
+      "secrets"
+    ]
+  },
+  {
+    "id": "gcp-cloud-run",
+    "label": "Cloud Run",
+    "category": "cloud",
+    "icon": "gcp:cloud-run",
+    "color": "#4285F4",
+    "provider": "gcp",
+    "aliases": [
+      "serverless"
+    ]
+  },
+  {
+    "id": "gcp-cloud-functions",
+    "label": "Cloud Functions",
+    "category": "cloud",
+    "icon": "gcp:cloud-functions",
+    "color": "#4285F4",
+    "provider": "gcp",
+    "aliases": [
+      "serverless"
+    ]
+  },
+  {
+    "id": "gcp-cloud-storage",
+    "label": "Cloud Storage",
+    "category": "cloud",
+    "icon": "gcp:cloud-storage",
+    "color": "#4285F4",
+    "provider": "gcp",
+    "aliases": [
+      "bucket"
+    ]
+  },
+  {
+    "id": "gcp-cloud-sql",
+    "label": "Cloud SQL",
+    "category": "cloud",
+    "icon": "gcp:cloud-sql",
+    "color": "#4285F4",
+    "provider": "gcp",
+    "aliases": [
+      "database"
+    ]
+  },
+  {
+    "id": "gcp-bigquery",
+    "label": "BigQuery",
+    "category": "cloud",
+    "icon": "gcp:bigquery",
+    "color": "#4285F4",
+    "provider": "gcp",
+    "aliases": [
+      "warehouse"
+    ]
+  },
+  {
+    "id": "gcp-firestore",
+    "label": "Firestore",
+    "category": "cloud",
+    "icon": "gcp:firestore",
+    "color": "#4285F4",
+    "provider": "gcp",
+    "aliases": [
+      "nosql"
+    ]
+  },
+  {
+    "id": "gcp-memorystore",
+    "label": "Memorystore",
+    "category": "cloud",
+    "icon": "gcp:memorystore",
+    "color": "#4285F4",
+    "provider": "gcp",
+    "aliases": [
+      "redis"
+    ]
+  },
+  {
+    "id": "gcp-cloud-cdn",
+    "label": "Cloud CDN",
+    "category": "cloud",
+    "icon": "gcp:cloud-cdn",
+    "color": "#4285F4",
+    "provider": "gcp",
+    "aliases": [
+      "cdn"
+    ]
+  },
+  {
+    "id": "gcp-load-balancing",
+    "label": "Cloud Load Balancing",
+    "category": "cloud",
+    "icon": "gcp:cloud-load-balancing",
+    "color": "#4285F4",
+    "provider": "gcp",
+    "aliases": [
+      "lb"
+    ]
+  },
+  {
+    "id": "gcp-dataflow",
+    "label": "Dataflow",
+    "category": "cloud",
+    "icon": "gcp:dataflow",
+    "color": "#4285F4",
+    "provider": "gcp",
+    "aliases": [
+      "streaming"
+    ]
+  },
+  {
+    "id": "gcp-cloud-tasks",
+    "label": "Cloud Tasks",
+    "category": "cloud",
+    "icon": "gcp:cloud-tasks",
+    "color": "#4285F4",
+    "provider": "gcp",
+    "aliases": [
+      "queue"
+    ]
+  },
+  {
+    "id": "gcp-cloud-scheduler",
+    "label": "Cloud Scheduler",
+    "category": "cloud",
+    "icon": "gcp:cloud-scheduler",
+    "color": "#4285F4",
+    "provider": "gcp",
+    "aliases": [
+      "cron"
+    ]
+  },
+  {
+    "id": "gcp-artifact-registry",
+    "label": "Artifact Registry",
+    "category": "cloud",
+    "icon": "gcp:artifact-registry",
+    "color": "#4285F4",
+    "provider": "gcp",
+    "aliases": [
+      "images"
+    ]
+  },
+  {
+    "id": "gcp-app-engine",
+    "label": "App Engine",
+    "category": "cloud",
+    "icon": "gcp:app-engine",
+    "color": "#4285F4",
+    "provider": "gcp"
+  },
+  {
+    "id": "gcp-pubsub",
+    "label": "Pub/Sub",
+    "category": "cloud",
+    "icon": "gcp:pubsub",
+    "color": "#4285F4",
+    "provider": "gcp",
+    "aliases": [
+      "queue",
+      "events"
+    ]
+  },
+  {
+    "id": "gcp-gke",
+    "label": "GKE",
+    "category": "cloud",
+    "icon": "gcp:google-kubernetes-engine",
+    "color": "#4285F4",
+    "provider": "gcp",
+    "aliases": [
+      "kubernetes"
+    ]
+  },
+  {
+    "id": "gcp-spanner",
+    "label": "Spanner",
+    "category": "cloud",
+    "icon": "gcp:cloud-spanner",
+    "color": "#4285F4",
+    "provider": "gcp",
+    "aliases": [
+      "database"
+    ]
+  },
+  {
+    "id": "gcp-vertex-ai",
+    "label": "Vertex AI",
+    "category": "cloud",
+    "icon": "gcp:vertexai",
+    "color": "#4285F4",
+    "provider": "gcp",
+    "aliases": [
+      "ml"
+    ]
+  },
+  {
+    "id": "azure",
+    "label": "Azure",
+    "category": "cloud",
+    "icon": "logos:azure-icon",
+    "color": "#0078D4",
+    "provider": "azure"
+  },
+  {
+    "id": "azure-functions",
+    "label": "Azure Functions",
+    "category": "cloud",
+    "icon": "logos:azure-icon",
+    "color": "#0078D4",
+    "provider": "azure",
+    "aliases": [
+      "serverless"
+    ]
+  },
+  {
+    "id": "azure-cosmosdb",
+    "label": "Cosmos DB",
+    "category": "cloud",
+    "icon": "logos:azure-icon",
+    "color": "#0078D4",
+    "provider": "azure",
+    "aliases": [
+      "database"
+    ]
+  },
+  {
+    "id": "azure-blob",
+    "label": "Blob Storage",
+    "category": "cloud",
+    "icon": "logos:azure-icon",
+    "color": "#0078D4",
+    "provider": "azure",
+    "aliases": [
+      "storage"
+    ]
+  },
+  {
+    "id": "azure-aks",
+    "label": "AKS",
+    "category": "cloud",
+    "icon": "logos:azure-icon",
+    "color": "#0078D4",
+    "provider": "azure",
+    "aliases": [
+      "kubernetes"
+    ]
+  },
+  {
+    "id": "azure-servicebus",
+    "label": "Service Bus",
+    "category": "cloud",
+    "icon": "logos:azure-icon",
+    "color": "#0078D4",
+    "provider": "azure",
+    "aliases": [
+      "queue"
+    ]
+  }
+]

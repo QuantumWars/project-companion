@@ -1,0 +1,529 @@
+{
+  "version": 1,
+  "id": "ticketing-schema",
+  "title": "Ticketing schema",
+  "type": "dfd",
+  "updatedAt": "2026-08-28T20:32:08.478Z",
+  "nodes": [
+    {
+      "id": "venues",
+      "type": "table",
+      "position": {
+        "x": 980,
+        "y": 457.16666666666663
+      },
+      "data": {
+        "kind": "table",
+        "label": "venues",
+        "schema": "public",
+        "columns": [
+          {
+            "id": "venues.id",
+            "name": "id",
+            "type": "uuid",
+            "pk": true
+          },
+          {
+            "id": "venues.name",
+            "name": "name",
+            "type": "varchar(160)",
+            "nullable": false
+          },
+          {
+            "id": "venues.city",
+            "name": "city",
+            "type": "varchar(80)",
+            "nullable": false
+          },
+          {
+            "id": "venues.capacity",
+            "name": "capacity",
+            "type": "integer",
+            "nullable": false
+          }
+        ]
+      },
+      "measured": {
+        "width": 230,
+        "height": 135
+      }
+    },
+    {
+      "id": "events",
+      "type": "table",
+      "position": {
+        "x": 660,
+        "y": 263.66666666666663
+      },
+      "data": {
+        "kind": "table",
+        "label": "events",
+        "schema": "public",
+        "columns": [
+          {
+            "id": "events.id",
+            "name": "id",
+            "type": "uuid",
+            "pk": true
+          },
+          {
+            "id": "events.venue_id",
+            "name": "venue_id",
+            "type": "uuid",
+            "nullable": false,
+            "fk": true
+          },
+          {
+            "id": "events.title",
+            "name": "title",
+            "type": "varchar(200)",
+            "nullable": false
+          },
+          {
+            "id": "events.starts_at",
+            "name": "starts_at",
+            "type": "timestamptz",
+            "nullable": false
+          },
+          {
+            "id": "events.status",
+            "name": "status",
+            "type": "text",
+            "nullable": false
+          }
+        ]
+      },
+      "measured": {
+        "width": 230,
+        "height": 157
+      }
+    },
+    {
+      "id": "seats",
+      "type": "table",
+      "position": {
+        "x": 660,
+        "y": 468.66666666666663
+      },
+      "data": {
+        "kind": "table",
+        "label": "seats",
+        "schema": "public",
+        "columns": [
+          {
+            "id": "seats.id",
+            "name": "id",
+            "type": "uuid",
+            "pk": true
+          },
+          {
+            "id": "seats.venue_id",
+            "name": "venue_id",
+            "type": "uuid",
+            "nullable": false,
+            "fk": true
+          },
+          {
+            "id": "seats.section",
+            "name": "section",
+            "type": "varchar(24)",
+            "nullable": false
+          },
+          {
+            "id": "seats.row_label",
+            "name": "row_label",
+            "type": "varchar(8)",
+            "nullable": false
+          },
+          {
+            "id": "seats.seat_number",
+            "name": "seat_number",
+            "type": "integer",
+            "nullable": false
+          }
+        ]
+      },
+      "measured": {
+        "width": 230,
+        "height": 157
+      }
+    },
+    {
+      "id": "users",
+      "type": "table",
+      "position": {
+        "x": 660,
+        "y": 84.83333333333331
+      },
+      "data": {
+        "kind": "table",
+        "label": "users",
+        "schema": "public",
+        "columns": [
+          {
+            "id": "users.id",
+            "name": "id",
+            "type": "uuid",
+            "pk": true
+          },
+          {
+            "id": "users.email",
+            "name": "email",
+            "type": "varchar(255)",
+            "nullable": false,
+            "unique": true
+          },
+          {
+            "id": "users.created_at",
+            "name": "created_at",
+            "type": "timestamptz",
+            "nullable": false
+          }
+        ]
+      },
+      "measured": {
+        "width": 230,
+        "height": 113
+      }
+    },
+    {
+      "id": "seat_holds",
+      "type": "table",
+      "position": {
+        "x": 340,
+        "y": 289.8333333333333
+      },
+      "data": {
+        "kind": "table",
+        "label": "seat_holds",
+        "schema": "public",
+        "columns": [
+          {
+            "id": "seat_holds.id",
+            "name": "id",
+            "type": "uuid",
+            "pk": true
+          },
+          {
+            "id": "seat_holds.event_id",
+            "name": "event_id",
+            "type": "uuid",
+            "nullable": false,
+            "fk": true
+          },
+          {
+            "id": "seat_holds.seat_id",
+            "name": "seat_id",
+            "type": "uuid",
+            "nullable": false,
+            "fk": true
+          },
+          {
+            "id": "seat_holds.user_id",
+            "name": "user_id",
+            "type": "uuid",
+            "nullable": false,
+            "fk": true
+          },
+          {
+            "id": "seat_holds.expires_at",
+            "name": "expires_at",
+            "type": "timestamptz",
+            "nullable": false
+          }
+        ]
+      },
+      "measured": {
+        "width": 230,
+        "height": 157
+      }
+    },
+    {
+      "id": "orders",
+      "type": "table",
+      "position": {
+        "x": 340,
+        "y": 62.833333333333314
+      },
+      "data": {
+        "kind": "table",
+        "label": "orders",
+        "schema": "public",
+        "columns": [
+          {
+            "id": "orders.id",
+            "name": "id",
+            "type": "uuid",
+            "pk": true
+          },
+          {
+            "id": "orders.user_id",
+            "name": "user_id",
+            "type": "uuid",
+            "nullable": false,
+            "fk": true
+          },
+          {
+            "id": "orders.event_id",
+            "name": "event_id",
+            "type": "uuid",
+            "nullable": false,
+            "fk": true
+          },
+          {
+            "id": "orders.total_cents",
+            "name": "total_cents",
+            "type": "integer",
+            "nullable": false
+          },
+          {
+            "id": "orders.status",
+            "name": "status",
+            "type": "text",
+            "nullable": false
+          },
+          {
+            "id": "orders.placed_at",
+            "name": "placed_at",
+            "type": "timestamptz",
+            "nullable": false
+          }
+        ]
+      },
+      "measured": {
+        "width": 230,
+        "height": 179
+      }
+    },
+    {
+      "id": "tickets",
+      "type": "table",
+      "position": {
+        "x": 20,
+        "y": 468.66666666666663
+      },
+      "data": {
+        "kind": "table",
+        "label": "tickets",
+        "schema": "public",
+        "columns": [
+          {
+            "id": "tickets.id",
+            "name": "id",
+            "type": "uuid",
+            "pk": true
+          },
+          {
+            "id": "tickets.order_id",
+            "name": "order_id",
+            "type": "uuid",
+            "nullable": false,
+            "fk": true
+          },
+          {
+            "id": "tickets.seat_id",
+            "name": "seat_id",
+            "type": "uuid",
+            "nullable": false,
+            "fk": true
+          },
+          {
+            "id": "tickets.price_cents",
+            "name": "price_cents",
+            "type": "integer",
+            "nullable": false
+          },
+          {
+            "id": "tickets.qr_code",
+            "name": "qr_code",
+            "type": "text",
+            "nullable": false,
+            "unique": true
+          }
+        ]
+      },
+      "measured": {
+        "width": 230,
+        "height": 157
+      }
+    },
+    {
+      "id": "payments",
+      "type": "table",
+      "position": {
+        "x": 20,
+        "y": 44
+      },
+      "data": {
+        "kind": "table",
+        "label": "payments",
+        "schema": "public",
+        "columns": [
+          {
+            "id": "payments.id",
+            "name": "id",
+            "type": "uuid",
+            "pk": true
+          },
+          {
+            "id": "payments.order_id",
+            "name": "order_id",
+            "type": "uuid",
+            "nullable": false,
+            "unique": true,
+            "fk": true
+          },
+          {
+            "id": "payments.provider_ref",
+            "name": "provider_ref",
+            "type": "varchar(120)",
+            "nullable": false,
+            "unique": true
+          },
+          {
+            "id": "payments.amount_cents",
+            "name": "amount_cents",
+            "type": "integer",
+            "nullable": false
+          },
+          {
+            "id": "payments.captured_at",
+            "name": "captured_at",
+            "type": "timestamptz"
+          }
+        ]
+      },
+      "measured": {
+        "width": 230,
+        "height": 157
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "events.venue_id->venues.id",
+      "source": "events",
+      "target": "venues",
+      "sourceHandle": "col:events.venue_id:r",
+      "targetHandle": "col:venues.id:l",
+      "type": "relation",
+      "data": {
+        "kind": "relation",
+        "cardinality": "n-1"
+      }
+    },
+    {
+      "id": "seats.venue_id->venues.id",
+      "source": "seats",
+      "target": "venues",
+      "sourceHandle": "col:seats.venue_id:r",
+      "targetHandle": "col:venues.id:l",
+      "type": "relation",
+      "data": {
+        "kind": "relation",
+        "cardinality": "n-1"
+      }
+    },
+    {
+      "id": "seat_holds.event_id->events.id",
+      "source": "seat_holds",
+      "target": "events",
+      "sourceHandle": "col:seat_holds.event_id:r",
+      "targetHandle": "col:events.id:l",
+      "type": "relation",
+      "data": {
+        "kind": "relation",
+        "cardinality": "n-1"
+      }
+    },
+    {
+      "id": "seat_holds.seat_id->seats.id",
+      "source": "seat_holds",
+      "target": "seats",
+      "sourceHandle": "col:seat_holds.seat_id:r",
+      "targetHandle": "col:seats.id:l",
+      "type": "relation",
+      "data": {
+        "kind": "relation",
+        "cardinality": "n-1"
+      }
+    },
+    {
+      "id": "seat_holds.user_id->users.id",
+      "source": "seat_holds",
+      "target": "users",
+      "sourceHandle": "col:seat_holds.user_id:r",
+      "targetHandle": "col:users.id:l",
+      "type": "relation",
+      "data": {
+        "kind": "relation",
+        "cardinality": "n-1"
+      }
+    },
+    {
+      "id": "orders.user_id->users.id",
+      "source": "orders",
+      "target": "users",
+      "sourceHandle": "col:orders.user_id:r",
+      "targetHandle": "col:users.id:l",
+      "type": "relation",
+      "data": {
+        "kind": "relation",
+        "cardinality": "n-1"
+      }
+    },
+    {
+      "id": "orders.event_id->events.id",
+      "source": "orders",
+      "target": "events",
+      "sourceHandle": "col:orders.event_id:r",
+      "targetHandle": "col:events.id:l",
+      "type": "relation",
+      "data": {
+        "kind": "relation",
+        "cardinality": "n-1"
+      }
+    },
+    {
+      "id": "tickets.order_id->orders.id",
+      "source": "tickets",
+      "target": "orders",
+      "sourceHandle": "col:tickets.order_id:r",
+      "targetHandle": "col:orders.id:l",
+      "type": "relation",
+      "data": {
+        "kind": "relation",
+        "cardinality": "n-1"
+      }
+    },
+    {
+      "id": "tickets.seat_id->seats.id",
+      "source": "tickets",
+      "target": "seats",
+      "sourceHandle": "col:tickets.seat_id:r",
+      "targetHandle": "col:seats.id:l",
+      "type": "relation",
+      "data": {
+        "kind": "relation",
+        "cardinality": "n-1"
+      }
+    },
+    {
+      "id": "payments.order_id->orders.id",
+      "source": "payments",
+      "target": "orders",
+      "sourceHandle": "col:payments.order_id:r",
+      "targetHandle": "col:orders.id:l",
+      "type": "relation",
+      "data": {
+        "kind": "relation",
+        "cardinality": "1-1"
+      }
+    }
+  ],
+  "viewport": {
+    "x": 87.72268907563023,
+    "y": 47.31568627450986,
+    "zoom": 1.2638655462184873
+  }
+}

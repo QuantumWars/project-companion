@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "archboard": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["./dist/archboard-mcp.mjs"]
+    }
+  }
+}
