@@ -31,7 +31,7 @@ const SIGNAL: Record<AttributionSignal, { label: string; hint: string; className
   },
   trailer: {
     label: "trailer",
-    hint: "The commit message carries an archboard: <id> trailer.",
+    hint: "The commit message carries an project-companion: <id> trailer.",
     className: "bg-sky-50 text-sky-700",
   },
   branch: {
@@ -230,7 +230,7 @@ export const GitSurface = ({ root }: { root?: string }) => {
             </h2>
             <p className="mt-1 text-xs text-neutral-500">
               These commits are not linked to anything on the board. Commit with an{" "}
-              <code className="rounded bg-neutral-100 px-1 font-mono">archboard: &lt;taskId&gt;</code>{" "}
+              <code className="rounded bg-neutral-100 px-1 font-mono">project-companion: &lt;taskId&gt;</code>{" "}
               trailer, or work on a branch whose name carries the id, and they link themselves.
             </p>
           </div>

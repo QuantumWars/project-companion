@@ -9,12 +9,12 @@
  *
  * Layout, rooted at the agent's project directory:
  *
- *   .claude/archboard/project.json          name, version, board index
- *   .claude/archboard/diagrams/<id>.json    one diagram each
- *   .claude/archboard/boards/<id>.json      one whiteboard each
- *   .claude/archboard/tasks.json            the Kanban board
- *   .claude/archboard/roadmap.json          phases + feature overrides
- *   .claude/archboard/cache/                derived data; gitignored
+ *   .claude/project-companion/project.json        name, version, board index
+ *   .claude/project-companion/diagrams/<id>.json  one diagram each
+ *   .claude/project-companion/boards/<id>.json    one whiteboard each
+ *   .claude/project-companion/tasks.json          the Kanban board
+ *   .claude/project-companion/roadmap.json        phases + feature overrides
+ *   .claude/project-companion/cache/              derived data; gitignored
  *
  * One file deliberately lives outside the store: the PRD itself, at
  * `docs/prd.md` by default. It is the source of truth for the feature list,
@@ -38,12 +38,28 @@ import type { Layer } from "@/types/canvas";
  * `.arch/` stays last so projects created before this change keep working.
  */
 export const STORE_DIRS = [
+  ".claude/project-companion",
+  ".codex/project-companion",
+  ".cursor/project-companion",
+  ".gemini/project-companion",
+  // Older names, still discovered so a project created before the rename keeps
+  // working untouched. `project-companion move <dir>` relocates one when its
+  // owner is ready; nothing forces it.
   ".claude/archboard",
   ".codex/archboard",
   ".cursor/archboard",
   ".gemini/archboard",
   ".arch",
 ] as const;
+
+/** Store directories kept only for discovery. Never chosen for a new project. */
+export const LEGACY_STORE_DIRS: readonly string[] = [
+  ".claude/archboard",
+  ".codex/archboard",
+  ".cursor/archboard",
+  ".gemini/archboard",
+  ".arch",
+];
 
 /** Created by `init` when a repo has no agent directory yet. */
 export const DEFAULT_STORE_DIR = STORE_DIRS[0];

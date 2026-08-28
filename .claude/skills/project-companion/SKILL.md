@@ -1,5 +1,5 @@
 ---
-name: archboard
+name: project-companion
 description: Read and update this project's PRD, task board, architecture diagrams, and the git history linking them. Use when picking up work, when finishing it, when the shape of the system changes, or when you need to know what has actually been built.
 ---
 
@@ -17,7 +17,7 @@ End every commit with a trailer naming the task:
 ```
 Add refund endpoint
 
-archboard: 978ce4d6
+project-companion: 978ce4d6
 ```
 
 That trailer is what links your commit to the board. Without it the link falls
@@ -27,27 +27,27 @@ weaker and sometimes wrong.
 ## Orient yourself
 
 ```bash
-npx archboard status              # diagrams and task counts
-npx archboard phase list          # phases, with progress
-npx archboard feature list        # the PRD's feature list
-npx archboard git status          # branch, ahead/behind, uncommitted files
+npx project-companion status              # diagrams and task counts
+npx project-companion phase list          # phases, with progress
+npx project-companion feature list        # the PRD's feature list
+npx project-companion git status          # branch, ahead/behind, uncommitted files
 ```
 
 ## The loop
 
-1. **Pick a feature.** `archboard feature list --status todo`, then
-   `archboard feature show <id>` for its acceptance criteria.
+1. **Pick a feature.** `project-companion feature list --status todo`, then
+   `project-companion feature show <id>` for its acceptance criteria.
 
 2. **Break it into tasks.**
 
    ```bash
-   npx archboard task add "Add refund endpoint" --feature refunds --status todo
+   npx project-companion task add "Add refund endpoint" --feature refunds --status todo
    ```
 
 3. **Start.** This moves the task to in progress and tells you the branch name:
 
    ```bash
-   npx archboard task start 978ce4d6
+   npx project-companion task start 978ce4d6
    ```
 
    It does **not** create the branch. Run the `git checkout -b` it prints,
@@ -59,8 +59,8 @@ npx archboard git status          # branch, ahead/behind, uncommitted files
 5. **Finish.** Tick the acceptance criteria you satisfied:
 
    ```bash
-   npx archboard feature check refunds "refund is idempotent"
-   npx archboard task done 978ce4d6 --commit HEAD
+   npx project-companion feature check refunds "refund is idempotent"
+   npx project-companion task done 978ce4d6 --commit HEAD
    ```
 
    A feature's status is **derived** from its criteria: all ticked means done,
@@ -94,7 +94,7 @@ Three rules when you edit it:
   tasks attached to a feature when the heading is renamed. Renaming the heading
   is fine; changing the id detaches every task pointing at it.
 - **A new feature needs an id.** Use
-  `archboard feature add "<title>" --phase <id>` and it is stamped for you,
+  `project-companion feature add "<title>" --phase <id>` and it is stamped for you,
   or add the comment yourself.
 - `Paths:` lists the globs a feature owns. It is how commits get attributed
   when there is no trailer, so keep it accurate.
@@ -104,10 +104,10 @@ Three rules when you edit it:
 When you add, remove or rewire a component, reflect it:
 
 ```bash
-npx archboard diagram list
-npx archboard diagram show <id>     # cheaper than reading the source
-npx archboard diagram new "Payments" --type architecture
-npx archboard diagram import prisma/schema.prisma --title "Database"
+npx project-companion diagram list
+npx project-companion diagram show <id>     # cheaper than reading the source
+npx project-companion diagram new "Payments" --type architecture
+npx project-companion diagram import prisma/schema.prisma --title "Database"
 ```
 
 For node and edge edits use the MCP tools (`add_node`, `connect_nodes`,
@@ -116,12 +116,12 @@ For node and edge edits use the MCP tools (`add_node`, `connect_nodes`,
 ## Check your work is visible
 
 ```bash
-npx archboard git log            # commits, and what each is linked to
-npx archboard git unlinked       # commits linked to nothing
+npx project-companion git log            # commits, and what each is linked to
+npx project-companion git unlinked       # commits linked to nothing
 ```
 
 If your commits show up under `git unlinked`, the trailer is missing. Fix it
-with `archboard task done <id> --commit <sha>`, which records the sha
+with `project-companion task done <id> --commit <sha>`, which records the sha
 directly.
 
 ## Rules

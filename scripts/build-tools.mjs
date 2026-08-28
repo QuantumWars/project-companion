@@ -30,13 +30,13 @@ const common = {
 await build({
   ...common,
   entryPoints: [resolve(ROOT, "cli/index.ts")],
-  outfile: resolve(ROOT, "dist/archboard.mjs"),
+  outfile: resolve(ROOT, "dist/project-companion.mjs"),
 });
 
 await build({
   ...common,
   entryPoints: [resolve(ROOT, "mcp/server.ts")],
-  outfile: resolve(ROOT, "dist/archboard-mcp.mjs"),
+  outfile: resolve(ROOT, "dist/project-companion-mcp.mjs"),
 });
 
-console.log("built dist/archboard.mjs and dist/archboard-mcp.mjs");
+console.log("built dist/project-companion.mjs and dist/project-companion-mcp.mjs");

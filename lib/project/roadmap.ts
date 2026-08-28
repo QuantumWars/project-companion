@@ -141,7 +141,7 @@ export const readRoadmap = (root: string): Roadmap => {
       phases: [],
       features: [],
       orphans: sidecar.orphans ?? [],
-      warnings: [`No PRD at ${source}. Run \`archboard prd init\` to create one.`],
+      warnings: [`No PRD at ${source}. Run \`project-companion prd init\` to create one.`],
     };
   }
 

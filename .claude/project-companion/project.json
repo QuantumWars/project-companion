@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "name": "Archboard",
+  "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
   "diagrams": [
     {
       "id": "archboard-architecture",
-      "title": "Archboard architecture",
+      "title": "Project Companion architecture",
       "type": "architecture",
       "updatedAt": "2026-08-28T20:34:06.787Z"
     },

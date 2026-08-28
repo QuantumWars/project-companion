@@ -1,5 +1,5 @@
 /**
- * The only two ways archboard may change a repository.
+ * The only two ways project-companion may change a repository.
  *
  * There is no `commit`, no `push`, no `checkout`, no `reset`, no `clean` --
  * not gated behind a flag, simply absent. A tool that watches your work should

@@ -55,7 +55,7 @@ const requireRoot = (): string => {
   const root = findProjectRoot();
   if (!root) {
     throw new Error(
-      "No .arch/ directory found. Run `npx archboard init` at the project root first.",
+      "No .arch/ directory found. Run `npx project-companion init` at the project root first.",
     );
   }
   return root;
@@ -118,7 +118,7 @@ const makeNode = (input: {
 
 const build = () => {
   const server = new McpServer({
-    name: "archboard",
+    name: "project-companion",
     version: "0.1.0",
   });
 
@@ -520,7 +520,7 @@ const build = () => {
         task: { ...task, status: "in_progress" },
         branch,
         checkout: `git checkout -b ${branch}`,
-        trailer: `archboard: ${task.id}`,
+        trailer: `project-companion: ${task.id}`,
       });
     },
   );
@@ -544,5 +544,5 @@ const build = () => {
 };
 
 serveStdio(() => build(), {
-  onerror: (error) => process.stderr.write(`archboard mcp: ${error.message}\n`),
+  onerror: (error) => process.stderr.write(`project-companion mcp: ${error.message}\n`),
 });

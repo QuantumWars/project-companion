@@ -42,6 +42,10 @@ next-env.d.ts
 /dist
 
 # derived git attribution; safe to delete at any time
+.claude/project-companion/cache/
+.codex/project-companion/cache/
+.cursor/project-companion/cache/
+.gemini/project-companion/cache/
 .claude/archboard/cache/
 .codex/archboard/cache/
 .cursor/archboard/cache/
@@ -49,4 +53,4 @@ next-env.d.ts
 .arch/cache/
 
 # test bundles
-/node_modules/.archboard-tests/
+/node_modules/.project-companion-tests/

@@ -21,7 +21,7 @@ import { eq, ok, runAll, test } from "./harness";
  * again.
  */
 const project = (prd?: string) => {
-  const dir = realpathSync(mkdtempSync(join(tmpdir(), "archboard-roadmap-")));
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "project-companion-roadmap-")));
   initProject(dir, "Test");
   if (prd !== undefined) {
     mkdirSync(join(dir, "docs"), { recursive: true });
@@ -101,7 +101,7 @@ test("ticking the last box moves the feature to done, with no sidecar write", ()
     const roadmap = readRoadmap(dir);
     eq(roadmap.features.find((f) => f.id === "guest-checkout")!.status, "done");
     // Nothing was pinned, so nothing should have been stored.
-    const sidecar = JSON.parse(readFileSync(join(dir, ".claude/archboard/roadmap.json"), "utf8"));
+    const sidecar = JSON.parse(readFileSync(join(dir, ".claude/project-companion/roadmap.json"), "utf8"));
     eq(sidecar.overrides, {});
   } finally {
     cleanup();
@@ -119,7 +119,7 @@ test("an override pins status, and clearing it returns to derived", () => {
     eq(cleared!.status, "in_progress", "should fall back to derived");
 
     // An empty override is removed rather than left as a husk.
-    const sidecar = JSON.parse(readFileSync(join(dir, ".claude/archboard/roadmap.json"), "utf8"));
+    const sidecar = JSON.parse(readFileSync(join(dir, ".claude/project-companion/roadmap.json"), "utf8"));
     eq(sidecar.overrides, {});
   } finally {
     cleanup();
@@ -196,7 +196,7 @@ test("a heading that vanishes orphans rather than deletes", () => {
   try {
     setFeatureOverride(dir, "saved-cards", { nodeIds: ["node-x"] });
     // Simulate the sidecar having recorded the feature, then the heading going.
-    const path = join(dir, ".claude/archboard/roadmap.json");
+    const path = join(dir, ".claude/project-companion/roadmap.json");
     const sidecar = JSON.parse(readFileSync(path, "utf8"));
     sidecar.orphans = [
       {

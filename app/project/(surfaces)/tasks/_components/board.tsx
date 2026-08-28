@@ -105,7 +105,7 @@ export const Board = ({ nodeLookup, root }: { nodeLookup: NodeLookup; root?: str
       <div className="rounded-lg border border-dashed border-neutral-300 bg-white p-8 text-center">
         <h2 className="text-base font-semibold text-neutral-900">No project here</h2>
         <p className="mt-2 text-sm text-neutral-500">
-          Run <code className="rounded bg-neutral-100 px-1 font-mono text-xs">archboard init</code>{" "}
+          Run <code className="rounded bg-neutral-100 px-1 font-mono text-xs">project-companion init</code>{" "}
           in a repository to create a store your agent can read.
         </p>
       </div>

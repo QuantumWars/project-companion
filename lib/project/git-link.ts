@@ -43,12 +43,18 @@ export type AttributionResult = {
 };
 
 /**
- * `archboard: <id>` on its own line is the documented convention, and the one
- * `SKILL.md` teaches. The bracketed forms are accepted because people type them
- * out of habit from other trackers.
+ * `project-companion: <id>` on its own line is the documented convention, and
+ * the one `SKILL.md` teaches.
+ *
+ * `archboard:` is still accepted. The tool was called that until the rename,
+ * and a commit message is immutable -- dropping the old spelling would silently
+ * unlink every commit made before it, which is exactly the kind of quiet
+ * detachment this whole module exists to avoid. The bracketed forms are
+ * accepted because people type them out of habit from other trackers.
  */
-const TRAILER = /(?:^|\n)\s*archboard[:\s]+([0-9a-f]{8,12})\b/i;
-const INLINE = /\[(?:#|archboard[:\s]*)([0-9a-f]{8,12})\]/i;
+const TRAILER =
+  /(?:^|\n)\s*(?:project-companion|archboard)[:\s]+([0-9a-f]{8,12})\b/i;
+const INLINE = /\[(?:#|(?:project-companion|archboard)[:\s]*)([0-9a-f]{8,12})\]/i;
 
 /** An id embedded in a branch name, delimited by a slash, dash or underscore. */
 const idInBranch = (branch: string, ids: readonly string[]): string | undefined =>

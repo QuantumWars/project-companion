@@ -487,7 +487,7 @@ const NoPrd = ({ source }: { source: string }) => (
       file tools.
     </p>
     <pre className="mx-auto mt-4 max-w-md overflow-x-auto rounded-md bg-neutral-900 p-3 text-left font-mono text-xs text-neutral-100">
-{`npx archboard prd init`}
+{`npx project-companion prd init`}
     </pre>
   </div>
 );

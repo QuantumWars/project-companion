@@ -33,6 +33,7 @@ import {
   type TaskStatus,
   type TasksFile,
   type WhiteboardFile,
+  LEGACY_STORE_DIRS,
 } from "./types";
 import type { ArchEdge, ArchNode, DiagramType } from "@/types/arch";
 
@@ -77,7 +78,10 @@ export const findProjectRoot = (from?: string): string | null =>
  * than adding another top-level folder.
  */
 export const chooseStoreDir = (root: string): string => {
+  // Legacy names are discovered but never chosen: a project created today
+  // should not land in `.arch/` just because that directory happens to exist.
   for (const candidate of STORE_DIRS) {
+    if (LEGACY_STORE_DIRS.includes(candidate)) continue;
     const agentDir = candidate.split("/")[0];
     if (existsSync(join(root, agentDir))) return candidate;
   }

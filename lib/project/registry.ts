@@ -72,6 +72,27 @@ export const globalIndexPath = (): string => {
   for (const candidate of STORE_DIRS) {
     const agentDir = candidate.split("/")[0];
     if (agentDir !== ".arch" && existsSync(join(home, agentDir))) {
+      return join(home, agentDir, "project-companion", "index.json");
+    }
+  }
+
+  return join(home, ".claude", "project-companion", "index.json");
+};
+
+/**
+ * Where the index lived before the rename.
+ *
+ * Read as a fallback so a machine that already knows about several projects
+ * does not silently forget them all. The index is a cache and rebuilds itself
+ * as projects are touched, but losing it means the dashboard goes blank and
+ * `?root=` stops resolving until every project is visited again.
+ */
+const legacyIndexPath = (): string => {
+  const home = homedir();
+
+  for (const candidate of STORE_DIRS) {
+    const agentDir = candidate.split("/")[0];
+    if (agentDir !== ".arch" && existsSync(join(home, agentDir))) {
       return join(home, agentDir, "archboard", "index.json");
     }
   }
@@ -79,16 +100,18 @@ export const globalIndexPath = (): string => {
   return join(home, ".claude", "archboard", "index.json");
 };
 
-const readIndex = (): IndexFile => {
+const parseIndex = (path: string): IndexFile | null => {
   try {
-    const parsed = JSON.parse(readFileSync(globalIndexPath(), "utf8")) as IndexFile;
-    return Array.isArray(parsed?.projects)
-      ? parsed
-      : { version: INDEX_VERSION, projects: [] };
+    const parsed = JSON.parse(readFileSync(path, "utf8")) as IndexFile;
+    return Array.isArray(parsed?.projects) ? parsed : null;
   } catch {
-    return { version: INDEX_VERSION, projects: [] };
+    return null;
   }
 };
+
+const readIndex = (): IndexFile =>
+  parseIndex(globalIndexPath()) ??
+  parseIndex(legacyIndexPath()) ?? { version: INDEX_VERSION, projects: [] };
 
 const writeIndex = (index: IndexFile) => {
   const path = globalIndexPath();

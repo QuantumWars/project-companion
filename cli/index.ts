@@ -60,48 +60,48 @@ import {
 import type { DiagramType } from "../types/arch";
 
 const HELP = `
-archboard - architecture and task boards that live in your repo
+project-companion - architecture and task boards that live in your repo
 
-  archboard init [name]              create .arch/ in this directory
-  archboard status                   summarise the project
+  project-companion init [name]              create .arch/ in this directory
+  project-companion status                   summarise the project
 
-  archboard diagram list             list diagrams
-  archboard diagram show <id>        print a diagram as text
-  archboard diagram json <id>        print a diagram as JSON
-  archboard diagram new <title> [--type architecture|flowchart|erd|...]
-  archboard diagram import <file> [--title T] [--id ID]
+  project-companion diagram list             list diagrams
+  project-companion diagram show <id>        print a diagram as text
+  project-companion diagram json <id>        print a diagram as JSON
+  project-companion diagram new <title> [--type architecture|flowchart|erd|...]
+  project-companion diagram import <file> [--title T] [--id ID]
                                      SQL DDL or Prisma schema -> ER diagram
 
-  archboard board new <title>        create a freehand whiteboard
+  project-companion board new <title>        create a freehand whiteboard
 
-  archboard prd sync                 re-read the PRD into the roadmap
-  archboard prd path <file>          point at a different PRD
-  archboard feature list [--phase P] [--status S]
-  archboard feature show <id>        criteria, tasks and commits
-  archboard feature add <title> [--phase P] [--summary S]
-  archboard feature check <id> <criterion>   tick an acceptance criterion
-  archboard feature pin <id> <status>        override the derived status
-  archboard phase list               phases, in document order
-  archboard phase add <name> [--goal G]
-  archboard phase set <id> [--status S] [--starts D] [--ends D]
+  project-companion prd sync                 re-read the PRD into the roadmap
+  project-companion prd path <file>          point at a different PRD
+  project-companion feature list [--phase P] [--status S]
+  project-companion feature show <id>        criteria, tasks and commits
+  project-companion feature add <title> [--phase P] [--summary S]
+  project-companion feature check <id> <criterion>   tick an acceptance criterion
+  project-companion feature pin <id> <status>        override the derived status
+  project-companion phase list               phases, in document order
+  project-companion phase add <name> [--goal G]
+  project-companion phase set <id> [--status S] [--starts D] [--ends D]
 
-  archboard task list [--status S] [--feature F]
-  archboard task add <title> [--status S] [--node ID] [--feature F]
-  archboard task move <id> <status>  ${TASK_STATUSES.join(" | ")}
-  archboard task start <id> [--branch] [--worktree]
+  project-companion task list [--status S] [--feature F]
+  project-companion task add <title> [--status S] [--node ID] [--feature F]
+  project-companion task move <id> <status>  ${TASK_STATUSES.join(" | ")}
+  project-companion task start <id> [--branch] [--worktree]
                                      open a branch for a task
-  archboard task done <id> [--commit SHA]
-  archboard task rm <id>
+  project-companion task done <id> [--commit SHA]
+  project-companion task rm <id>
 
-  archboard git status               branch, ahead/behind, working tree
-  archboard git log [--limit N]      recent commits and what they are linked to
-  archboard git unlinked             commits with nothing on the board
+  project-companion git status               branch, ahead/behind, working tree
+  project-companion git log [--limit N]      recent commits and what they are linked to
+  project-companion git unlinked             commits with nothing on the board
 
-  archboard move <dir>               move the store, e.g. .claude/archboard
-  archboard reindex                  rebuild the diagram index from disk
+  project-companion move <dir>               move the store, e.g. .claude/project-companion
+  project-companion reindex                  rebuild the diagram index from disk
 
-  archboard projects                 every project on this machine
-  archboard projects forget <path>   drop one from the global index
+  project-companion projects                 every project on this machine
+  project-companion projects forget <path>   drop one from the global index
 
 Run inside a repo containing .arch/, or any directory below it.
 `;
@@ -199,7 +199,7 @@ const runGit = async (root: string, sub: string | undefined, rest: string[]) => 
       process.stdout.write(`${c.short}  ${c.subject}\n`);
     }
     process.stdout.write(
-      `\n${linked.unattributed.length} unlinked. Add \`archboard: <taskId>\` to a commit message, or work on a branch named after the task.\n`,
+      `\n${linked.unattributed.length} unlinked. Add \`project-companion: <taskId>\` to a commit message, or work on a branch named after the task.\n`,
     );
     return;
   }
@@ -238,7 +238,7 @@ const runTaskGit = async (root: string, sub: string, id: string) => {
     // Without an explicit flag this only moves the task and SUGGESTS the name.
     // Creating a branch is a change to the repository, so it waits to be asked.
     process.stdout.write(
-      `${id} -> in progress\n\nSuggested branch:\n  git checkout -b ${name}\n\nCommit with a trailer so the work links itself:\n  archboard: ${id}\n`,
+      `${id} -> in progress\n\nSuggested branch:\n  git checkout -b ${name}\n\nCommit with a trailer so the work links itself:\n  project-companion: ${id}\n`,
     );
     return;
   }
@@ -263,7 +263,7 @@ const runTaskGit = async (root: string, sub: string, id: string) => {
 
 const requireRoot = (): string =>
   findProjectRoot() ??
-  die("No .arch/ found. Run `archboard init` at your project root.");
+  die("No .arch/ found. Run `project-companion init` at your project root.");
 
 const describeDiagram = (diagram: DiagramFile): string => {
   const lines: string[] = [
@@ -302,7 +302,7 @@ const main = () => {
   // The global index is machine-wide, so it works with no project in scope.
   if (command === "projects") {
     if (sub === "forget") {
-      const path = rest[0] ?? die("Usage: archboard projects forget <path>");
+      const path = rest[0] ?? die("Usage: project-companion projects forget <path>");
       process.stdout.write(
         forgetProject(path) ? `Forgot ${path}\n` : `Not indexed: ${path}\n`,
       );
@@ -312,7 +312,7 @@ const main = () => {
     const projects = listProjects();
     if (!projects.length) {
       process.stdout.write(
-        `No projects indexed yet.\nRun \`archboard init\` in a repository.\n`,
+        `No projects indexed yet.\nRun \`project-companion init\` in a repository.\n`,
       );
       return;
     }
@@ -338,7 +338,7 @@ const main = () => {
     const storeDir = findProject(root)?.storeDir ?? "";
     const agentDir = storeDir.split("/")[0];
     if (agentDir && agentDir !== ".arch") {
-      const skill = join(root, agentDir, "skills", "archboard", "SKILL.md");
+      const skill = join(root, agentDir, "skills", "project-companion", "SKILL.md");
       if (!existsSync(skill)) {
         mkdirSync(dirname(skill), { recursive: true });
         writeFileSync(skill, SKILL_MD, "utf8");
@@ -346,8 +346,8 @@ const main = () => {
     }
     process.stdout.write(
       `Initialised "${project.name}" in ${root}/${findProject(root)?.storeDir}\n` +
-        `Wrote the archboard skill so your agent can use it directly.\n` +
-        `Next: archboard diagram new "System architecture"\n`,
+        `Wrote the project-companion skill so your agent can use it directly.\n` +
+        `Next: project-companion diagram new "System architecture"\n`,
     );
     return;
   }
@@ -377,7 +377,7 @@ const main = () => {
     if (sub === "list") {
       const diagrams = listDiagrams(root);
       if (!diagrams.length) {
-        process.stdout.write("No diagrams yet. `archboard diagram new <title>`\n");
+        process.stdout.write("No diagrams yet. `project-companion diagram new <title>`\n");
         return;
       }
       for (const d of diagrams) {
@@ -388,7 +388,7 @@ const main = () => {
     }
 
     if (sub === "show" || sub === "json") {
-      const id = rest[0] ?? die("Usage: archboard diagram show <id>");
+      const id = rest[0] ?? die("Usage: project-companion diagram show <id>");
       const diagram = readDiagram(root, id) ?? die(`No diagram "${id}"`);
       process.stdout.write(
         sub === "json"
@@ -399,7 +399,7 @@ const main = () => {
     }
 
     if (sub === "new") {
-      const title = rest[0] ?? die("Usage: archboard diagram new <title>");
+      const title = rest[0] ?? die("Usage: project-companion diagram new <title>");
       const type = (flag("type") ?? "architecture") as DiagramType;
       const diagram = createDiagram(root, title, type);
       process.stdout.write(`Created ${diagram.id}\n`);
@@ -407,7 +407,7 @@ const main = () => {
     }
 
     if (sub === "import") {
-      const file = rest[0] ?? die("Usage: archboard diagram import <file>");
+      const file = rest[0] ?? die("Usage: project-companion diagram import <file>");
       const source = readFileSync(resolve(file), "utf8");
       // Prisma declares `model X {`; SQL says CREATE TABLE. Either is decisive.
       const isPrisma =
@@ -436,7 +436,7 @@ const main = () => {
 
   if (command === "board") {
     if (sub === "new") {
-      const title = rest[0] ?? die("Usage: archboard board new <title>");
+      const title = rest[0] ?? die("Usage: project-companion board new <title>");
       const board = createWhiteboard(root, title);
       process.stdout.write(`Created ${board.id}\n`);
       return;
@@ -470,7 +470,7 @@ const main = () => {
     }
 
     if (sub === "add") {
-      const title = rest[0] ?? die("Usage: archboard task add <title>");
+      const title = rest[0] ?? die("Usage: project-companion task add <title>");
       const raw = flag("status");
       if (raw !== undefined && !isTaskStatus(raw)) {
         return die(`Unknown status "${raw}". One of: ${TASK_STATUSES.join(", ")}`);
@@ -481,7 +481,7 @@ const main = () => {
       if (feature && !readRoadmap(root).features.some((f) => f.id === feature)) {
         // Fail rather than silently storing a dangling id: an unresolvable
         // featureId puts the task in a swimlane that does not exist.
-        die(`No feature "${feature}". Run \`archboard feature list\`.`);
+        die(`No feature "${feature}". Run \`project-companion feature list\`.`);
       }
 
       const task = createTask(root, {
@@ -498,14 +498,14 @@ const main = () => {
     }
 
     if (sub === "start" || sub === "done") {
-      const id = rest[0] ?? die(`Usage: archboard task ${sub} <id>`);
+      const id = rest[0] ?? die(`Usage: project-companion task ${sub} <id>`);
       void runTaskGit(root, sub, id);
       return;
     }
 
     if (sub === "move") {
       const [id, status] = rest;
-      if (!id || !status) return die("Usage: archboard task move <id> <status>");
+      if (!id || !status) return die("Usage: project-companion task move <id> <status>");
       if (!isTaskStatus(status)) {
         return die(`Unknown status "${status}". One of: ${TASK_STATUSES.join(", ")}`);
       }
@@ -515,7 +515,7 @@ const main = () => {
     }
 
     if (sub === "rm") {
-      const id = rest[0] ?? die("Usage: archboard task rm <id>");
+      const id = rest[0] ?? die("Usage: project-companion task rm <id>");
       if (!deleteTask(root, id)) die(`No task "${id}"`);
       process.stdout.write(`Deleted ${id}\n`);
       return;
@@ -525,7 +525,7 @@ const main = () => {
   }
 
   if (command === "move") {
-    const target = sub ?? die("Usage: archboard move <dir>   e.g. .claude/archboard");
+    const target = sub ?? die("Usage: project-companion move <dir>   e.g. .claude/project-companion");
     const moved = moveStore(root, target);
     if (!moved) {
       return die(`Nothing to move (store is already at ${findProject(root)?.storeDir}).`);
@@ -538,7 +538,7 @@ const main = () => {
 
   if (command === "prd") {
     if (sub === "path") {
-      const file = rest[0] ?? die("Usage: archboard prd path <file>");
+      const file = rest[0] ?? die("Usage: project-companion prd path <file>");
       const roadmap = setPrdSource(root, file);
       process.stdout.write(`PRD source is now ${roadmap.source}\n`);
       return;
@@ -555,7 +555,7 @@ const main = () => {
     // `sync` is a read: the roadmap is assembled from the markdown every time,
     // so there is nothing to import. It exists to report what was parsed.
     const roadmap = readRoadmap(root);
-    if (!roadmap.present) die(`No PRD at ${roadmap.source}. Run \`archboard prd init\`.`);
+    if (!roadmap.present) die(`No PRD at ${roadmap.source}. Run \`project-companion prd init\`.`);
     process.stdout.write(
       `${roadmap.source}\n${roadmap.phases.length} phases, ${roadmap.features.length} features\n`,
     );
@@ -567,10 +567,10 @@ const main = () => {
 
   if (command === "feature") {
     const roadmap = readRoadmap(root);
-    if (!roadmap.present) die(`No PRD at ${roadmap.source}. Run \`archboard prd init\`.`);
+    if (!roadmap.present) die(`No PRD at ${roadmap.source}. Run \`project-companion prd init\`.`);
 
     if (sub === "show") {
-      const id = rest[0] ?? die("Usage: archboard feature show <id>");
+      const id = rest[0] ?? die("Usage: project-companion feature show <id>");
       const feature =
         roadmap.features.find((f) => f.id === id) ?? die(`No feature "${id}"`);
       const lines = [
@@ -590,7 +590,7 @@ const main = () => {
     }
 
     if (sub === "add") {
-      const title = rest[0] ?? die("Usage: archboard feature add <title> [--phase P]");
+      const title = rest[0] ?? die("Usage: project-companion feature add <title> [--phase P]");
       editPrd(root, undefined, [
         { op: "addFeature", title, phaseId: flag("phase"), summary: flag("summary") },
       ]);
@@ -599,7 +599,7 @@ const main = () => {
     }
 
     if (sub === "check" || sub === "uncheck") {
-      const id = rest[0] ?? die("Usage: archboard feature check <id> <criterion>");
+      const id = rest[0] ?? die("Usage: project-companion feature check <id> <criterion>");
       const needle = rest.slice(1).join(" ").toLowerCase();
       const feature = roadmap.features.find((f) => f.id === id) ?? die(`No feature "${id}"`);
       const criterion =
@@ -615,8 +615,8 @@ const main = () => {
     }
 
     if (sub === "pin") {
-      const id = rest[0] ?? die("Usage: archboard feature pin <id> <status|none>");
-      const value = rest[1] ?? die("Usage: archboard feature pin <id> <status|none>");
+      const id = rest[0] ?? die("Usage: project-companion feature pin <id> <status|none>");
+      const value = rest[1] ?? die("Usage: project-companion feature pin <id> <status|none>");
       if (value !== "none" && !isTaskStatus(value)) die(`Unknown status "${value}"`);
       const feature =
         setFeatureOverride(root, id, {
@@ -650,14 +650,14 @@ const main = () => {
     const roadmap = readRoadmap(root);
 
     if (sub === "add") {
-      const name = rest[0] ?? die("Usage: archboard phase add <name> [--goal G]");
+      const name = rest[0] ?? die("Usage: project-companion phase add <name> [--goal G]");
       editPrd(root, undefined, [{ op: "addPhase", name, goal: flag("goal") }]);
       process.stdout.write(`Added phase "${name}"\n`);
       return;
     }
 
     if (sub === "set") {
-      const id = rest[0] ?? die("Usage: archboard phase set <id> [--status S]");
+      const id = rest[0] ?? die("Usage: project-companion phase set <id> [--status S]");
       const status = flag("status");
       if (status && !PHASE_STATUSES.includes(status as never)) {
         die(`Unknown phase status "${status}" (${PHASE_STATUSES.join(" | ")})`);

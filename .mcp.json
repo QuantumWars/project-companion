@@ -1,9 +1,9 @@
 {
   "mcpServers": {
-    "archboard": {
+    "project-companion": {
       "type": "stdio",
       "command": "node",
-      "args": ["./dist/archboard-mcp.mjs"]
+      "args": ["./dist/project-companion-mcp.mjs"]
     }
   }
 }

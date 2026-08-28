@@ -30,7 +30,7 @@ if (!files.length) {
 // Bundles go inside the repo, not a temp dir: `packages: "external"` leaves
 // imports bare, and Node resolves those relative to the FILE, so a bundle in
 // /tmp cannot see node_modules.
-const out = join(ROOT, "node_modules", ".archboard-tests");
+const out = join(ROOT, "node_modules", ".project-companion-tests");
 mkdirSync(out, { recursive: true });
 let failed = 0;
 

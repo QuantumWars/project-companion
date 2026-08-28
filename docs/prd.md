@@ -1,6 +1,6 @@
-# Archboard PRD
+# Project Companion PRD
 
-Archboard is project management that runs alongside your coding agent. The architecture
+Project Companion is project management that runs alongside your coding agent. The architecture
 canvas describes what the system is; the roadmap and board describe what is being built;
 the git tree proves what actually got built.
 

@@ -15,7 +15,7 @@ export const GET = async (request: Request) => {
     return resolved.status === 404
       ? NextResponse.json({
           configured: false,
-          message: "No project store found. Run `archboard init`.",
+          message: "No project store found. Run `project-companion init`.",
         })
       : NextResponse.json({ error: resolved.error }, { status: resolved.status });
   }

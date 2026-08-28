@@ -12,7 +12,7 @@ import { eq, ok, runAll, test, throws } from "./harness";
 
 /** A real repository, because mocking git would test the mock. */
 const repo = () => {
-  const dir = realpathSync(mkdtempSync(join(tmpdir(), "archboard-git-")));
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "project-companion-git-")));
   const sh = (...args: string[]) => execFileSync("git", args, { cwd: dir, stdio: "pipe" });
 
   sh("init", "-q", "-b", "main");
@@ -80,7 +80,7 @@ test("ordinary refs pass", () => {
 /* --------------------------------- reading -------------------------------- */
 
 test("a directory that is not a repository reports null, not an error", async () => {
-  const dir = realpathSync(mkdtempSync(join(tmpdir(), "archboard-norepo-")));
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "project-companion-norepo-")));
   try {
     eq(await gitRoot(dir), null);
   } finally {
@@ -120,11 +120,11 @@ test("commits parse with stats and paths", async () => {
 test("a multi-line commit body does not break record parsing", async () => {
   const r = repo();
   try {
-    r.commit("subject line\n\nA body with\nseveral lines\n\narchboard: 978ce4d6", { "a.txt": "x" });
+    r.commit("subject line\n\nA body with\nseveral lines\n\nproject-companion: 978ce4d6", { "a.txt": "x" });
     const [commit] = await readCommits(r.dir);
     eq(commit.subject, "subject line");
     ok(commit.body.includes("several lines"), "body truncated");
-    ok(commit.body.includes("archboard: 978ce4d6"), "trailer lost");
+    ok(commit.body.includes("project-companion: 978ce4d6"), "trailer lost");
   } finally {
     r.cleanup();
   }
@@ -194,7 +194,7 @@ test("a recorded sha wins over everything else", async () => {
 test("a trailer attributes to its task", async () => {
   const r = repo();
   try {
-    r.commit("Add refund endpoint\n\narchboard: 978ce4d6", { "a.ts": "x" });
+    r.commit("Add refund endpoint\n\nproject-companion: 978ce4d6", { "a.ts": "x" });
     const commits = await readCommits(r.dir);
     const result = attribute(commits, [task()], [feature()], new Map());
     eq(result.commits[0].taskId, "978ce4d6");
@@ -259,7 +259,7 @@ test("an ambiguous path match is no match", async () => {
 test("a task's feature is inherited by its commits", async () => {
   const r = repo();
   try {
-    r.commit("work\n\narchboard: 978ce4d6", { "a.ts": "x" });
+    r.commit("work\n\nproject-companion: 978ce4d6", { "a.ts": "x" });
     const commits = await readCommits(r.dir);
     const result = attribute(commits, [task({ featureId: "guest-checkout" })], [feature()], new Map());
     eq(result.byFeature["guest-checkout"].length, 1);

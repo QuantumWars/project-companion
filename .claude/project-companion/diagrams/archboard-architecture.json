@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "archboard-architecture",
-  "title": "Archboard architecture",
+  "title": "Project Companion architecture",
   "type": "architecture",
   "updatedAt": "2026-08-28T20:34:06.787Z",
   "nodes": [
@@ -251,7 +251,7 @@
       },
       "data": {
         "kind": "service",
-        "label": "archboard CLI",
+        "label": "project-companion CLI",
         "tech": "nodejs"
       },
       "measured": {

@@ -20,7 +20,7 @@ export const StoreBadge = () => {
       .catch(() => {});
   }, []);
 
-  // The agent directory alone: ".claude" reads better than ".claude/archboard".
+  // The agent directory alone: ".claude" reads better than ".claude/project-companion".
   const label = dir ? dir.split("/")[0] : "project";
 
   return (

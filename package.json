@@ -64,7 +64,7 @@
     "typescript": "^5"
   },
   "bin": {
-    "archboard": "./dist/archboard.mjs",
-    "archboard-mcp": "./dist/archboard-mcp.mjs"
+    "project-companion": "./dist/project-companion.mjs",
+    "project-companion-mcp": "./dist/project-companion-mcp.mjs"
   }
 }
