@@ -139,7 +139,8 @@ export const Board = ({ nodeLookup, root }: { nodeLookup: NodeLookup; root?: str
         <TextInput
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          placeholder="Filter tasks…"className="h-8 w-56 text-sm"/>
+          placeholder="Filter tasks…"
+          className="h-8 w-56 text-sm"/>
 
         <span className="ml-auto text-xs text-fg-subtle">
           {visible.length} task{visible.length === 1 ? "" : "s"}
@@ -274,7 +275,8 @@ const Column = ({
             setComposing(true);
             setDraft("");
           }}
-          className="ml-auto text-fg-subtle hover:text-fg"aria-label={`Add to ${COLUMN_LABELS[status]}`}
+          className="ml-auto text-fg-subtle hover:text-fg"
+          aria-label={`Add to ${COLUMN_LABELS[status]}`}
         >
           <Plus className="h-3.5 w-3.5" />
         </button>
@@ -293,7 +295,8 @@ const Column = ({
               setDraft("");
             }
           }}
-          placeholder="Task title…"className="mb-2 h-8 text-sm"/>
+          placeholder="Task title…"
+          className="mb-2 h-8 text-sm"/>
       ) : null}
 
       <div className="space-y-2">
@@ -321,7 +324,8 @@ const Column = ({
         ))}
         {dropIndex === tasks.length ? <Insertion /> : null}
         <div
-          className="h-6"onDragOver={(e) => {
+          className="h-6"
+          onDragOver={(e) => {
             e.preventDefault();
             setDropIndex(tasks.length);
           }}
@@ -381,7 +385,8 @@ const Card = ({
             e.stopPropagation();
             onRemove();
           }}
-          className="shrink-0 text-fg-subtle opacity-0 transition-opacity hover:text-status-danger group-hover:opacity-100"aria-label="Delete task">
+          className="shrink-0 text-fg-subtle opacity-0 transition-opacity hover:text-status-danger group-hover:opacity-100"
+          aria-label="Delete task">
           <Trash2 className="h-3.5 w-3.5" />
         </button>
       </div>

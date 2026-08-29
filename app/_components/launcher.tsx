@@ -11,8 +11,9 @@ import {
 import { useEffect, useMemo, useState } from "react";
 
 import {
-  Badge, Button, EmptyState, Kbd, Panel, Progress, StatusDot,
+  Badge, EmptyState, Progress, StatusDot,
 } from "@/components/ui/primitives";
+import { NewDiagramButton } from "./new-diagram-button";
 import type { ProjectSummary } from "@/lib/project/summary";
 import { TASK_STATUSES } from "@/lib/project/types";
 import {
@@ -59,6 +60,11 @@ export const Launcher = () => {
   const boards = useBoards();
   const [projects, setProjects] = useState<ProjectSummary[] | null>(null);
   const [current, setCurrent] = useState<string | null>(null);
+
+  const currentProject = useMemo(
+    () => projects?.find((p) => p.path === current) ?? null,
+    [projects, current],
+  );
 
   useEffect(() => {
     fetch("/api/projects")
@@ -163,14 +169,29 @@ export const Launcher = () => {
           <h2 className="mb-2.5 text-2xs font-medium uppercase tracking-wider text-fg-subtle">
             Start
           </h2>
-          <div className="flex flex-col gap-y-1">
+          {currentProject ? (
+            <div className="mb-5">
+              <NewDiagramButton root={null} projectName={currentProject.name} />
+            </div>
+          ) : null}
+
+          {/*
+            Deliberately labelled and separated. A diagram made in a project is
+            a file the agent can read; a scratch board lives in this browser and
+            is invisible to it. Presenting both as the same kind of "new" is how
+            someone ends up with work the agent will never see.
+          */}
+          <p className="mb-1.5 text-2xs text-fg-subtle">Scratch, in this browser</p>
+          <div className="flex flex-col gap-y-0.5">
             <StartAction
               icon={Network}
-              label="Architecture diagram"onClick={() => onCreate("arch")}
+              label="Architecture diagram"
+              onClick={() => onCreate("arch")}
             />
             <StartAction
               icon={Pencil}
-              label="Whiteboard"onClick={() => onCreate("whiteboard")}
+              label="Whiteboard"
+              onClick={() => onCreate("whiteboard")}
             />
           </div>
 
@@ -309,7 +330,8 @@ const ProjectRow = ({
 
           {project.git?.branch ? (
             <span
-              className="flex items-center gap-x-1 font-mono text-2xs text-fg-subtle"title={`${project.git.dirty} uncommitted change${project.git.dirty === 1 ? "" : "s"}`}
+              className="flex items-center gap-x-1 font-mono text-2xs text-fg-subtle"
+              title={`${project.git.dirty} uncommitted change${project.git.dirty === 1 ? "" : "s"}`}
             >
               <GitBranch className="h-3 w-3" />
               {project.git.branch}

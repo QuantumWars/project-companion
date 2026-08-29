@@ -75,7 +75,9 @@ export const GitSurface = ({ root }: { root?: string }) => {
       setBusy(true);
       try {
         const [g, t, r] = await Promise.all([
-          fetch(`/api/project/git${query}${refresh ? (query ? "&" : "?") + "refresh=1" : ""}`).then((x) => x.json()),
+          fetch(
+            `/api/project/git${query}${refresh ? (query ? "&" : "?") + "refresh=1" : ""}`,
+          ).then((x) => x.json()),
           fetch(`/api/project/tasks${query}`).then((x) => x.json()),
           fetch(`/api/project/roadmap${query}`).then((x) => x.json()),
         ]);
@@ -248,7 +250,8 @@ export const GitSurface = ({ root }: { root?: string }) => {
           <TextInput
             value={filter.text}
             onChange={(e) => setFilter((f) => ({ ...f, text: e.target.value }))}
-            placeholder="Filter by message, author or path…"className="h-8 w-72 pl-7 text-sm"/>
+            placeholder="Filter by message, author or path…"
+            className="h-8 w-72 pl-7 text-sm"/>
         </div>
 
         <select

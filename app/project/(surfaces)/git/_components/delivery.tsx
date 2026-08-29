@@ -196,7 +196,8 @@ export const Delivery = ({
                       <span className="text-status-danger">&minus;{row.deletions}</span>
                     </span>
                     <span
-                      className="h-1.5 rounded-full bg-status-todo"style={{ width: `${Math.max(4, (churn / maxChurn) * 64)}px` }}
+                      className="h-1.5 rounded-full bg-status-todo"
+                      style={{ width: `${Math.max(4, (churn / maxChurn) * 64)}px` }}
                       title={`${churn} lines changed across ${row.commits.length} commits`}
                     />
                   </>

@@ -118,7 +118,8 @@ export const RoadmapView = ({ root }: { root?: string }) => {
           {warning.includes("heading slug") ? (
             <button
               onClick={() => void roadmap.apply([{ op: "stampIds" }])}
-              className="shrink-0 rounded bg-bg-subtle px-2 py-0.5 font-medium hover:bg-bg-subtle"title="Write a stable id comment under each heading so renames keep their links">
+              className="shrink-0 rounded bg-bg-subtle px-2 py-0.5 font-medium hover:bg-bg-subtle"
+              title="Write a stable id comment under each heading so renames keep their links">
               Stamp ids
             </button>
           ) : null}
@@ -222,7 +223,8 @@ const Progress = ({ features }: { features: Feature[] }) => {
       <div className="flex h-1.5 overflow-hidden rounded-full bg-line">
         <div className="bg-status-done" style={{ width: `${pct}%` }} />
         <div
-          className="bg-status-progress"style={{ width: `${features.length ? (active / features.length) * 100 : 0}%` }}
+          className="bg-status-progress"
+          style={{ width: `${features.length ? (active / features.length) * 100 : 0}%` }}
         />
       </div>
     </div>
@@ -259,7 +261,8 @@ const FeatureCard = ({
       <div className="flex items-center gap-x-3 p-3">
         <button
           onClick={() => setOpen((v) => !v)}
-          className="shrink-0 text-fg-subtle hover:text-fg"aria-label={open ? "Collapse" : "Expand"}
+          className="shrink-0 text-fg-subtle hover:text-fg"
+          aria-label={open ? "Collapse" : "Expand"}
         >
           {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
         </button>
@@ -284,7 +287,8 @@ const FeatureCard = ({
               setDraft(feature.title);
               setEditing(true);
             }}
-            className="flex-1 text-left text-sm font-medium text-fg hover:text-fg-muted"title="Rename — the id stays put, so linked tasks survive">
+            className="flex-1 text-left text-sm font-medium text-fg hover:text-fg-muted"
+            title="Rename — the id stays put, so linked tasks survive">
             {feature.title}
           </button>
         )}
@@ -302,7 +306,8 @@ const FeatureCard = ({
 
         {git?.commits ? (
           <span
-            className="flex shrink-0 items-center gap-x-1 text-xs text-fg-muted"title={`+${git.insertions} −${git.deletions}`}
+            className="flex shrink-0 items-center gap-x-1 text-xs text-fg-muted"
+            title={`+${git.insertions} −${git.deletions}`}
           >
             <GitCommit className="h-3 w-3" />
             {git.commits}
@@ -311,7 +316,8 @@ const FeatureCard = ({
 
         {feature.idSource === "slug" ? (
           <span
-            className="shrink-0 text-status-progress"title="This id comes from the heading text, so renaming it in the PRD would orphan linked tasks">
+            className="shrink-0 text-status-progress"
+            title="This id comes from the heading text, so renaming it in the PRD would orphan linked tasks">
             <Tag className="h-3 w-3" />
           </span>
         ) : null}
@@ -409,7 +415,8 @@ const AddCriterion = ({
         if (e.key === "Enter") void submit();
         if (e.key === "Escape") setDraft("");
       }}
-      placeholder="Add an acceptance criterion…"className="h-7 text-sm"/>
+      placeholder="Add an acceptance criterion…"
+      className="h-7 text-sm"/>
   );
 };
 
@@ -454,7 +461,8 @@ const AddFeature = ({
           setDraft("");
         }
       }}
-      placeholder="Feature name…"className="h-8 text-sm"/>
+      placeholder="Feature name…"
+      className="h-8 text-sm"/>
   );
 };
 

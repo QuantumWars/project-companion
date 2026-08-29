@@ -65,17 +65,20 @@ export const Overview = ({
 
       <div className="grid gap-3 sm:grid-cols-3">
         <Stat
-          label="Features"value={`${doneFeatures}/${roadmap.features.length}`}
+          label="Features"
+          value={`${doneFeatures}/${roadmap.features.length}`}
           hint={`${roadmap.phases.length} phase${roadmap.phases.length === 1 ? "" : "s"}`}
           href={href("/project/roadmap")}
         />
         <Stat
-          label="Tasks"value={`${tasks.filter((t) => t.status === "done").length}/${tasks.length}`}
+          label="Tasks"
+          value={`${tasks.filter((t) => t.status === "done").length}/${tasks.length}`}
           hint={`${tasks.filter((t) => t.status === "in_progress").length} in progress`}
           href={href("/project/tasks")}
         />
         <Stat
-          label="Commits linked"value={commits.length ? `${linked}/${commits.length}` : "—"}
+          label="Commits linked"
+          value={commits.length ? `${linked}/${commits.length}` : "—"}
           hint={commits.length ? "recent history" : "no repository"}
           href={href("/project/git")}
         />

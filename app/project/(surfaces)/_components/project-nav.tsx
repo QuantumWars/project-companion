@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
@@ -11,6 +12,7 @@ import { Kbd } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
 
 import { CommandPalette } from "./command-palette";
+import { NewDiagram } from "./new-diagram";
 import { ThemeToggle } from "./theme-toggle";
 
 type DiagramRef = { id: string; title: string; type: string; kind?: string };
@@ -92,9 +94,7 @@ export const ProjectNav = ({
           href="/"
           className="mx-2 mt-2 flex items-center gap-x-2.5 rounded-lg px-2 py-2 transition-colors hover:bg-bg-subtle"
         >
-          <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-md bg-brand text-[10px] font-bold text-brand-fg">
-            {shownName.slice(0, 1).toUpperCase()}
-          </span>
+          <Image src="/logo.svg" alt="" height={22} width={22} className="shrink-0" priority />
           <span className="truncate text-[13px] font-medium text-fg">{shownName}</span>
         </Link>
 
@@ -126,11 +126,20 @@ export const ProjectNav = ({
           })}
         </nav>
 
-        {shownDiagrams.length ? (
-          <div className="mt-5 min-h-0 flex-1 overflow-y-auto px-2 scrollbar-slim">
-            <p className="px-2 pb-1 text-2xs font-medium uppercase tracking-wider text-fg-subtle">
+        {/*
+          Always rendered, even with nothing in it. Hiding the section when a
+          project has no diagrams also hides the only way to make one, which is
+          precisely the state where you need it.
+        */}
+        <div className="mt-5 min-h-0 flex-1 overflow-y-auto px-2 scrollbar-slim">
+          <div className="flex items-center justify-between px-2 pb-1">
+            <p className="text-2xs font-medium uppercase tracking-wider text-fg-subtle">
               Diagrams
             </p>
+            <NewDiagram root={root} />
+          </div>
+
+          {shownDiagrams.length ? (
             <div className="flex flex-col gap-y-px">
               {shownDiagrams.map((d) => {
                 const to = d.kind === "whiteboard"
@@ -152,10 +161,12 @@ export const ProjectNav = ({
                 );
               })}
             </div>
-          </div>
-        ) : (
-          <div className="flex-1" />
-        )}
+          ) : (
+            <p className="px-2 py-1 text-xs leading-relaxed text-fg-subtle">
+              None yet.
+            </p>
+          )}
+        </div>
 
         <div className="px-3 pb-3 pt-2">
           {git?.branch ? (
