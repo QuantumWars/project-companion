@@ -15,10 +15,12 @@ import {
   createDiagram,
   createTask,
   createWhiteboard,
+  deleteProject,
   deleteTask,
   findProject,
   findProjectRoot,
   initProject,
+  migrateProject,
   moveStore,
   isTaskStatus,
   listDiagrams,
@@ -98,7 +100,8 @@ project-companion - architecture and task boards that live in your repo
   project-companion git unlinked             commits with nothing on the board
 
   project-companion move <dir>               move the store, e.g. .claude/project-companion
-  project-companion reindex                  rebuild the diagram index from disk
+  project-companion reindex          rebuild the diagram index from disk
+  project-companion migrate          convert a split store into one .project file
 
   project-companion projects                 every project on this machine
   project-companion projects forget <path>   drop one from the global index
@@ -301,6 +304,22 @@ const main = () => {
 
   // The global index is machine-wide, so it works with no project in scope.
   if (command === "projects") {
+    if (sub === "delete") {
+      const target = rest[0] ?? die("Usage: project-companion projects delete <path>");
+      // Deleting data is not something to infer from an abbreviation, so the
+      // path must be given in full and is echoed back before it happens.
+      const summary = deleteProject(resolve(target));
+      if (!summary) {
+        die(`No project store at ${resolve(target)} (nothing was deleted).`);
+      }
+      forgetProject(resolve(target));
+      process.stdout.write(
+        `Deleted ${summary!.removed}\n  ${summary!.diagrams} diagrams, ${summary!.tasks} tasks\n` +
+          `Your source files were not touched.\n`,
+      );
+      return;
+    }
+
     if (sub === "forget") {
       const path = rest[0] ?? die("Usage: project-companion projects forget <path>");
       process.stdout.write(
@@ -691,6 +710,19 @@ const main = () => {
 
   if (command === "git") {
     void runGit(root, sub, rest);
+    return;
+  }
+
+  if (command === "migrate") {
+    const result = migrateProject(root);
+    if (!result) {
+      process.stdout.write("Already a single .project file; nothing to migrate.\n");
+      return;
+    }
+    process.stdout.write(
+      `Migrated to .project\n  ${result.diagrams} diagrams, ${result.boards} whiteboards, ${result.tasks} tasks\n` +
+        `Removed ${result.removed}\n`,
+    );
     return;
   }
 

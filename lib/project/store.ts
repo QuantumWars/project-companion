@@ -13,16 +13,30 @@ import {
   mkdirSync,
   readdirSync,
   readFileSync,
+  realpathSync,
   renameSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, resolve as resolvePath } from "node:path";
 
 import {
+  BUNDLE_FILE,
+  bundleRefs,
+  emptyBundle,
+  mutateBundle,
+  readBundle,
+  removeBundle,
+  migrateToBundle,
+  writeBundle,
+  type ProjectBundle,
+} from "./bundle";
+import {
   DEFAULT_STORE_DIR,
+  DEFAULT_PRD_PATH,
   emptyProject,
   emptyTasks,
+  refKind,
   FORMAT_VERSION,
   STORE_DIRS,
   TASK_STATUSES,
@@ -53,9 +67,16 @@ import type { ArchEdge, ArchNode, DiagramType } from "@/types/arch";
 export const findProject = (
   from?: string,
 ): { root: string; storeDir: string } | null => {
-  let dir = resolve(from ?? process.env.CLAUDE_PROJECT_DIR ?? process.cwd());
+  let dir = resolvePath(from ?? process.env.CLAUDE_PROJECT_DIR ?? process.cwd());
 
   for (;;) {
+    // A `.project` file is the current format and wins wherever it is found.
+    if (existsSync(join(dir, BUNDLE_FILE))) {
+      return { root: dir, storeDir: BUNDLE_FILE };
+    }
+
+    // The split layout is still discovered, so a project created before the
+    // single-file format keeps working until its owner chooses to migrate.
     for (const candidate of STORE_DIRS) {
       if (existsSync(join(dir, candidate, "project.json"))) {
         return { root: dir, storeDir: candidate };
@@ -67,6 +88,9 @@ export const findProject = (
     dir = parent;
   }
 };
+
+/** True when this project still uses the pre-bundle split layout. */
+export const isLegacyStore = (storeDir: string): boolean => storeDir !== BUNDLE_FILE;
 
 export const findProjectRoot = (from?: string): string | null =>
   findProject(from)?.root ?? null;
@@ -103,8 +127,8 @@ export const projectPaths = (root: string, storeDir?: string) => {
     board: (id: string) => join(root, base, "boards", `${id}.json`),
     roadmap: join(root, base, "roadmap.json"),
     /** Derived data only. Gitignored: it must always be safe to delete. */
-    cache: join(root, base, "cache"),
-    gitCache: join(root, base, "cache", "git.json"),
+    cache: join(root, ".project-cache"),
+    gitCache: join(root, ".project-cache", "git.json"),
     /** The PRD itself lives in the repo, not the store. */
     prd: (source: string) => join(root, source),
   };
@@ -143,30 +167,22 @@ const slugId = (title: string): string => {
 /* -------------------------------- project --------------------------------- */
 
 export const initProject = (root: string, name: string): ProjectFile => {
-  // Reuse an existing store rather than creating a second one: a repo with
-  // both `.arch/` and `.claude/` must not end up with two divergent copies of
-  // the same project.
-  const existing = findProject(root);
-  const paths = projectPaths(
-    root,
-    existing?.root === root ? existing.storeDir : chooseStoreDir(root),
-  );
+  const found = findProject(root);
 
-  if (existsSync(paths.project)) {
-    return readJson(paths.project, emptyProject(name));
+  // An existing project of either shape is returned untouched. Initialising is
+  // not a reason to convert somebody's store out from under them.
+  if (found && found.root === root) {
+    return readProject(root);
   }
 
-  mkdirSync(paths.diagrams, { recursive: true });
-  const project = emptyProject(name);
-  writeJson(paths.project, project);
-  writeJson(paths.tasks, emptyTasks());
-  return project;
+  writeBundle(root, { ...emptyBundle(name) });
+  return readProject(root);
 };
 
-export const readProject = (root: string): ProjectFile =>
+const legacyReadProject = (root: string): ProjectFile =>
   readJson(projectPaths(root).project, emptyProject("Untitled project"));
 
-const writeProject = (root: string, project: ProjectFile) =>
+const legacyWriteProject = (root: string, project: ProjectFile) =>
   writeJson(projectPaths(root).project, project);
 
 /** Keeps `project.json`'s index in step with what is on disk. */
@@ -183,26 +199,26 @@ const touchDiagramRef = (root: string, diagram: DiagramFile) => {
   if (index === -1) project.diagrams.push(ref);
   else project.diagrams[index] = ref;
 
-  writeProject(root, project);
+  legacyWriteProject(root, project);
 };
 
 /* -------------------------------- diagrams -------------------------------- */
 
-export const listDiagrams = (root: string) => readProject(root).diagrams;
+const legacyListDiagrams = (root: string) => readProject(root).diagrams;
 
-export const readDiagram = (root: string, id: string): DiagramFile | null => {
+const legacyReadDiagram = (root: string, id: string): DiagramFile | null => {
   const path = projectPaths(root).diagram(id);
   return existsSync(path) ? readJson<DiagramFile | null>(path, null) : null;
 };
 
-export const writeDiagram = (root: string, diagram: DiagramFile): DiagramFile => {
+const legacyWriteDiagram = (root: string, diagram: DiagramFile): DiagramFile => {
   const next: DiagramFile = { ...diagram, updatedAt: now() };
   writeJson(projectPaths(root).diagram(next.id), next);
   touchDiagramRef(root, next);
   return next;
 };
 
-export const createDiagram = (
+const legacyCreateDiagram = (
   root: string,
   title: string,
   type: DiagramType = "architecture",
@@ -224,14 +240,14 @@ export const createDiagram = (
   });
 };
 
-export const deleteDiagram = (root: string, id: string): boolean => {
+const legacyDeleteDiagram = (root: string, id: string): boolean => {
   const path = projectPaths(root).diagram(id);
   if (!existsSync(path)) return false;
 
   rmSync(path);
   const project = readProject(root);
   project.diagrams = project.diagrams.filter((d) => d.id !== id);
-  writeProject(root, project);
+  legacyWriteProject(root, project);
   return true;
 };
 
@@ -295,13 +311,63 @@ export const reindexDiagrams = (root: string): number => {
     })),
   ];
 
-  writeProject(root, project);
+  legacyWriteProject(root, project);
   return project.diagrams.length;
+};
+
+/** `realpath` so a symlinked path cannot masquerade as a different root. */
+const canonicalise = (path: string): string => {
+  try {
+    return realpathSync(resolvePath(path));
+  } catch {
+    return resolvePath(path);
+  }
+};
+
+/**
+ * Deletes a project's entire store.
+ *
+ * Nothing else here removes more than one file at a time, so this is
+ * deliberately narrow: it resolves the store from the root it was given,
+ * refuses to act unless that directory demonstrably contains a `project.json`,
+ * and never touches anything above it. A store lives inside a repository full
+ * of the user's source, and a delete that walked one level too far would take
+ * that with it.
+ *
+ * Returns what was removed, so a caller can report it rather than guess.
+ */
+export const deleteProject = (
+  root: string,
+): { removed: string; diagrams: number; tasks: number } | null => {
+  const found = findProject(root);
+  if (!found || canonicalise(found.root) !== canonicalise(root)) return null;
+
+  const summary = {
+    removed: "",
+    diagrams: listDiagrams(found.root).length,
+    tasks: readTasks(found.root).tasks.length,
+  };
+
+  if (found.storeDir === BUNDLE_FILE) {
+    summary.removed = join(found.root, BUNDLE_FILE);
+    if (!removeBundle(found.root)) return null;
+  } else {
+    const paths = projectPaths(found.root, found.storeDir);
+    // Only ever delete a directory that demonstrably IS a store. Without this
+    // a wrong root would remove an arbitrary folder from the user's repository.
+    if (!existsSync(paths.project)) return null;
+    summary.removed = paths.dir;
+    rmSync(paths.dir, { recursive: true, force: true });
+  }
+
+  // Derived data is not part of the project, but it should not outlive it.
+  rmSync(join(found.root, ".project-cache"), { recursive: true, force: true });
+  return summary;
 };
 
 /* ------------------------------- whiteboards ------------------------------ */
 
-export const readWhiteboard = (
+const legacyReadWhiteboard = (
   root: string,
   id: string,
 ): WhiteboardFile | null => {
@@ -309,7 +375,7 @@ export const readWhiteboard = (
   return existsSync(path) ? readJson<WhiteboardFile | null>(path, null) : null;
 };
 
-export const writeWhiteboard = (
+const legacyWriteWhiteboard = (
   root: string,
   board: WhiteboardFile,
 ): WhiteboardFile => {
@@ -329,12 +395,12 @@ export const writeWhiteboard = (
   const index = project.diagrams.findIndex((d) => d.id === next.id);
   if (index === -1) project.diagrams.push(ref);
   else project.diagrams[index] = ref;
-  writeProject(root, project);
+  legacyWriteProject(root, project);
 
   return next;
 };
 
-export const createWhiteboard = (root: string, title: string): WhiteboardFile => {
+const legacyCreateWhiteboard = (root: string, title: string): WhiteboardFile => {
   let id = slugId(title);
   if (existsSync(projectPaths(root).board(id))) {
     id = `${id}-${randomUUID().slice(0, 6)}`;
@@ -350,15 +416,234 @@ export const createWhiteboard = (root: string, title: string): WhiteboardFile =>
   });
 };
 
-export const deleteWhiteboard = (root: string, id: string): boolean => {
+const legacyDeleteWhiteboard = (root: string, id: string): boolean => {
   const path = projectPaths(root).board(id);
   if (!existsSync(path)) return false;
 
   rmSync(path);
   const project = readProject(root);
   project.diagrams = project.diagrams.filter((d) => d.id !== id);
-  writeProject(root, project);
+  legacyWriteProject(root, project);
   return true;
+};
+
+
+/**
+ * Moves a split store into a single `.project` file.
+ *
+ * The old directory is only removed once the bundle has been written and read
+ * back with the same counts.
+ */
+/**
+ * Set by the registry at import time.
+ *
+ * The store cannot import the registry -- the registry already imports the
+ * store -- so the dependency is inverted rather than made circular.
+ */
+let reregister: ((root: string) => unknown) | undefined;
+export const onProjectMoved = (fn: (root: string) => unknown) => {
+  reregister = fn;
+};
+
+export const migrateProject = (
+  root: string,
+): { diagrams: number; boards: number; tasks: number; removed: string } | null => {
+  const found = findProject(root);
+  if (!found || found.storeDir === BUNDLE_FILE) return null;
+
+  const paths = projectPaths(found.root, found.storeDir);
+  const project = legacyReadProject(found.root);
+  const refs = legacyListDiagrams(found.root);
+
+  const diagrams = refs
+    .filter((r) => refKind(r) !== "whiteboard")
+    .map((r) => legacyReadDiagram(found.root, r.id))
+    .filter((d): d is DiagramFile => d !== null);
+  const boards = refs
+    .filter((r) => refKind(r) === "whiteboard")
+    .map((r) => legacyReadWhiteboard(found.root, r.id))
+    .filter((b): b is WhiteboardFile => b !== null);
+
+  const sidecar = readJson<{
+    source?: string;
+    phases?: never[];
+    overrides?: Record<string, never>;
+    orphans?: never[];
+  } | null>(paths.roadmap, null);
+
+  // Read the counts BEFORE the old store is removed; reading them afterwards
+  // reports zero for everything that was successfully migrated.
+  const tasks = legacyReadTasks(found.root).tasks;
+
+  migrateToBundle(found.root, {
+    name: project.name,
+    createdAt: project.createdAt,
+    prdSource: sidecar?.source || DEFAULT_PRD_PATH,
+    diagrams,
+    boards,
+    tasks,
+    roadmap: {
+      phases: sidecar?.phases ?? [],
+      overrides: sidecar?.overrides ?? {},
+      orphans: sidecar?.orphans ?? [],
+    },
+  });
+
+  rmSync(paths.dir, { recursive: true, force: true });
+
+  // The recorded storeDir just changed; without re-registering, the global
+  // index still points at a directory that no longer exists.
+  void reregister?.(found.root);
+
+  return {
+    diagrams: diagrams.length,
+    boards: boards.length,
+    tasks: tasks.length,
+    removed: paths.dir,
+  };
+};
+
+/* ------------------------------- dispatch --------------------------------- */
+
+/**
+ * Every public read and write goes through here.
+ *
+ * A project is either a single `.project` file or the older split layout, and
+ * the rest of the codebase should not have to know which. Keeping the legacy
+ * path working rather than forcing a migration means an existing project keeps
+ * opening exactly as it did.
+ */
+const usesBundle = (root: string): boolean =>
+  findProject(root)?.storeDir === BUNDLE_FILE;
+
+const requireBundle = (root: string): ProjectBundle => {
+  const bundle = readBundle(root);
+  if (!bundle) throw new Error(`No ${BUNDLE_FILE} at ${root}`);
+  return bundle;
+};
+
+export const readProject = (root: string): ProjectFile => {
+  if (!usesBundle(root)) return legacyReadProject(root);
+  const bundle = requireBundle(root);
+  return {
+    version: bundle.version,
+    name: bundle.name,
+    createdAt: bundle.createdAt,
+    diagrams: bundleRefs(bundle),
+  };
+};
+
+export const listDiagrams = (root: string): DiagramRef[] =>
+  usesBundle(root) ? bundleRefs(requireBundle(root)) : legacyListDiagrams(root);
+
+export const readDiagram = (root: string, id: string): DiagramFile | null =>
+  usesBundle(root)
+    ? requireBundle(root).diagrams[id] ?? null
+    : legacyReadDiagram(root, id);
+
+export const writeDiagram = (root: string, diagram: DiagramFile): DiagramFile => {
+  if (!usesBundle(root)) return legacyWriteDiagram(root, diagram);
+  const next = { ...diagram, updatedAt: now() };
+  mutateBundle(root, (b) => {
+    b.diagrams[next.id] = next;
+  });
+  return next;
+};
+
+export const createDiagram = (
+  root: string,
+  title: string,
+  type: DiagramType = "architecture",
+): DiagramFile => {
+  if (!usesBundle(root)) return legacyCreateDiagram(root, title, type);
+
+  const bundle = requireBundle(root);
+  let id = slugId(title);
+  while (bundle.diagrams[id] || bundle.boards[id]) id = `${slugId(title)}-${randomUUID().slice(0, 6)}`;
+
+  const diagram: DiagramFile = {
+    version: FORMAT_VERSION,
+    id,
+    title,
+    type,
+    updatedAt: now(),
+    nodes: [],
+    edges: [],
+  };
+  mutateBundle(root, (b) => {
+    b.diagrams[id] = diagram;
+  });
+  return diagram;
+};
+
+export const deleteDiagram = (root: string, id: string): boolean => {
+  if (!usesBundle(root)) return legacyDeleteDiagram(root, id);
+  let removed = false;
+  mutateBundle(root, (b) => {
+    removed = Boolean(b.diagrams[id]);
+    delete b.diagrams[id];
+    // A task pointing at a deleted diagram would dangle, so drop the link but
+    // keep the task: the work is still real even if the drawing is gone.
+    for (const task of b.tasks) if (task.diagramId === id) task.diagramId = undefined;
+  });
+  return removed;
+};
+
+export const readWhiteboard = (root: string, id: string): WhiteboardFile | null =>
+  usesBundle(root)
+    ? requireBundle(root).boards[id] ?? null
+    : legacyReadWhiteboard(root, id);
+
+export const writeWhiteboard = (root: string, board: WhiteboardFile): WhiteboardFile => {
+  if (!usesBundle(root)) return legacyWriteWhiteboard(root, board);
+  const next = { ...board, updatedAt: now() };
+  mutateBundle(root, (b) => {
+    b.boards[next.id] = next;
+  });
+  return next;
+};
+
+export const createWhiteboard = (root: string, title: string): WhiteboardFile => {
+  if (!usesBundle(root)) return legacyCreateWhiteboard(root, title);
+
+  const bundle = requireBundle(root);
+  let id = slugId(title);
+  while (bundle.diagrams[id] || bundle.boards[id]) id = `${slugId(title)}-${randomUUID().slice(0, 6)}`;
+
+  const board: WhiteboardFile = {
+    version: FORMAT_VERSION,
+    id,
+    title,
+    updatedAt: now(),
+    layerIds: [],
+    layers: [],
+  };
+  mutateBundle(root, (b) => {
+    b.boards[id] = board;
+  });
+  return board;
+};
+
+export const deleteWhiteboard = (root: string, id: string): boolean => {
+  if (!usesBundle(root)) return legacyDeleteWhiteboard(root, id);
+  let removed = false;
+  mutateBundle(root, (b) => {
+    removed = Boolean(b.boards[id]);
+    delete b.boards[id];
+  });
+  return removed;
+};
+
+export const readTasks = (root: string): TasksFile =>
+  usesBundle(root)
+    ? { version: FORMAT_VERSION, tasks: requireBundle(root).tasks }
+    : legacyReadTasks(root);
+
+export const writeTasks = (root: string, tasks: TasksFile): void => {
+  if (!usesBundle(root)) return legacyWriteTasks(root, tasks);
+  mutateBundle(root, (b) => {
+    b.tasks = tasks.tasks;
+  });
 };
 
 /* --------------------------- diagram mutations ---------------------------- */
@@ -448,10 +733,10 @@ export const removeNode = (
 
 /* --------------------------------- tasks ---------------------------------- */
 
-export const readTasks = (root: string): TasksFile =>
+const legacyReadTasks = (root: string): TasksFile =>
   readJson(projectPaths(root).tasks, emptyTasks());
 
-export const writeTasks = (root: string, tasks: TasksFile) =>
+const legacyWriteTasks = (root: string, tasks: TasksFile) =>
   writeJson(projectPaths(root).tasks, tasks);
 
 export const isTaskStatus = (value: string): value is TaskStatus =>

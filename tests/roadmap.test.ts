@@ -12,6 +12,7 @@ import {
   setFeatureOverride,
   setPhase,
 } from "@/lib/project/roadmap";
+import { readBundle, writeBundle } from "@/lib/project/bundle";
 import { initProject } from "@/lib/project/store";
 import { eq, ok, runAll, test } from "./harness";
 
@@ -29,6 +30,9 @@ const project = (prd?: string) => {
   }
   return { dir, cleanup: () => rmSync(dir, { recursive: true, force: true }) };
 };
+
+/** Overrides now live inside `.project`; read them through the bundle. */
+const overridesOf = (dir: string) => readBundle(dir)?.roadmap.overrides ?? {};
 
 const PRD = `# Checkout PRD
 
@@ -101,8 +105,7 @@ test("ticking the last box moves the feature to done, with no sidecar write", ()
     const roadmap = readRoadmap(dir);
     eq(roadmap.features.find((f) => f.id === "guest-checkout")!.status, "done");
     // Nothing was pinned, so nothing should have been stored.
-    const sidecar = JSON.parse(readFileSync(join(dir, ".claude/project-companion/roadmap.json"), "utf8"));
-    eq(sidecar.overrides, {});
+    eq(overridesOf(dir), {}, "nothing was pinned");
   } finally {
     cleanup();
   }
@@ -119,8 +122,7 @@ test("an override pins status, and clearing it returns to derived", () => {
     eq(cleared!.status, "in_progress", "should fall back to derived");
 
     // An empty override is removed rather than left as a husk.
-    const sidecar = JSON.parse(readFileSync(join(dir, ".claude/project-companion/roadmap.json"), "utf8"));
-    eq(sidecar.overrides, {});
+    eq(overridesOf(dir), {}, "nothing was pinned");
   } finally {
     cleanup();
   }
@@ -195,22 +197,30 @@ test("a heading that vanishes orphans rather than deletes", () => {
   const { dir, cleanup } = project(PRD);
   try {
     setFeatureOverride(dir, "saved-cards", { nodeIds: ["node-x"] });
-    // Simulate the sidecar having recorded the feature, then the heading going.
-    const path = join(dir, ".claude/project-companion/roadmap.json");
-    const sidecar = JSON.parse(readFileSync(path, "utf8"));
-    sidecar.orphans = [
+    // Record the feature, then take its heading away.
+    const bundle = readBundle(dir)!;
+    writeBundle(
+      dir,
       {
-        id: "saved-cards",
-        idSource: "marker",
-        title: "Saved cards",
-        status: "todo",
-        order: 1,
-        acceptance: [],
-        createdAt: "2026-01-01T00:00:00.000Z",
-        updatedAt: "2026-01-01T00:00:00.000Z",
+        ...bundle,
+        roadmap: {
+          ...bundle.roadmap,
+          orphans: [
+            {
+              id: "saved-cards",
+              idSource: "marker",
+              title: "Saved cards",
+              status: "todo",
+              order: 1,
+              acceptance: [],
+              createdAt: "2026-01-01T00:00:00.000Z",
+              updatedAt: "2026-01-01T00:00:00.000Z",
+            },
+          ],
+        },
       },
-    ];
-    writeFileSync(path, JSON.stringify(sidecar, null, 2), "utf8");
+      bundle.revision,
+    );
 
     // While the heading is still there, it is not an orphan.
     eq(readRoadmap(dir).orphans.length, 0);

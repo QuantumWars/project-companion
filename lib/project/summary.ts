@@ -12,6 +12,9 @@
  */
 
 import { existsSync } from "node:fs";
+import { join } from "node:path";
+
+import { BUNDLE_FILE } from "./bundle";
 
 import { gitRoot, readStatus } from "./git";
 import { readRoadmap } from "./roadmap";
@@ -49,7 +52,12 @@ export const summariseProject = async (
     name: meta.name,
     storeDir: meta.storeDir,
     lastOpened: meta.lastOpened,
-    present: existsSync(projectPaths(root, meta.storeDir).project),
+    // Either shape counts as present. Checking only for the split layout's
+    // `project.json` reported every migrated project as missing.
+    present:
+      meta.storeDir === BUNDLE_FILE
+        ? existsSync(join(root, BUNDLE_FILE))
+        : existsSync(projectPaths(root, meta.storeDir).project),
     diagrams: { total: 0, byType: {} },
     whiteboards: 0,
     tasks: { total: 0, byStatus: emptyByStatus() },

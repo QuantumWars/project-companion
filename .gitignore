@@ -54,3 +54,6 @@ next-env.d.ts
 
 # test bundles
 /node_modules/.project-companion-tests/
+
+# derived git attribution; safe to delete at any time
+/.project-cache/

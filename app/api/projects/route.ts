@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { findProjectRoot } from "@/lib/project/store";
-import { listProjects, registerProject } from "@/lib/project/registry";
+import { forgetProject, isKnownProject, listProjects, registerProject } from "@/lib/project/registry";
+import { deleteProject } from "@/lib/project/store";
 import { summariseProject } from "@/lib/project/summary";
 
 export const runtime = "nodejs";
@@ -30,4 +31,38 @@ export const GET = async () => {
   );
 
   return NextResponse.json({ current: here, projects });
+};
+
+/**
+ * Removes a project.
+ *
+ * `?data=1` deletes the store from disk; without it only the index entry goes,
+ * which is the reversible option and therefore the default. The path must
+ * already be indexed -- the same allowlist that gates reading gates this, so a
+ * crafted request cannot point the delete at an arbitrary directory.
+ */
+export const DELETE = async (request: Request) => {
+  const url = new URL(request.url);
+  const path = url.searchParams.get("path");
+  if (!path) {
+    return NextResponse.json({ error: "path is required" }, { status: 400 });
+  }
+
+  if (!isKnownProject(path)) {
+    return NextResponse.json(
+      { error: "Unknown project. Only indexed projects can be removed." },
+      { status: 403 },
+    );
+  }
+
+  if (url.searchParams.get("data") === "1") {
+    const summary = deleteProject(path);
+    if (!summary) {
+      return NextResponse.json({ error: "No project store found there." }, { status: 404 });
+    }
+    forgetProject(path);
+    return NextResponse.json({ ok: true, deleted: summary });
+  }
+
+  return NextResponse.json({ ok: true, forgotten: forgetProject(path) });
 };

@@ -25,6 +25,7 @@ import {
   type ParsedPhase,
   type PrdOp,
 } from "./prd";
+import { mutateBundle, readBundle } from "./bundle";
 import { readJson, projectPaths, writeJson } from "./store";
 import {
   DEFAULT_PRD_PATH,
@@ -62,9 +63,25 @@ export class RoadmapConflictError extends Error {
 
 /* --------------------------------- reading -------------------------------- */
 
+/**
+ * Phases, overrides and orphans.
+ *
+ * These live inside `.project` for a bundled project and in `roadmap.json` for
+ * the older layout. The shape is identical either way, so nothing above this
+ * function needs to know which it is reading.
+ */
 const readSidecar = (root: string): RoadmapFile => {
-  const stored = readJson<RoadmapFile | null>(projectPaths(root).roadmap, null);
-  return stored ?? emptyRoadmap();
+  const bundle = readBundle(root);
+  if (bundle) {
+    return {
+      version: bundle.version,
+      source: bundle.prdSource,
+      phases: bundle.roadmap.phases,
+      overrides: bundle.roadmap.overrides,
+      orphans: bundle.roadmap.orphans,
+    };
+  }
+  return readJson<RoadmapFile | null>(projectPaths(root).roadmap, null) ?? emptyRoadmap();
 };
 
 const readPrdText = (root: string, source: string): string | null => {
@@ -217,6 +234,16 @@ const writeText = (path: string, value: string) => {
 };
 
 const writeSidecar = (root: string, file: RoadmapFile) => {
+  if (
+    mutateBundle(root, (b) => {
+      b.prdSource = file.source || b.prdSource;
+      b.roadmap.phases = file.phases;
+      b.roadmap.overrides = file.overrides;
+      b.roadmap.orphans = file.orphans;
+    })
+  ) {
+    return;
+  }
   writeJson(projectPaths(root).roadmap, file);
 };
 

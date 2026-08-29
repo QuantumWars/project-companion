@@ -28,7 +28,14 @@ import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 
 import { STORE_DIRS } from "./types";
-import { findProject, listDiagrams, readProject, readTasks } from "./store";
+import { BUNDLE_FILE } from "./bundle";
+import {
+  findProject,
+  listDiagrams,
+  onProjectMoved,
+  readProject,
+  readTasks,
+} from "./store";
 
 /**
  * Canonical form of a project path.
@@ -161,8 +168,14 @@ export const registerProject = (root: string): RegisteredProject | null => {
 export const listProjects = (): RegisteredProject[] => {
   const index = readIndex();
 
+  // A project is alive if it still has a store of EITHER shape. Checking only
+  // for the split layout's `project.json` silently pruned every project that
+  // had been migrated to a single `.project` file -- they vanished from the
+  // launcher despite being perfectly intact on disk.
   const alive = index.projects.filter((p) =>
-    existsSync(join(p.path, p.storeDir, "project.json")),
+    p.storeDir === BUNDLE_FILE
+      ? existsSync(join(p.path, BUNDLE_FILE))
+      : existsSync(join(p.path, p.storeDir, "project.json")),
   );
 
   if (alive.length !== index.projects.length) {
@@ -192,3 +205,6 @@ export const isKnownProject = (root: string): boolean => {
   const target = canonical(root);
   return listProjects().some((p) => canonical(p.path) === target);
 };
+
+// Migration changes where a project lives, so the index has to be refreshed.
+onProjectMoved(registerProject);
