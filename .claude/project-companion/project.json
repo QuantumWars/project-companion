@@ -7,7 +7,7 @@
       "id": "archboard-architecture",
       "title": "Project Companion architecture",
       "type": "architecture",
-      "updatedAt": "2026-08-29T14:35:46.040Z"
+      "updatedAt": "2026-08-29T14:40:11.504Z"
     },
     {
       "id": "sprint-sketches",
@@ -19,7 +19,7 @@
     {
       "id": "ticketing-schema",
       "title": "Ticketing schema",
-      "type": "dfd",
+      "type": "erd",
       "updatedAt": "2026-08-29T08:06:35.555Z"
     }
   ]

@@ -2,7 +2,7 @@
   "version": 1,
   "id": "ticketing-schema",
   "title": "Ticketing schema",
-  "type": "dfd",
+  "type": "erd",
   "updatedAt": "2026-08-29T08:06:35.555Z",
   "nodes": [
     {
