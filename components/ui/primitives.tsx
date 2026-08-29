@@ -15,41 +15,102 @@ import type { TaskStatus } from "@/lib/project/types";
 
 /* --------------------------------- surface -------------------------------- */
 
-export const Panel = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn(
-        "rounded-xl border border-line bg-panel shadow-xs",
-        className,
-      )}
-      {...props}
-    />
-  ),
-);
+/**
+ * A surface.
+ *
+ * Borderless by default. A 1px outline around every element is the signature
+ * of an admin template; the products this is measured against separate content
+ * with space, a small shift in background, and hover states that appear only on
+ * interaction. `bordered` exists for the few places a hard edge genuinely
+ * helps -- a popover over unpredictable content, say.
+ */
+export const Panel = forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement> & { bordered?: boolean }
+>(({ className, bordered, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      "rounded-xl bg-panel",
+      bordered ? "border border-line shadow-xs" : "shadow-xs ring-1 ring-inset ring-line/60",
+      className,
+    )}
+    {...props}
+  />
+));
 Panel.displayName = "Panel";
 
-export const PanelHeader = ({
+/**
+ * A section heading.
+ *
+ * Sections are separated by space rather than a rule. A divider under every
+ * heading chops a page into boxes; whitespace lets it read as one document.
+ */
+export const SectionHeader = ({
   title,
   hint,
   actions,
-  icon,
 }: {
   title: string;
   hint?: React.ReactNode;
   actions?: React.ReactNode;
-  icon?: React.ReactNode;
 }) => (
-  <div className="flex items-start justify-between gap-x-3 border-b border-line px-4 py-3">
+  <div className="mb-3 flex items-end justify-between gap-x-4">
     <div className="min-w-0">
-      <h2 className="flex items-center gap-x-1.5 text-2xs font-semibold uppercase tracking-wider text-fg-subtle">
-        {icon}
-        {title}
-      </h2>
-      {hint ? <p className="mt-1 text-xs text-fg-muted">{hint}</p> : null}
+      <h2 className="text-[13px] font-medium text-fg">{title}</h2>
+      {hint ? <p className="mt-0.5 text-xs leading-relaxed text-fg-muted">{hint}</p> : null}
     </div>
     {actions ? <div className="shrink-0">{actions}</div> : null}
   </div>
+);
+
+/**
+ * The zone at the top of every surface.
+ *
+ * Its job is to give the page somewhere to begin. Content that starts
+ * immediately under the chrome reads as a fragment of a larger page rather than
+ * a page in its own right.
+ */
+export const PageHeader = ({
+  title,
+  description,
+  actions,
+}: {
+  title: string;
+  description?: React.ReactNode;
+  actions?: React.ReactNode;
+}) => (
+  <header className="mb-7 flex items-start justify-between gap-x-6">
+    <div className="min-w-0">
+      <h1 className="text-[20px] font-semibold leading-tight text-fg">{title}</h1>
+      {description ? (
+        <p className="mt-1 text-[13px] leading-relaxed text-fg-muted">{description}</p>
+      ) : null}
+    </div>
+    {actions ? <div className="flex shrink-0 items-center gap-x-2">{actions}</div> : null}
+  </header>
+);
+
+/**
+ * A row in a list.
+ *
+ * Rows are separated by a hairline that only exists between them, and the
+ * hover state is a background shift rather than a border change -- borders that
+ * light up on hover make a layout feel like it is twitching.
+ */
+export const Row = ({
+  className,
+  interactive = true,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement> & { interactive?: boolean }) => (
+  <div
+    className={cn(
+      "group relative flex items-center gap-x-3 rounded-lg px-3 py-2.5 transition-colors duration-100",
+      interactive && "hover:bg-bg-subtle",
+      className,
+    )}
+    {...props}
+  />
 );
 
 /* --------------------------------- button --------------------------------- */
@@ -59,7 +120,7 @@ type ButtonSize = "sm" | "md";
 
 const BUTTON_VARIANT: Record<ButtonVariant, string> = {
   primary: "bg-brand text-brand-fg hover:bg-brand-hover shadow-xs",
-  secondary: "border border-line bg-panel text-fg hover:bg-bg-subtle shadow-xs",
+  secondary: "bg-bg-subtle text-fg hover:bg-line/70",
   ghost: "text-fg-muted hover:bg-bg-subtle hover:text-fg",
   danger: "text-status-danger hover:bg-status-danger/10",
 };
@@ -118,16 +179,16 @@ export const Badge = ({
   tone?: "neutral" | "brand" | "success" | "warning" | "danger";
 }) => {
   const TONE = {
-    neutral: "bg-bg-subtle text-fg-muted ring-line",
-    brand: "bg-brand-subtle text-brand ring-brand-border",
-    success: "bg-status-done/10 text-status-done ring-status-done/25",
-    warning: "bg-status-progress/10 text-status-progress ring-status-progress/25",
-    danger: "bg-status-danger/10 text-status-danger ring-status-danger/25",
+    neutral: "bg-bg-subtle text-fg-muted",
+    brand: "bg-brand-subtle text-brand",
+    success: "bg-status-done/12 text-status-done",
+    warning: "bg-status-progress/12 text-status-progress",
+    danger: "bg-status-danger/12 text-status-danger",
   };
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-center gap-x-1 rounded px-1.5 py-0.5 text-2xs font-medium ring-1 ring-inset",
+        "inline-flex shrink-0 items-center gap-x-1 rounded px-1.5 py-0.5 text-2xs font-medium",
         TONE[tone],
         className,
       )}
@@ -173,7 +234,7 @@ export const StatusBadge = ({ status, pinned }: { status: TaskStatus; pinned?: b
   <span
     className={cn(
       "inline-flex shrink-0 items-center gap-x-1.5 rounded px-1.5 py-0.5 text-2xs font-medium",
-      "bg-bg-subtle ring-1 ring-inset ring-line",
+      "bg-bg-subtle",
       STATUS_TEXT[status],
     )}
     title={pinned ? "Pinned by hand; not derived from the acceptance criteria" : undefined}
@@ -215,7 +276,7 @@ export const Progress = ({
 /* ----------------------------------- kbd ---------------------------------- */
 
 export const Kbd = ({ children }: { children: React.ReactNode }) => (
-  <kbd className="rounded border border-line bg-bg-subtle px-1 py-0.5 font-sans text-2xs font-medium text-fg-subtle">
+  <kbd className="rounded bg-bg-subtle px-1.5 py-0.5 font-sans text-2xs font-medium text-fg-subtle">
     {children}
   </kbd>
 );
@@ -233,7 +294,7 @@ export const EmptyState = ({
   children?: React.ReactNode;
   action?: React.ReactNode;
 }) => (
-  <div className="flex flex-col items-center rounded-xl border border-dashed border-line-strong bg-panel px-6 py-12 text-center">
+  <div className="flex flex-col items-center px-6 py-16 text-center">
     {icon ? <div className="mb-3 text-fg-subtle">{icon}</div> : null}
     <h2 className="text-sm font-semibold text-fg">{title}</h2>
     {children ? (
@@ -252,9 +313,10 @@ export const TextInput = forwardRef<
   <input
     ref={ref}
     className={cn(
-      "h-8 w-full rounded-md border border-line bg-panel px-2.5 text-sm text-fg",
+      "h-8 w-full rounded-md bg-bg-subtle px-2.5 text-sm text-fg",
       "placeholder:text-fg-subtle",
-      "transition-colors focus:border-brand focus:outline-none focus-visible:outline-none",
+      "ring-1 ring-inset ring-transparent transition-shadow",
+      "focus:bg-panel focus:outline-none focus:ring-brand focus-visible:outline-none",
       className,
     )}
     {...props}
@@ -269,8 +331,9 @@ export const Select = forwardRef<
   <select
     ref={ref}
     className={cn(
-      "h-8 rounded-md border border-line bg-panel px-2 text-xs text-fg",
-      "transition-colors focus:border-brand focus:outline-none focus-visible:outline-none",
+      "h-8 rounded-md bg-bg-subtle px-2 text-xs text-fg",
+      "ring-1 ring-inset ring-transparent transition-shadow",
+      "focus:bg-panel focus:outline-none focus:ring-brand focus-visible:outline-none",
       className,
     )}
     {...props}
@@ -289,7 +352,7 @@ export const Segmented = <T extends string>({
   value: T;
   onChange: (value: T) => void;
 }) => (
-  <div className="inline-flex items-center gap-x-0.5 rounded-md border border-line bg-panel p-0.5">
+  <div className="inline-flex items-center gap-x-0.5 rounded-md bg-bg-subtle p-0.5">
     {options.map((option) => (
       <button
         key={option.value}
@@ -298,8 +361,8 @@ export const Segmented = <T extends string>({
         className={cn(
           "rounded px-2 py-1 text-xs font-medium transition-colors",
           value === option.value
-            ? "bg-brand text-brand-fg"
-            : "text-fg-muted hover:bg-bg-subtle hover:text-fg",
+            ? "bg-panel text-fg shadow-xs"
+            : "text-fg-muted hover:text-fg",
         )}
       >
         {option.label}

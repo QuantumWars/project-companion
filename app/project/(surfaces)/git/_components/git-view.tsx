@@ -161,7 +161,7 @@ export const GitSurface = ({ root }: { root?: string }) => {
 
   if (!view.available) {
     return (
-      <div className="rounded-lg border border-dashed border-line-strong bg-panel p-8 text-center">
+      <div className="rounded-xl bg-bg-subtle p-8 text-center">
         <h2 className="text-base font-semibold text-fg">No repository here</h2>
         <p className="mx-auto mt-2 max-w-md text-sm text-fg-muted">{view.reason}</p>
       </div>
@@ -183,8 +183,7 @@ export const GitSurface = ({ root }: { root?: string }) => {
         <button
           onClick={() => void load(true)}
           disabled={busy}
-          className="flex shrink-0 items-center gap-x-1.5 rounded-md border border-line bg-panel px-2.5 py-1.5 text-xs font-medium text-fg hover:bg-bg-subtle disabled:opacity-50"
-        >
+          className="flex shrink-0 items-center gap-x-1.5 rounded-lg bg-bg-subtle px-2.5 py-1.5 text-xs font-medium text-fg hover:bg-bg-subtle disabled:opacity-50">
           <RefreshCw className={cn("h-3 w-3", busy && "animate-spin")} />
           Rescan
         </button>
@@ -249,21 +248,18 @@ export const GitSurface = ({ root }: { root?: string }) => {
           <TextInput
             value={filter.text}
             onChange={(e) => setFilter((f) => ({ ...f, text: e.target.value }))}
-            placeholder="Filter by message, author or path…"
-            className="h-8 w-72 pl-7 text-sm"
-          />
+            placeholder="Filter by message, author or path…"className="h-8 w-72 pl-7 text-sm"/>
         </div>
 
         <select
           value={filter.author ?? ""}
           onChange={(e) => setFilter((f) => ({ ...f, author: e.target.value || null }))}
-          className="h-8 rounded-md border border-line px-2 text-xs outline-none focus:border-line-strong"
-        >
+          className="h-8 rounded-md border border-line px-2 text-xs outline-none focus:border-line-strong">
           <option value="">All authors</option>
           {authors.map((a) => <option key={a} value={a}>{a}</option>)}
         </select>
 
-        <div className="flex items-center gap-x-0.5 rounded-md border border-line bg-panel p-0.5">
+        <div className="flex items-center gap-x-0.5 rounded-lg bg-bg-subtle p-0.5">
           {([null, "recorded", "trailer", "branch", "paths", "none"] as const).map((s) => (
             <button
               key={s ?? "all"}
@@ -271,7 +267,9 @@ export const GitSurface = ({ root }: { root?: string }) => {
               title={s && s !== "none" ? SIGNAL[s].hint : undefined}
               className={cn(
                 "rounded px-2 py-1 text-[11px] font-medium capitalize transition-colors",
-                filter.signal === s ? "bg-brand text-brand-fg" : "text-fg-muted hover:bg-bg-subtle",
+                filter.signal === s
+                  ? "bg-panel text-fg shadow-xs"
+                  : "text-fg-muted hover:text-fg",
               )}
             >
               {s === null ? "All" : s === "none" ? "Unlinked" : s}
@@ -282,8 +280,7 @@ export const GitSurface = ({ root }: { root?: string }) => {
         {isFiltering ? (
           <button
             onClick={() => setFilter({ text: "", author: null, signal: null })}
-            className="flex items-center gap-x-1 text-xs text-fg-muted hover:text-fg"
-          >
+            className="flex items-center gap-x-1 text-xs text-fg-muted hover:text-fg">
             <X className="h-3 w-3" />
             Clear
           </button>
@@ -294,7 +291,7 @@ export const GitSurface = ({ root }: { root?: string }) => {
         </span>
       </div>
 
-      <section className="overflow-hidden rounded-lg border border-line bg-panel">
+      <section className="overflow-hidden rounded-xl bg-panel shadow-xs ring-1 ring-inset ring-line/60">
         <ul>
           {graph.rows.map((row) => {
             const c = row.commit;
@@ -363,7 +360,7 @@ export const GitSurface = ({ root }: { root?: string }) => {
       </section>
 
       {view.attribution?.unattributed.length ? (
-        <section className="rounded-lg border border-line bg-panel p-4">
+        <section className="rounded-xl bg-panel shadow-xs ring-1 ring-inset ring-line/60 p-4">
           <h2 className="flex items-center gap-x-1.5 text-xs font-semibold uppercase tracking-wide text-fg-muted">
             <Link2 className="h-3 w-3" />
             {view.attribution.unattributed.length} unlinked
@@ -407,7 +404,7 @@ const CommitDetail = ({ commit, label }: { commit: LinkedCommit; label: string |
 const Panel = ({
   icon, title, children,
 }: { icon?: React.ReactNode; title: string; children: React.ReactNode }) => (
-  <div className="rounded-lg border border-line bg-panel p-4">
+  <div className="rounded-xl bg-panel shadow-xs ring-1 ring-inset ring-line/60 p-4">
     <h2 className="mb-2 flex items-center gap-x-1.5 text-2xs font-semibold uppercase tracking-wider text-fg-subtle">
       {icon}
       {title}

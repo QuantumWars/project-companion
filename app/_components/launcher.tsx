@@ -76,34 +76,33 @@ export const Launcher = () => {
   };
 
   return (
-    <main className="mx-auto min-h-full max-w-5xl px-6 py-16">
-      <header className="mb-12 flex items-center gap-x-3">
-        <Image src="/logo.svg" alt="" height={36} width={36} priority />
+    <main className="mx-auto flex min-h-full max-w-4xl flex-col px-8 py-24 animate-fade-in">
+      <header className="mb-14 flex items-center gap-x-3.5">
+        <Image src="/logo.svg" alt="" height={34} width={34} priority />
         <div>
-          <h1 className="text-[22px] font-semibold leading-tight text-fg">Project Companion</h1>
-          <p className="mt-0.5 text-[13px] text-fg-muted">
+          <h1 className="text-[26px] font-semibold leading-none text-fg">Project Companion</h1>
+          <p className="mt-1.5 text-[13px] leading-relaxed text-fg-muted">
             Project management that runs with your coding agent
           </p>
         </div>
       </header>
 
-      <div className="grid gap-10 md:grid-cols-[minmax(0,1fr)_240px]">
+      <div className="grid gap-x-16 gap-y-12 md:grid-cols-[minmax(0,1fr)_220px]">
         <section>
-          <h2 className="mb-3 text-2xs font-semibold uppercase tracking-wider text-fg-subtle">
+          <h2 className="mb-2.5 text-2xs font-medium uppercase tracking-wider text-fg-subtle">
             Recent projects
           </h2>
 
           {projects === null ? (
             <div className="space-y-2">
               {[0, 1].map((i) => (
-                <div key={i} className="h-[86px] animate-pulse rounded-xl border border-line bg-panel" />
+                <div key={i} className="h-[76px] animate-pulse rounded-xl bg-bg-subtle" />
               ))}
             </div>
           ) : projects.length === 0 ? (
             <EmptyState
               icon={<FolderGit2 className="h-7 w-7" />}
-              title="No projects indexed yet"
-            >
+              title="No projects indexed yet">
               <p>
                 Run <code className="rounded bg-bg-subtle px-1 py-0.5 font-mono text-xs">
                   npx project-companion init
@@ -113,7 +112,7 @@ export const Launcher = () => {
               </p>
             </EmptyState>
           ) : (
-            <ul className="space-y-2">
+            <ul className="divide-y divide-line/50">
               {projects.map((project) => (
                 <ProjectRow
                   key={project.path}
@@ -126,21 +125,20 @@ export const Launcher = () => {
 
           {boards.length ? (
             <>
-              <h2 className="mb-3 mt-10 text-2xs font-semibold uppercase tracking-wider text-fg-subtle">
+              <h2 className="mb-2.5 mt-12 text-2xs font-medium uppercase tracking-wider text-fg-subtle">
                 Local boards
               </h2>
               <p className="mb-3 text-xs text-fg-subtle">
                 Kept in this browser only. Your agent cannot see these.
               </p>
-              <ul className="grid gap-2 sm:grid-cols-2">
+              <ul className="grid gap-x-6 sm:grid-cols-2">
                 {boards.map((board) => {
                   const isArch = boardKind(board) === "arch";
                   return (
                     <li key={board.id}>
                       <Link
                         href={boardHref(board)}
-                        className="flex items-center gap-x-2.5 rounded-lg border border-line bg-panel px-3 py-2.5 transition-colors hover:border-line-strong"
-                      >
+                        className="flex items-center gap-x-2.5 rounded-xl bg-panel shadow-xs ring-1 ring-inset ring-line/60 px-3 py-2.5 transition-colors hover:bg-bg-subtle">
                         {isArch ? (
                           <Network className="h-4 w-4 shrink-0 text-status-done" />
                         ) : (
@@ -162,37 +160,33 @@ export const Launcher = () => {
         </section>
 
         <aside>
-          <h2 className="mb-3 text-2xs font-semibold uppercase tracking-wider text-fg-subtle">
+          <h2 className="mb-2.5 text-2xs font-medium uppercase tracking-wider text-fg-subtle">
             Start
           </h2>
           <div className="flex flex-col gap-y-1">
             <StartAction
               icon={Network}
-              label="New architecture diagram"
-              onClick={() => onCreate("arch")}
+              label="Architecture diagram"onClick={() => onCreate("arch")}
             />
             <StartAction
               icon={Pencil}
-              label="New whiteboard"
-              onClick={() => onCreate("whiteboard")}
+              label="Whiteboard"onClick={() => onCreate("whiteboard")}
             />
           </div>
 
-          <h2 className="mb-2 mt-8 text-2xs font-semibold uppercase tracking-wider text-fg-subtle">
+          <h2 className="mb-2.5 mt-9 text-2xs font-medium uppercase tracking-wider text-fg-subtle">
             Add a project
           </h2>
-          <Panel className="p-3">
-            <p className="mb-2 flex items-center gap-x-1.5 text-xs text-fg-muted">
-              <Terminal className="h-3 w-3 shrink-0" />
-              In any repository:
-            </p>
-            <code className="block select-all rounded-md bg-bg-subtle px-2 py-1.5 font-mono text-2xs text-fg">
-              npx project-companion init
-            </code>
-            <p className="mt-2 text-2xs leading-relaxed text-fg-subtle">
-              Creates the store, writes the agent skill, and lists the project here.
-            </p>
-          </Panel>
+          <p className="mb-2 flex items-center gap-x-1.5 text-xs text-fg-muted">
+            <Terminal className="h-3 w-3 shrink-0" />
+            In any repository
+          </p>
+          <code className="block select-all rounded-lg bg-bg-subtle px-2.5 py-2 font-mono text-2xs leading-relaxed text-fg">
+            npx project-companion init
+          </code>
+          <p className="mt-2 text-2xs leading-relaxed text-fg-subtle">
+            Creates the store, writes the agent skill, and lists the project here.
+          </p>
         </aside>
       </div>
     </main>
@@ -210,8 +204,7 @@ const StartAction = ({
 }) => (
   <button
     onClick={onClick}
-    className="flex items-center gap-x-2 rounded-md px-2 py-1.5 text-left text-sm text-brand transition-colors hover:bg-brand-subtle"
-  >
+    className="-mx-2 flex items-center gap-x-2 rounded-lg px-2 py-1.5 text-left text-[13px] text-brand transition-colors duration-100 hover:bg-brand-subtle">
     <Icon className="h-3.5 w-3.5 shrink-0" />
     {label}
   </button>
@@ -237,7 +230,7 @@ const ProjectRow = ({
 
   if (!project.present) {
     return (
-      <li className="rounded-xl border border-dashed border-line-strong bg-panel px-4 py-3">
+      <li className="rounded-xl bg-bg-subtle px-4 py-3">
         <p className="text-sm text-fg-muted">{project.name}</p>
         <p className="mt-0.5 truncate font-mono text-2xs text-fg-subtle">{project.path}</p>
         <p className="mt-1.5 text-xs text-status-progress">
@@ -252,10 +245,10 @@ const ProjectRow = ({
     <li>
       <Link
         href={href("/project")}
-        className="group block rounded-xl border border-line bg-panel px-4 py-3 shadow-xs transition-colors hover:border-line-strong"
+        className="group -mx-3 block rounded-xl px-3 py-3 transition-colors duration-100 hover:bg-bg-subtle"
       >
         <div className="flex items-baseline gap-x-2">
-          <span className="truncate text-sm font-medium text-fg">{project.name}</span>
+          <span className="truncate text-[15px] font-medium text-fg">{project.name}</span>
           {isCurrent ? <Badge tone="brand">open here</Badge> : null}
           <span className="ml-auto flex shrink-0 items-center gap-x-1 text-2xs text-fg-subtle">
             <Clock className="h-2.5 w-2.5" />
@@ -292,8 +285,7 @@ const ProjectRow = ({
               <Progress
                 value={project.features.done}
                 total={project.features.total}
-                className="w-20"
-              />
+                className="w-20"/>
               <span className="text-2xs tabular-nums text-fg-muted">
                 {project.features.done}/{project.features.total} features
               </span>
@@ -317,8 +309,7 @@ const ProjectRow = ({
 
           {project.git?.branch ? (
             <span
-              className="flex items-center gap-x-1 font-mono text-2xs text-fg-subtle"
-              title={`${project.git.dirty} uncommitted change${project.git.dirty === 1 ? "" : "s"}`}
+              className="flex items-center gap-x-1 font-mono text-2xs text-fg-subtle"title={`${project.git.dirty} uncommitted change${project.git.dirty === 1 ? "" : "s"}`}
             >
               <GitBranch className="h-3 w-3" />
               {project.git.branch}
@@ -344,8 +335,7 @@ const ProjectRow = ({
                   e.stopPropagation();
                   window.location.href = href(link.to);
                 }}
-                className="rounded border border-line px-1.5 py-0.5 text-2xs text-fg-muted hover:bg-bg-subtle hover:text-fg"
-              >
+                className="rounded bg-bg-subtle px-1.5 py-0.5 text-2xs text-fg-muted hover:bg-bg-subtle hover:text-fg">
                 {link.label}
               </span>
             ))}

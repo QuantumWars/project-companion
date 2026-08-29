@@ -81,18 +81,24 @@ export const ProjectNav = ({
     <div className="flex h-full">
       <CommandPalette diagrams={shownDiagrams} root={root} />
 
-      <aside className="flex w-[220px] shrink-0 flex-col border-r border-line bg-bg-subtle">
+      {/*
+        The sidebar sits on the page ground, not on its own tinted panel. A
+        second background colour behind the nav is what makes an app look like
+        a dashboard template; the separation reads perfectly well from the
+        hairline and the content's own surface.
+      */}
+      <aside className="flex w-[232px] shrink-0 flex-col border-r border-line/70">
         <Link
           href="/"
-          className="flex items-center gap-x-2 px-3 py-3.5 transition-colors hover:bg-panel/60"
+          className="mx-2 mt-2 flex items-center gap-x-2.5 rounded-lg px-2 py-2 transition-colors hover:bg-bg-subtle"
         >
-          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-brand text-2xs font-bold text-brand-fg">
+          <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-md bg-brand text-[10px] font-bold text-brand-fg">
             {shownName.slice(0, 1).toUpperCase()}
           </span>
-          <span className="truncate text-sm font-semibold text-fg">{shownName}</span>
+          <span className="truncate text-[13px] font-medium text-fg">{shownName}</span>
         </Link>
 
-        <nav className="flex flex-col gap-y-0.5 px-2">
+        <nav className="mt-3 flex flex-col gap-y-px px-2">
           {SURFACES.map((surface) => {
             const isActive = surface.exact
               ? pathname === surface.href
@@ -102,14 +108,17 @@ export const ProjectNav = ({
                 key={surface.href}
                 href={href(surface.href)}
                 className={cn(
-                  "flex items-center gap-x-2.5 rounded-md px-2 py-1.5 text-sm transition-colors",
+                  "flex items-center gap-x-2.5 rounded-lg px-2 py-1.5 text-[13px] transition-colors duration-100",
                   isActive
-                    ? "bg-panel font-medium text-fg shadow-xs"
-                    : "text-fg-muted hover:bg-panel/60 hover:text-fg",
+                    ? "bg-bg-subtle font-medium text-fg"
+                    : "text-fg-muted hover:bg-bg-subtle/70 hover:text-fg",
                 )}
               >
                 <surface.icon
-                  className={cn("h-4 w-4 shrink-0", isActive ? "text-brand" : "text-fg-subtle")}
+                  className={cn(
+                    "h-[15px] w-[15px] shrink-0 transition-colors",
+                    isActive ? "text-brand" : "text-fg-subtle group-hover:text-fg-muted",
+                  )}
                 />
                 {surface.label}
               </Link>
@@ -119,10 +128,10 @@ export const ProjectNav = ({
 
         {shownDiagrams.length ? (
           <div className="mt-5 min-h-0 flex-1 overflow-y-auto px-2 scrollbar-slim">
-            <p className="px-2 pb-1.5 text-2xs font-semibold uppercase tracking-wider text-fg-subtle">
+            <p className="px-2 pb-1 text-2xs font-medium uppercase tracking-wider text-fg-subtle">
               Diagrams
             </p>
-            <div className="flex flex-col gap-y-0.5">
+            <div className="flex flex-col gap-y-px">
               {shownDiagrams.map((d) => {
                 const to = d.kind === "whiteboard"
                   ? `/project/board/${d.id}`
@@ -131,7 +140,7 @@ export const ProjectNav = ({
                   <Link
                     key={d.id}
                     href={href(to)}
-                    className="flex items-center gap-x-2 rounded-md px-2 py-1.5 text-sm text-fg-muted transition-colors hover:bg-panel/60 hover:text-fg"
+                    className="flex items-center gap-x-2 rounded-lg px-2 py-1.5 text-[13px] text-fg-muted transition-colors duration-100 hover:bg-bg-subtle/70 hover:text-fg"
                   >
                     {d.kind === "whiteboard" ? (
                       <Pencil className="h-3.5 w-3.5 shrink-0 text-status-progress" />
@@ -148,7 +157,7 @@ export const ProjectNav = ({
           <div className="flex-1" />
         )}
 
-        <div className="border-t border-line px-3 py-2.5">
+        <div className="px-3 pb-3 pt-2">
           {git?.branch ? (
             <div
               className="mb-2 flex items-center gap-x-1.5 font-mono text-2xs text-fg-muted"
@@ -166,23 +175,25 @@ export const ProjectNav = ({
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-12 shrink-0 items-center gap-x-3 border-b border-line px-5">
-          <h1 className="text-sm font-semibold text-fg">{active?.label ?? "Project"}</h1>
+        <header className="flex h-12 shrink-0 items-center gap-x-3 px-7">
+          <span className="text-[13px] font-medium text-fg-muted">
+            {active?.label ?? "Project"}
+          </span>
           <button
             onClick={() =>
               window.dispatchEvent(
                 new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true }),
               )
             }
-            className="ml-auto flex items-center gap-x-1.5 rounded-md border border-line bg-panel px-2 py-1 text-xs text-fg-subtle transition-colors hover:text-fg"
+            className="ml-auto flex items-center gap-x-1.5 rounded-lg bg-bg-subtle px-2 py-1 text-xs text-fg-subtle transition-colors hover:text-fg"
           >
             Search
             <Kbd>⌘K</Kbd>
           </button>
         </header>
 
-        <main className="min-h-0 flex-1 overflow-y-auto px-5 py-5 scrollbar-slim">
-          <div className="mx-auto max-w-6xl">{children}</div>
+        <main className="min-h-0 flex-1 overflow-y-auto px-7 pb-16 pt-1 scrollbar-slim">
+          <div className="mx-auto max-w-5xl animate-fade-in">{children}</div>
         </main>
       </div>
     </div>

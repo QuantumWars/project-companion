@@ -65,27 +65,24 @@ export const Overview = ({
 
       <div className="grid gap-3 sm:grid-cols-3">
         <Stat
-          label="Features"
-          value={`${doneFeatures}/${roadmap.features.length}`}
+          label="Features"value={`${doneFeatures}/${roadmap.features.length}`}
           hint={`${roadmap.phases.length} phase${roadmap.phases.length === 1 ? "" : "s"}`}
           href={href("/project/roadmap")}
         />
         <Stat
-          label="Tasks"
-          value={`${tasks.filter((t) => t.status === "done").length}/${tasks.length}`}
+          label="Tasks"value={`${tasks.filter((t) => t.status === "done").length}/${tasks.length}`}
           hint={`${tasks.filter((t) => t.status === "in_progress").length} in progress`}
           href={href("/project/tasks")}
         />
         <Stat
-          label="Commits linked"
-          value={commits.length ? `${linked}/${commits.length}` : "—"}
+          label="Commits linked"value={commits.length ? `${linked}/${commits.length}` : "—"}
           hint={commits.length ? "recent history" : "no repository"}
           href={href("/project/git")}
         />
       </div>
 
       {roadmap.phases.length ? (
-        <section className="rounded-lg border border-line bg-panel p-4">
+        <section className="rounded-xl bg-panel shadow-xs ring-1 ring-inset ring-line/60 p-4">
           <h2 className="mb-3 text-2xs font-semibold uppercase tracking-wider text-fg-subtle">
             Phases
           </h2>
@@ -116,7 +113,7 @@ export const Overview = ({
       ) : null}
 
       <div className="grid gap-3 md:grid-cols-2">
-        <section className="rounded-lg border border-line bg-panel p-4">
+        <section className="rounded-xl bg-panel shadow-xs ring-1 ring-inset ring-line/60 p-4">
           <h2 className="mb-3 text-2xs font-semibold uppercase tracking-wider text-fg-subtle">
             Work in flight
           </h2>
@@ -134,7 +131,7 @@ export const Overview = ({
           </div>
         </section>
 
-        <section className="rounded-lg border border-line bg-panel p-4">
+        <section className="rounded-xl bg-panel shadow-xs ring-1 ring-inset ring-line/60 p-4">
           <h2 className="mb-3 text-2xs font-semibold uppercase tracking-wider text-fg-subtle">
             Diagrams
           </h2>
@@ -146,8 +143,7 @@ export const Overview = ({
                     href={href(
                       d.kind === "whiteboard" ? `/project/board/${d.id}` : `/project/diagram/${d.id}`,
                     )}
-                    className="flex items-center gap-x-2 text-sm text-fg hover:text-fg"
-                  >
+                    className="flex items-center gap-x-2 text-sm text-fg hover:text-fg">
                     {d.kind === "whiteboard" ? (
                       <Pencil className="h-3.5 w-3.5 text-status-progress" />
                     ) : (
@@ -168,7 +164,7 @@ export const Overview = ({
       </div>
 
       {commits.length ? (
-        <section className="rounded-lg border border-line bg-panel p-4">
+        <section className="rounded-xl bg-panel shadow-xs ring-1 ring-inset ring-line/60 p-4">
           <h2 className="mb-3 flex items-center gap-x-1.5 text-xs font-semibold uppercase tracking-wide text-fg-muted">
             <GitCommit className="h-3 w-3" />
             Latest commits
@@ -205,8 +201,7 @@ const Stat = ({
 }) => (
   <Link
     href={href}
-    className="rounded-lg border border-line bg-panel p-4 transition-colors hover:border-line-strong"
-  >
+    className="rounded-xl bg-panel shadow-xs ring-1 ring-inset ring-line/60 p-4 transition-colors hover:bg-bg-subtle">
     <p className="text-2xs font-medium uppercase tracking-wider text-fg-subtle">{label}</p>
     <p className="mt-1.5 text-[26px] font-semibold leading-none text-fg">{value}</p>
     <p className="mt-0.5 text-xs text-fg-subtle">{hint}</p>

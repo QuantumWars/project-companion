@@ -122,8 +122,8 @@ export const Delivery = ({
   }
 
   return (
-    <section className="rounded-lg border border-line bg-panel">
-      <div className="border-b border-line px-4 py-3">
+    <section className="rounded-xl bg-panel shadow-xs ring-1 ring-inset ring-line/60">
+      <div className="px-4 pb-2 pt-3.5">
         <h2 className="text-2xs font-semibold uppercase tracking-wider text-fg-subtle">
           Delivery
         </h2>
@@ -140,14 +140,12 @@ export const Delivery = ({
           {flagged.map((row) => (
             <li
               key={row.feature.id}
-              className="flex items-start gap-x-2 px-4 py-2 text-xs text-status-progress"
-            >
+              className="flex items-start gap-x-2 px-4 py-2 text-xs text-status-progress">
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-status-progress" />
               <span>
                 <span className="font-medium">{row.feature.title}</span>{" "}
                 {row.unevidenced
-                  ? "is marked done but no commit is attributed to it. Either the work landed without a link, or it did not land."
-                  : `has ${row.commits.length} commits but is still on the to-do column. Work may have started without the board catching up.`}
+                  ? "is marked done but no commit is attributed to it. Either the work landed without a link, or it did not land.": `has ${row.commits.length} commits but is still on the to-do column. Work may have started without the board catching up.`}
               </span>
             </li>
           ))}
@@ -178,8 +176,7 @@ export const Delivery = ({
                       className={cn(
                         "block h-full",
                         row.done === row.total && row.total > 0
-                          ? "bg-status-done"
-                          : "bg-status-progress",
+                          ? "bg-status-done": "bg-status-progress",
                       )}
                       style={{ width: `${row.total ? (row.done / row.total) * 100 : 0}%` }}
                     />
@@ -199,8 +196,7 @@ export const Delivery = ({
                       <span className="text-status-danger">&minus;{row.deletions}</span>
                     </span>
                     <span
-                      className="h-1.5 rounded-full bg-status-todo"
-                      style={{ width: `${Math.max(4, (churn / maxChurn) * 64)}px` }}
+                      className="h-1.5 rounded-full bg-status-todo"style={{ width: `${Math.max(4, (churn / maxChurn) * 64)}px` }}
                       title={`${churn} lines changed across ${row.commits.length} commits`}
                     />
                   </>

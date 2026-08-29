@@ -102,7 +102,7 @@ export const Board = ({ nodeLookup, root }: { nodeLookup: NodeLookup; root?: str
 
   if (!loading && !configured) {
     return (
-      <div className="rounded-lg border border-dashed border-line-strong bg-panel p-8 text-center">
+      <div className="rounded-xl bg-bg-subtle p-8 text-center">
         <h2 className="text-base font-semibold text-fg">No project here</h2>
         <p className="mt-2 text-sm text-fg-muted">
           Run <code className="rounded bg-bg-subtle px-1 font-mono text-xs">project-companion init</code>{" "}
@@ -119,14 +119,16 @@ export const Board = ({ nodeLookup, root }: { nodeLookup: NodeLookup; root?: str
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <h1 className="text-[19px] font-semibold leading-tight text-fg">Board</h1>
 
-        <div className="flex items-center gap-x-0.5 rounded-md border border-line bg-panel p-0.5">
+        <div className="flex items-center gap-x-0.5 rounded-lg bg-bg-subtle p-0.5">
           {(["none", "phase", "feature"] as const).map((mode) => (
             <button
               key={mode}
               onClick={() => setGrouping(mode)}
               className={cn(
                 "rounded px-2.5 py-1 text-xs font-medium capitalize transition-colors",
-                grouping === mode ? "bg-brand text-brand-fg" : "text-fg-muted hover:bg-bg-subtle",
+                grouping === mode
+                  ? "bg-panel text-fg shadow-xs"
+                  : "text-fg-muted hover:text-fg",
               )}
             >
               {mode === "none" ? "No grouping" : `By ${mode}`}
@@ -137,9 +139,7 @@ export const Board = ({ nodeLookup, root }: { nodeLookup: NodeLookup; root?: str
         <TextInput
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          placeholder="Filter tasks…"
-          className="h-8 w-56 text-sm"
-        />
+          placeholder="Filter tasks…"className="h-8 w-56 text-sm"/>
 
         <span className="ml-auto text-xs text-fg-subtle">
           {visible.length} task{visible.length === 1 ? "" : "s"}
@@ -274,8 +274,7 @@ const Column = ({
             setComposing(true);
             setDraft("");
           }}
-          className="ml-auto text-fg-subtle hover:text-fg"
-          aria-label={`Add to ${COLUMN_LABELS[status]}`}
+          className="ml-auto text-fg-subtle hover:text-fg"aria-label={`Add to ${COLUMN_LABELS[status]}`}
         >
           <Plus className="h-3.5 w-3.5" />
         </button>
@@ -294,9 +293,7 @@ const Column = ({
               setDraft("");
             }
           }}
-          placeholder="Task title…"
-          className="mb-2 h-8 text-sm"
-        />
+          placeholder="Task title…"className="mb-2 h-8 text-sm"/>
       ) : null}
 
       <div className="space-y-2">
@@ -324,8 +321,7 @@ const Column = ({
         ))}
         {dropIndex === tasks.length ? <Insertion /> : null}
         <div
-          className="h-6"
-          onDragOver={(e) => {
+          className="h-6"onDragOver={(e) => {
             e.preventDefault();
             setDropIndex(tasks.length);
           }}
@@ -374,7 +370,7 @@ const Card = ({
       onDragOver={onDragOverIndex}
       onClick={onSelect}
       className={cn(
-        "group cursor-pointer rounded-md border border-line bg-panel p-2.5 shadow-sm transition-opacity hover:border-line-strong",
+        "group cursor-pointer rounded-lg bg-bg-subtle p-2.5 shadow-sm transition-opacity hover:bg-bg-subtle",
         dragging && "opacity-40",
       )}
     >
@@ -385,9 +381,7 @@ const Card = ({
             e.stopPropagation();
             onRemove();
           }}
-          className="shrink-0 text-fg-subtle opacity-0 transition-opacity hover:text-status-danger group-hover:opacity-100"
-          aria-label="Delete task"
-        >
+          className="shrink-0 text-fg-subtle opacity-0 transition-opacity hover:text-status-danger group-hover:opacity-100"aria-label="Delete task">
           <Trash2 className="h-3.5 w-3.5" />
         </button>
       </div>
@@ -440,8 +434,7 @@ const Card = ({
                     ? `/project/diagram/${node.diagramId}?root=${encodeURIComponent(root)}`
                     : `/project/diagram/${node.diagramId}`
                 }
-                className="rounded bg-bg-subtle px-1.5 py-0.5 text-[10px] text-fg-muted hover:bg-line"
-              >
+                className="rounded bg-bg-subtle px-1.5 py-0.5 text-[10px] text-fg-muted hover:bg-line">
                 {node.label}
               </Link>
             );
@@ -512,7 +505,7 @@ const Detail = ({
 
   return (
     <aside className="fixed inset-y-0 right-0 z-40 flex w-[380px] flex-col border-l border-line bg-panel shadow-xl">
-      <header className="flex items-center gap-x-2 border-b border-line px-4 py-3">
+      <header className="flex items-center gap-x-2 px-4 pb-2 pt-3.5">
         <h2 className="flex-1 text-sm font-semibold text-fg">Task</h2>
         <span className="font-mono text-xs text-fg-subtle">{task.id}</span>
         <button onClick={onClose} className="text-fg-subtle hover:text-fg" aria-label="Close">
@@ -526,8 +519,7 @@ const Detail = ({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             onBlur={() => title.trim() && title !== task.title && onUpdate(task.id, { title: title.trim() })}
-            className="h-8 text-sm"
-          />
+            className="h-8 text-sm"/>
         </Field>
 
         <Field label="Description">
@@ -536,16 +528,14 @@ const Detail = ({
             onChange={(e) => setDescription(e.target.value)}
             onBlur={() => description !== (task.description ?? "") && onUpdate(task.id, { description })}
             rows={3}
-            className="w-full rounded-md border border-line px-2 py-1.5 text-sm outline-none focus:border-line-strong"
-          />
+            className="w-full rounded-md border border-line px-2 py-1.5 text-sm outline-none focus:border-line-strong"/>
         </Field>
 
         <Field label="Feature">
           <select
             value={task.featureId ?? ""}
             onChange={(e) => onUpdate(task.id, { featureId: e.target.value || undefined })}
-            className="w-full rounded-md border border-line px-2 py-1.5 text-sm outline-none focus:border-line-strong"
-          >
+            className="w-full rounded-md border border-line px-2 py-1.5 text-sm outline-none focus:border-line-strong">
             <option value="">None</option>
             {features.map((f) => (
               <option key={f.id} value={f.id}>
@@ -559,8 +549,7 @@ const Detail = ({
           <select
             value={task.phaseId ?? ""}
             onChange={(e) => onUpdate(task.id, { phaseId: e.target.value || undefined })}
-            className="w-full rounded-md border border-line px-2 py-1.5 text-sm outline-none focus:border-line-strong"
-          >
+            className="w-full rounded-md border border-line px-2 py-1.5 text-sm outline-none focus:border-line-strong">
             <option value="">Inherit from the feature</option>
             {phases.map((p) => (
               <option key={p.id} value={p.id}>
@@ -582,14 +571,12 @@ const Detail = ({
               <div className="flex gap-x-2">
                 <button
                   onClick={() => void startBranch(false)}
-                  className="rounded-md border border-line px-2 py-1 text-xs font-medium hover:bg-bg-subtle"
-                >
+                  className="rounded-md bg-bg-subtle px-2 py-1 text-xs font-medium transition-colors hover:bg-line/70">
                   Create branch
                 </button>
                 <button
                   onClick={() => void startBranch(true)}
-                  className="rounded-md border border-line px-2 py-1 text-xs font-medium hover:bg-bg-subtle"
-                >
+                  className="rounded-md bg-bg-subtle px-2 py-1 text-xs font-medium transition-colors hover:bg-line/70">
                   + worktree
                 </button>
               </div>
