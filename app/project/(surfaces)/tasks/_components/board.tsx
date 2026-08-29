@@ -4,7 +4,7 @@ import Link from "next/link";
 import { GitBranch, GitCommit, Plus, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import { Input } from "@/components/ui/input";
+import { Segmented, StatusDot, TextInput } from "@/components/ui/primitives";
 import type { LinkedCommit } from "@/lib/project/git-link";
 import { TASK_STATUSES, type Feature, type Phase, type Task, type TaskStatus } from "@/lib/project/types";
 import { useRoadmap } from "@/lib/project/use-roadmap";
@@ -20,11 +20,11 @@ const COLUMN_LABELS: Record<TaskStatus, string> = {
 };
 
 const COLUMN_ACCENT: Record<TaskStatus, string> = {
-  backlog: "bg-neutral-300",
-  todo: "bg-sky-400",
-  in_progress: "bg-amber-400",
-  review: "bg-violet-400",
-  done: "bg-emerald-400",
+  backlog: "bg-status-backlog",
+  todo: "bg-status-todo",
+  in_progress: "bg-status-progress",
+  review: "bg-status-review",
+  done: "bg-status-done",
 };
 
 type NodeLookup = Record<string, { label: string; diagramId: string }>;
@@ -102,10 +102,10 @@ export const Board = ({ nodeLookup, root }: { nodeLookup: NodeLookup; root?: str
 
   if (!loading && !configured) {
     return (
-      <div className="rounded-lg border border-dashed border-neutral-300 bg-white p-8 text-center">
-        <h2 className="text-base font-semibold text-neutral-900">No project here</h2>
-        <p className="mt-2 text-sm text-neutral-500">
-          Run <code className="rounded bg-neutral-100 px-1 font-mono text-xs">project-companion init</code>{" "}
+      <div className="rounded-lg border border-dashed border-line-strong bg-panel p-8 text-center">
+        <h2 className="text-base font-semibold text-fg">No project here</h2>
+        <p className="mt-2 text-sm text-fg-muted">
+          Run <code className="rounded bg-bg-subtle px-1 font-mono text-xs">project-companion init</code>{" "}
           in a repository to create a store your agent can read.
         </p>
       </div>
@@ -117,16 +117,16 @@ export const Board = ({ nodeLookup, root }: { nodeLookup: NodeLookup; root?: str
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <h1 className="text-xl font-semibold text-neutral-900">Board</h1>
+        <h1 className="text-xl font-semibold text-fg">Board</h1>
 
-        <div className="flex items-center gap-x-0.5 rounded-md border border-neutral-200 bg-white p-0.5">
+        <div className="flex items-center gap-x-0.5 rounded-md border border-line bg-panel p-0.5">
           {(["none", "phase", "feature"] as const).map((mode) => (
             <button
               key={mode}
               onClick={() => setGrouping(mode)}
               className={cn(
                 "rounded px-2.5 py-1 text-xs font-medium capitalize transition-colors",
-                grouping === mode ? "bg-neutral-900 text-white" : "text-neutral-600 hover:bg-neutral-100",
+                grouping === mode ? "bg-brand text-brand-fg" : "text-fg-muted hover:bg-bg-subtle",
               )}
             >
               {mode === "none" ? "No grouping" : `By ${mode}`}
@@ -134,14 +134,14 @@ export const Board = ({ nodeLookup, root }: { nodeLookup: NodeLookup; root?: str
           ))}
         </div>
 
-        <Input
+        <TextInput
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           placeholder="Filter tasks…"
           className="h-8 w-56 text-sm"
         />
 
-        <span className="ml-auto text-xs text-neutral-400">
+        <span className="ml-auto text-xs text-fg-subtle">
           {visible.length} task{visible.length === 1 ? "" : "s"}
         </span>
       </div>
@@ -150,8 +150,8 @@ export const Board = ({ nodeLookup, root }: { nodeLookup: NodeLookup; root?: str
         <section key={lane.key}>
           {lane.label ? (
             <div className="mb-2 flex items-baseline gap-x-2">
-              <h2 className="text-sm font-semibold text-neutral-800">{lane.label}</h2>
-              {lane.hint ? <span className="text-xs text-neutral-400">{lane.hint}</span> : null}
+              <h2 className="text-sm font-semibold text-fg">{lane.label}</h2>
+              {lane.hint ? <span className="text-xs text-fg-subtle">{lane.hint}</span> : null}
             </div>
           ) : null}
 
@@ -260,21 +260,21 @@ const Column = ({
       }}
       className={cn(
         "rounded-lg border border-transparent p-1 transition-colors",
-        over && "border-neutral-300 bg-neutral-100/70",
+        over && "border-line-strong bg-bg-subtle/70",
       )}
     >
       <header className="mb-2 flex items-center gap-x-2 px-1">
         <span className={cn("h-2 w-2 rounded-full", COLUMN_ACCENT[status])} />
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-neutral-600">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-fg-muted">
           {COLUMN_LABELS[status]}
         </h3>
-        <span className="text-xs text-neutral-400">{tasks.length}</span>
+        <span className="text-xs text-fg-subtle">{tasks.length}</span>
         <button
           onClick={() => {
             setComposing(true);
             setDraft("");
           }}
-          className="ml-auto text-neutral-300 hover:text-neutral-700"
+          className="ml-auto text-fg-subtle hover:text-fg"
           aria-label={`Add to ${COLUMN_LABELS[status]}`}
         >
           <Plus className="h-3.5 w-3.5" />
@@ -282,7 +282,7 @@ const Column = ({
       </header>
 
       {composing ? (
-        <Input
+        <TextInput
           autoFocus
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -335,7 +335,7 @@ const Column = ({
   );
 };
 
-const Insertion = () => <div className="mb-2 h-0.5 rounded-full bg-sky-400" />;
+const Insertion = () => <div className="mb-2 h-0.5 rounded-full bg-status-todo" />;
 
 const Card = ({
   task,
@@ -374,18 +374,18 @@ const Card = ({
       onDragOver={onDragOverIndex}
       onClick={onSelect}
       className={cn(
-        "group cursor-pointer rounded-md border border-neutral-200 bg-white p-2.5 shadow-sm transition-opacity hover:border-neutral-300",
+        "group cursor-pointer rounded-md border border-line bg-panel p-2.5 shadow-sm transition-opacity hover:border-line-strong",
         dragging && "opacity-40",
       )}
     >
       <div className="flex items-start gap-x-2">
-        <p className="flex-1 text-sm text-neutral-800">{task.title}</p>
+        <p className="flex-1 text-sm text-fg">{task.title}</p>
         <button
           onClick={(e) => {
             e.stopPropagation();
             onRemove();
           }}
-          className="shrink-0 text-neutral-300 opacity-0 transition-opacity hover:text-rose-500 group-hover:opacity-100"
+          className="shrink-0 text-fg-subtle opacity-0 transition-opacity hover:text-status-danger group-hover:opacity-100"
           aria-label="Delete task"
         >
           <Trash2 className="h-3.5 w-3.5" />
@@ -395,12 +395,12 @@ const Card = ({
       {feature || phase ? (
         <div className="mt-1.5 flex flex-wrap gap-1">
           {feature ? (
-            <span className="max-w-full truncate rounded bg-sky-50 px-1.5 py-0.5 text-[10px] font-medium text-sky-700">
+            <span className="max-w-full truncate rounded bg-status-todo/10 px-1.5 py-0.5 text-[10px] font-medium text-status-todo">
               {feature.title}
             </span>
           ) : null}
           {phase ? (
-            <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-[10px] text-neutral-600">
+            <span className="rounded bg-bg-subtle px-1.5 py-0.5 text-[10px] text-fg-muted">
               {phase.name}
             </span>
           ) : null}
@@ -408,7 +408,7 @@ const Card = ({
       ) : null}
 
       {commits.length || task.branch ? (
-        <div className="mt-1.5 flex flex-wrap items-center gap-x-2 text-[11px] text-neutral-400">
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-2 text-[11px] text-fg-subtle">
           {task.branch ? (
             <span className="flex items-center gap-x-1 font-mono">
               <GitBranch className="h-3 w-3" />
@@ -419,8 +419,8 @@ const Card = ({
             <span className="flex items-center gap-x-1">
               <GitCommit className="h-3 w-3" />
               {commits.length}
-              <span className="font-mono text-emerald-600">+{insertions}</span>
-              <span className="font-mono text-rose-500">&minus;{deletions}</span>
+              <span className="font-mono text-status-done">+{insertions}</span>
+              <span className="font-mono text-status-danger">&minus;{deletions}</span>
             </span>
           ) : null}
         </div>
@@ -440,7 +440,7 @@ const Card = ({
                     ? `/project/diagram/${node.diagramId}?root=${encodeURIComponent(root)}`
                     : `/project/diagram/${node.diagramId}`
                 }
-                className="rounded bg-neutral-100 px-1.5 py-0.5 text-[10px] text-neutral-600 hover:bg-neutral-200"
+                className="rounded bg-bg-subtle px-1.5 py-0.5 text-[10px] text-fg-muted hover:bg-line"
               >
                 {node.label}
               </Link>
@@ -511,18 +511,18 @@ const Detail = ({
   };
 
   return (
-    <aside className="fixed inset-y-0 right-0 z-40 flex w-[380px] flex-col border-l border-neutral-200 bg-white shadow-xl">
-      <header className="flex items-center gap-x-2 border-b border-neutral-100 px-4 py-3">
-        <h2 className="flex-1 text-sm font-semibold text-neutral-900">Task</h2>
-        <span className="font-mono text-xs text-neutral-400">{task.id}</span>
-        <button onClick={onClose} className="text-neutral-400 hover:text-neutral-800" aria-label="Close">
+    <aside className="fixed inset-y-0 right-0 z-40 flex w-[380px] flex-col border-l border-line bg-panel shadow-xl">
+      <header className="flex items-center gap-x-2 border-b border-line px-4 py-3">
+        <h2 className="flex-1 text-sm font-semibold text-fg">Task</h2>
+        <span className="font-mono text-xs text-fg-subtle">{task.id}</span>
+        <button onClick={onClose} className="text-fg-subtle hover:text-fg" aria-label="Close">
           <X className="h-4 w-4" />
         </button>
       </header>
 
       <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
         <Field label="Title">
-          <Input
+          <TextInput
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             onBlur={() => title.trim() && title !== task.title && onUpdate(task.id, { title: title.trim() })}
@@ -536,7 +536,7 @@ const Detail = ({
             onChange={(e) => setDescription(e.target.value)}
             onBlur={() => description !== (task.description ?? "") && onUpdate(task.id, { description })}
             rows={3}
-            className="w-full rounded-md border border-neutral-200 px-2 py-1.5 text-sm outline-none focus:border-neutral-400"
+            className="w-full rounded-md border border-line px-2 py-1.5 text-sm outline-none focus:border-line-strong"
           />
         </Field>
 
@@ -544,7 +544,7 @@ const Detail = ({
           <select
             value={task.featureId ?? ""}
             onChange={(e) => onUpdate(task.id, { featureId: e.target.value || undefined })}
-            className="w-full rounded-md border border-neutral-200 px-2 py-1.5 text-sm outline-none focus:border-neutral-400"
+            className="w-full rounded-md border border-line px-2 py-1.5 text-sm outline-none focus:border-line-strong"
           >
             <option value="">None</option>
             {features.map((f) => (
@@ -559,7 +559,7 @@ const Detail = ({
           <select
             value={task.phaseId ?? ""}
             onChange={(e) => onUpdate(task.id, { phaseId: e.target.value || undefined })}
-            className="w-full rounded-md border border-neutral-200 px-2 py-1.5 text-sm outline-none focus:border-neutral-400"
+            className="w-full rounded-md border border-line px-2 py-1.5 text-sm outline-none focus:border-line-strong"
           >
             <option value="">Inherit from the feature</option>
             {phases.map((p) => (
@@ -572,30 +572,30 @@ const Detail = ({
 
         <Field label="Git">
           {task.branch ? (
-            <p className="font-mono text-xs text-neutral-600">{task.branch}</p>
+            <p className="font-mono text-xs text-fg-muted">{task.branch}</p>
           ) : (
             <div className="space-y-1.5">
-              <p className="text-xs text-neutral-500">
+              <p className="text-xs text-fg-muted">
                 Opens <code className="font-mono">feat/{task.id}-…</code> without checking it out.
                 Every commit on it links back here automatically.
               </p>
               <div className="flex gap-x-2">
                 <button
                   onClick={() => void startBranch(false)}
-                  className="rounded-md border border-neutral-200 px-2 py-1 text-xs font-medium hover:bg-neutral-50"
+                  className="rounded-md border border-line px-2 py-1 text-xs font-medium hover:bg-bg-subtle"
                 >
                   Create branch
                 </button>
                 <button
                   onClick={() => void startBranch(true)}
-                  className="rounded-md border border-neutral-200 px-2 py-1 text-xs font-medium hover:bg-neutral-50"
+                  className="rounded-md border border-line px-2 py-1 text-xs font-medium hover:bg-bg-subtle"
                 >
                   + worktree
                 </button>
               </div>
             </div>
           )}
-          {branching ? <p className="mt-1 text-xs text-neutral-500">{branching}</p> : null}
+          {branching ? <p className="mt-1 text-xs text-fg-muted">{branching}</p> : null}
         </Field>
 
         {commits.length ? (
@@ -603,8 +603,8 @@ const Detail = ({
             <ul className="space-y-1">
               {commits.map((commit) => (
                 <li key={commit.sha} className="flex items-baseline gap-x-2 text-xs">
-                  <span className="font-mono text-neutral-400">{commit.short}</span>
-                  <span className="min-w-0 flex-1 truncate text-neutral-700">{commit.subject}</span>
+                  <span className="font-mono text-fg-subtle">{commit.short}</span>
+                  <span className="min-w-0 flex-1 truncate text-fg">{commit.subject}</span>
                 </li>
               ))}
             </ul>
@@ -617,7 +617,7 @@ const Detail = ({
 
 const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <div>
-    <p className="mb-1 text-xs font-medium uppercase tracking-wide text-neutral-500">{label}</p>
+    <p className="mb-1 text-xs font-medium uppercase tracking-wide text-fg-muted">{label}</p>
     {children}
   </div>
 );

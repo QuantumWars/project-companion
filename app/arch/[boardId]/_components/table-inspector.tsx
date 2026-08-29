@@ -48,9 +48,9 @@ export const TableInspector = ({ data, onChange }: TableInspectorProps) => {
   };
 
   return (
-    <aside className="absolute right-2 top-2 z-20 flex max-h-[calc(100vh-5rem)] w-[320px] flex-col rounded-lg border border-neutral-200 bg-white shadow-lg">
+    <aside className="absolute right-2 top-2 z-20 flex max-h-[calc(100vh-5rem)] w-[320px] flex-col rounded-lg border border-line bg-panel shadow-lg">
       <div className="border-b p-3">
-        <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-neutral-400">
+        <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-fg-subtle">
           Table
         </p>
         <div className="flex gap-x-2">
@@ -71,7 +71,7 @@ export const TableInspector = ({ data, onChange }: TableInspectorProps) => {
 
       <div className="flex-1 overflow-y-auto p-2">
         {data.columns.length === 0 ? (
-          <p className="px-1 py-4 text-center text-xs text-neutral-400">
+          <p className="px-1 py-4 text-center text-xs text-fg-subtle">
             No columns yet.
           </p>
         ) : null}
@@ -79,7 +79,7 @@ export const TableInspector = ({ data, onChange }: TableInspectorProps) => {
         {data.columns.map((column, index) => (
           <div
             key={column.id}
-            className="mb-1.5 rounded-md border border-neutral-200 p-1.5"
+            className="mb-1.5 rounded-md border border-line p-1.5"
           >
             <div className="mb-1 flex items-center gap-x-1">
               <span className="flex w-4 shrink-0 justify-center">
@@ -99,7 +99,7 @@ export const TableInspector = ({ data, onChange }: TableInspectorProps) => {
                 value={column.type}
                 placeholder="type"
                 onChange={(e) => update(column.id, { type: e.target.value })}
-                className="h-7 w-[86px] text-xs text-neutral-500"
+                className="h-7 w-[86px] text-xs text-fg-muted"
               />
             </div>
 
@@ -114,8 +114,8 @@ export const TableInspector = ({ data, onChange }: TableInspectorProps) => {
                   className={cn(
                     "rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors",
                     column[flag.key]
-                      ? "bg-neutral-900 text-white"
-                      : "bg-neutral-100 text-neutral-500 hover:bg-neutral-200",
+                      ? "bg-brand text-brand-fg"
+                      : "bg-bg-subtle text-fg-muted hover:bg-neutral-200",
                   )}
                 >
                   {flag.label}
@@ -131,8 +131,8 @@ export const TableInspector = ({ data, onChange }: TableInspectorProps) => {
                 className={cn(
                   "rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors",
                   column.nullable === false
-                    ? "bg-neutral-900 text-white"
-                    : "bg-neutral-100 text-neutral-500 hover:bg-neutral-200",
+                    ? "bg-brand text-brand-fg"
+                    : "bg-bg-subtle text-fg-muted hover:bg-neutral-200",
                 )}
               >
                 NOT NULL
@@ -142,7 +142,7 @@ export const TableInspector = ({ data, onChange }: TableInspectorProps) => {
                 <button
                   onClick={() => move(index, -1)}
                   disabled={index === 0}
-                  className="rounded p-0.5 text-neutral-400 hover:bg-neutral-100 disabled:opacity-25"
+                  className="rounded p-0.5 text-fg-subtle hover:bg-bg-subtle disabled:opacity-25"
                   title="Move up"
                 >
                   <ChevronUp className="h-3 w-3" />
@@ -150,7 +150,7 @@ export const TableInspector = ({ data, onChange }: TableInspectorProps) => {
                 <button
                   onClick={() => move(index, 1)}
                   disabled={index === data.columns.length - 1}
-                  className="rounded p-0.5 text-neutral-400 hover:bg-neutral-100 disabled:opacity-25"
+                  className="rounded p-0.5 text-fg-subtle hover:bg-bg-subtle disabled:opacity-25"
                   title="Move down"
                 >
                   <ChevronDown className="h-3 w-3" />
@@ -159,7 +159,7 @@ export const TableInspector = ({ data, onChange }: TableInspectorProps) => {
                   onClick={() =>
                     setColumns(data.columns.filter((c) => c.id !== column.id))
                   }
-                  className="rounded p-0.5 text-neutral-400 hover:bg-red-50 hover:text-red-500"
+                  className="rounded p-0.5 text-fg-subtle hover:bg-red-50 hover:text-red-500"
                   title="Delete column"
                 >
                   <X className="h-3 w-3" />

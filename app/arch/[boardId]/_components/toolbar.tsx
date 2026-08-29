@@ -56,8 +56,8 @@ const RailButton = ({
       className={cn(
         "flex h-10 w-10 items-center justify-center rounded-lg transition-colors",
         isActive
-          ? "bg-blue-50 text-blue-600"
-          : "text-neutral-600 hover:bg-neutral-100",
+          ? "bg-brand-subtle text-brand"
+          : "text-fg-muted hover:bg-bg-subtle",
         isDisabled && "pointer-events-none opacity-30",
       )}
     >
@@ -83,7 +83,7 @@ export const Toolbar = ({
 }: ToolbarProps) => (
   <>
     {/* Tool rail, pinned left below the header. */}
-    <div className="absolute left-3 top-1/2 z-20 flex -translate-y-1/2 flex-col gap-y-0.5 rounded-xl border border-neutral-200 bg-white p-1.5 shadow-md">
+    <div className="absolute left-3 top-1/2 z-20 flex -translate-y-1/2 flex-col gap-y-0.5 rounded-xl border border-line bg-panel p-1.5 shadow-md">
       <RailButton
         label="Select"
         icon={MousePointer2}
@@ -116,7 +116,7 @@ export const Toolbar = ({
     </div>
 
     {/* History sits bottom-left, away from the tools, as in Miro. */}
-    <div className="absolute bottom-3 left-3 z-20 flex items-center gap-x-0.5 rounded-lg border border-neutral-200 bg-white p-1 shadow-md">
+    <div className="absolute bottom-3 left-3 z-20 flex items-center gap-x-0.5 rounded-lg border border-line bg-panel p-1 shadow-md">
       <RailButton label="Undo" icon={Undo2} onClick={undo} isDisabled={!canUndo} />
       <RailButton label="Redo" icon={Redo2} onClick={redo} isDisabled={!canRedo} />
     </div>

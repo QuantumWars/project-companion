@@ -14,17 +14,17 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import { Input } from "@/components/ui/input";
+import { StatusBadge, TextInput } from "@/components/ui/primitives";
 import { useRoadmap } from "@/lib/project/use-roadmap";
 import type { Feature, Task, TaskStatus } from "@/lib/project/types";
 import { cn } from "@/lib/utils";
 
 const STATUS_STYLE: Record<TaskStatus, string> = {
-  backlog: "bg-neutral-100 text-neutral-600",
-  todo: "bg-sky-50 text-sky-700",
-  in_progress: "bg-amber-50 text-amber-700",
-  review: "bg-violet-50 text-violet-700",
-  done: "bg-emerald-50 text-emerald-700",
+  backlog: "bg-bg-subtle text-fg-muted",
+  todo: "bg-status-todo/10 text-status-todo",
+  in_progress: "bg-status-progress/10 text-status-progress",
+  review: "bg-status-review/10 text-status-review",
+  done: "bg-status-done/10 text-status-done",
 };
 
 const STATUS_LABEL: Record<TaskStatus, string> = {
@@ -73,7 +73,7 @@ export const RoadmapView = ({ root }: { root?: string }) => {
   );
 
   if (roadmap.loading) {
-    return <p className="text-sm text-neutral-400">Loading the roadmap…</p>;
+    return <p className="text-sm text-fg-subtle">Loading the roadmap…</p>;
   }
 
   if (!roadmap.present) {
@@ -84,16 +84,16 @@ export const RoadmapView = ({ root }: { root?: string }) => {
     <div className="space-y-8">
       <div className="flex items-start justify-between gap-x-4">
         <div>
-          <h1 className="text-xl font-semibold text-neutral-900">
+          <h1 className="text-xl font-semibold text-fg">
             {roadmap.title ?? "Roadmap"}
           </h1>
-          <p className="mt-1 font-mono text-xs text-neutral-400">{roadmap.source}</p>
+          <p className="mt-1 font-mono text-xs text-fg-subtle">{roadmap.source}</p>
         </div>
         <Progress features={roadmap.features} />
       </div>
 
       {roadmap.conflict ? (
-        <div className="flex items-start gap-x-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+        <div className="flex items-start gap-x-2 rounded-lg border border-status-progress/40 bg-status-progress/10 p-3 text-sm text-status-progress">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <div className="flex-1">
             <p className="font-medium">{roadmap.conflict.message}</p>
@@ -113,14 +113,14 @@ export const RoadmapView = ({ root }: { root?: string }) => {
       {roadmap.warnings.map((warning) => (
         <div
           key={warning}
-          className="flex items-start gap-x-2 rounded-lg border border-neutral-200 bg-white p-3 text-xs text-neutral-600"
+          className="flex items-start gap-x-2 rounded-lg border border-line bg-panel p-3 text-xs text-fg-muted"
         >
-          <FileWarning className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
+          <FileWarning className="mt-0.5 h-3.5 w-3.5 shrink-0 text-status-progress" />
           <span className="flex-1">{warning}</span>
           {warning.includes("heading slug") ? (
             <button
               onClick={() => void roadmap.apply([{ op: "stampIds" }])}
-              className="shrink-0 rounded border border-neutral-300 px-2 py-0.5 font-medium hover:bg-neutral-50"
+              className="shrink-0 rounded border border-line-strong px-2 py-0.5 font-medium hover:bg-bg-subtle"
               title="Write a stable id comment under each heading so renames keep their links"
             >
               Stamp ids
@@ -132,19 +132,19 @@ export const RoadmapView = ({ root }: { root?: string }) => {
       {roadmap.phases.map((phase) => (
         <section key={phase.id}>
           <div className="mb-3 flex items-baseline gap-x-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-800">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-fg">
               {phase.name}
             </h2>
             <span className={cn("rounded px-1.5 py-0.5 text-[10px] font-medium uppercase", STATUS_STYLE[phase.status === "active" ? "in_progress" : phase.status === "done" ? "done" : "backlog"])}>
               {phase.status}
             </span>
             {phase.startsAt ? (
-              <span className="text-xs text-neutral-400">
+              <span className="text-xs text-fg-subtle">
                 {phase.startsAt}
                 {phase.endsAt ? ` → ${phase.endsAt}` : ""}
               </span>
             ) : null}
-            {phase.goal ? <span className="text-xs text-neutral-500">{phase.goal}</span> : null}
+            {phase.goal ? <span className="text-xs text-fg-muted">{phase.goal}</span> : null}
           </div>
           <div className="space-y-2">
             {roadmap.features
@@ -166,7 +166,7 @@ export const RoadmapView = ({ root }: { root?: string }) => {
 
       {unphased.length ? (
         <section>
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-800">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-fg">
             Unphased
           </h2>
           <div className="space-y-2">
@@ -186,11 +186,11 @@ export const RoadmapView = ({ root }: { root?: string }) => {
 
       {roadmap.orphans.length ? (
         <section>
-          <h2 className="mb-1 flex items-center gap-x-2 text-sm font-semibold uppercase tracking-wide text-neutral-800">
-            <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+          <h2 className="mb-1 flex items-center gap-x-2 text-sm font-semibold uppercase tracking-wide text-fg">
+            <AlertTriangle className="h-3.5 w-3.5 text-status-progress" />
             Orphaned
           </h2>
-          <p className="mb-3 text-xs text-neutral-500">
+          <p className="mb-3 text-xs text-fg-muted">
             These headings are gone from the PRD, but tasks still point at them. Nothing was
             deleted.
           </p>
@@ -198,10 +198,10 @@ export const RoadmapView = ({ root }: { root?: string }) => {
             {roadmap.orphans.map((feature) => (
               <div
                 key={feature.id}
-                className="rounded-lg border border-amber-200 bg-amber-50/40 p-3 text-sm"
+                className="rounded-lg border border-status-progress/30 bg-status-progress/5 p-3 text-sm"
               >
-                <span className="font-medium text-neutral-800">{feature.title}</span>
-                <span className="ml-2 font-mono text-xs text-neutral-400">{feature.id}</span>
+                <span className="font-medium text-fg">{feature.title}</span>
+                <span className="ml-2 font-mono text-xs text-fg-subtle">{feature.id}</span>
               </div>
             ))}
           </div>
@@ -218,16 +218,16 @@ const Progress = ({ features }: { features: Feature[] }) => {
 
   return (
     <div className="w-56 shrink-0">
-      <div className="mb-1 flex items-baseline justify-between text-xs text-neutral-500">
+      <div className="mb-1 flex items-baseline justify-between text-xs text-fg-muted">
         <span>
           {done} of {features.length} done
         </span>
-        <span className="font-medium text-neutral-800">{pct}%</span>
+        <span className="font-medium text-fg">{pct}%</span>
       </div>
-      <div className="flex h-1.5 overflow-hidden rounded-full bg-neutral-200">
-        <div className="bg-emerald-500" style={{ width: `${pct}%` }} />
+      <div className="flex h-1.5 overflow-hidden rounded-full bg-line">
+        <div className="bg-status-done" style={{ width: `${pct}%` }} />
         <div
-          className="bg-amber-400"
+          className="bg-status-progress"
           style={{ width: `${features.length ? (active / features.length) * 100 : 0}%` }}
         />
       </div>
@@ -261,18 +261,18 @@ const FeatureCard = ({
   };
 
   return (
-    <div className="rounded-lg border border-neutral-200 bg-white">
+    <div className="rounded-lg border border-line bg-panel">
       <div className="flex items-center gap-x-3 p-3">
         <button
           onClick={() => setOpen((v) => !v)}
-          className="shrink-0 text-neutral-400 hover:text-neutral-700"
+          className="shrink-0 text-fg-subtle hover:text-fg"
           aria-label={open ? "Collapse" : "Expand"}
         >
           {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
         </button>
 
         {editing ? (
-          <Input
+          <TextInput
             autoFocus
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
@@ -292,7 +292,7 @@ const FeatureCard = ({
               setDraft(feature.title);
               setEditing(true);
             }}
-            className="flex-1 text-left text-sm font-medium text-neutral-900 hover:text-neutral-600"
+            className="flex-1 text-left text-sm font-medium text-fg hover:text-fg-muted"
             title="Rename — the id stays put, so linked tasks survive"
           >
             {feature.title}
@@ -305,14 +305,14 @@ const FeatureCard = ({
         </span>
 
         {feature.acceptance.length ? (
-          <span className="shrink-0 text-xs tabular-nums text-neutral-400">
+          <span className="shrink-0 text-xs tabular-nums text-fg-subtle">
             {done}/{feature.acceptance.length}
           </span>
         ) : null}
 
         {git?.commits ? (
           <span
-            className="flex shrink-0 items-center gap-x-1 text-xs text-neutral-500"
+            className="flex shrink-0 items-center gap-x-1 text-xs text-fg-muted"
             title={`+${git.insertions} −${git.deletions}`}
           >
             <GitCommit className="h-3 w-3" />
@@ -322,7 +322,7 @@ const FeatureCard = ({
 
         {feature.idSource === "slug" ? (
           <span
-            className="shrink-0 text-amber-500"
+            className="shrink-0 text-status-progress"
             title="This id comes from the heading text, so renaming it in the PRD would orphan linked tasks"
           >
             <Tag className="h-3 w-3" />
@@ -331,9 +331,9 @@ const FeatureCard = ({
       </div>
 
       {open ? (
-        <div className="space-y-3 border-t border-neutral-100 px-3 pb-3 pt-3 text-sm">
+        <div className="space-y-3 border-t border-line px-3 pb-3 pt-3 text-sm">
           {feature.summary ? (
-            <p className="text-neutral-600">{feature.summary}</p>
+            <p className="text-fg-muted">{feature.summary}</p>
           ) : null}
 
           {feature.acceptance.length ? (
@@ -351,14 +351,14 @@ const FeatureCard = ({
                         },
                       ])
                     }
-                    className="flex w-full items-start gap-x-2 rounded px-1 py-0.5 text-left hover:bg-neutral-50"
+                    className="flex w-full items-start gap-x-2 rounded px-1 py-0.5 text-left hover:bg-bg-subtle"
                   >
                     {criterion.done ? (
-                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-status-done" />
                     ) : (
-                      <Square className="mt-0.5 h-3.5 w-3.5 shrink-0 text-neutral-300" />
+                      <Square className="mt-0.5 h-3.5 w-3.5 shrink-0 text-fg-subtle" />
                     )}
-                    <span className={cn("text-sm", criterion.done && "text-neutral-400 line-through")}>
+                    <span className={cn("text-sm", criterion.done && "text-fg-subtle line-through")}>
                       {criterion.text}
                     </span>
                   </button>
@@ -366,13 +366,13 @@ const FeatureCard = ({
               ))}
             </ul>
           ) : (
-            <p className="text-xs text-neutral-400">No acceptance criteria yet.</p>
+            <p className="text-xs text-fg-subtle">No acceptance criteria yet.</p>
           )}
 
           <AddCriterion featureId={feature.id} apply={apply} />
 
           {feature.paths?.length ? (
-            <p className="font-mono text-xs text-neutral-400">
+            <p className="font-mono text-xs text-fg-subtle">
               paths: {feature.paths.join(", ")}
             </p>
           ) : null}
@@ -416,7 +416,7 @@ const AddCriterion = ({
   };
 
   return (
-    <Input
+    <TextInput
       value={draft}
       onChange={(e) => setDraft(e.target.value)}
       onKeyDown={(e) => {
@@ -443,7 +443,7 @@ const AddFeature = ({
     return (
       <button
         onClick={() => setComposing(true)}
-        className="flex items-center gap-x-1.5 px-1 py-1 text-xs text-neutral-400 hover:text-neutral-700"
+        className="flex items-center gap-x-1.5 px-1 py-1 text-xs text-fg-subtle hover:text-fg"
       >
         <Plus className="h-3 w-3" />
         Add a feature
@@ -459,7 +459,7 @@ const AddFeature = ({
   };
 
   return (
-    <Input
+    <TextInput
       autoFocus
       value={draft}
       onChange={(e) => setDraft(e.target.value)}
@@ -478,15 +478,15 @@ const AddFeature = ({
 };
 
 const NoPrd = ({ source }: { source: string }) => (
-  <div className="rounded-lg border border-dashed border-neutral-300 bg-white p-8 text-center">
-    <h2 className="text-base font-semibold text-neutral-900">No PRD yet</h2>
-    <p className="mx-auto mt-2 max-w-md text-sm text-neutral-500">
+  <div className="rounded-lg border border-dashed border-line-strong bg-panel p-8 text-center">
+    <h2 className="text-base font-semibold text-fg">No PRD yet</h2>
+    <p className="mx-auto mt-2 max-w-md text-sm text-fg-muted">
       The feature list lives in{" "}
-      <code className="rounded bg-neutral-100 px-1 py-0.5 font-mono text-xs">{source}</code>, so it
+      <code className="rounded bg-bg-subtle px-1 py-0.5 font-mono text-xs">{source}</code>, so it
       is reviewed in a pull request like any other change and your agent can read it with ordinary
       file tools.
     </p>
-    <pre className="mx-auto mt-4 max-w-md overflow-x-auto rounded-md bg-neutral-900 p-3 text-left font-mono text-xs text-neutral-100">
+    <pre className="mx-auto mt-4 max-w-md overflow-x-auto rounded-md bg-fg p-3 text-left font-mono text-xs text-bg">
 {`npx project-companion prd init`}
     </pre>
   </div>

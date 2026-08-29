@@ -25,9 +25,10 @@ const SurfacesLayout = ({ children }: { children: React.ReactNode }) => {
   const project = readProject(root);
 
   return (
-    <div className="min-h-full bg-neutral-50">
-      <ProjectNav name={project.name} diagrams={project.diagrams} />
-      <main className="mx-auto max-w-7xl px-6 py-6">{children}</main>
+    <div className="h-full bg-bg">
+      <ProjectNav name={project.name} diagrams={project.diagrams}>
+        {children}
+      </ProjectNav>
     </div>
   );
 };

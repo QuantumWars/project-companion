@@ -70,15 +70,15 @@ export const ImportDialog = ({
               className={cn(
                 "rounded px-2.5 py-1 text-xs capitalize transition-colors",
                 format === f
-                  ? "bg-neutral-900 text-white"
-                  : "text-neutral-600 hover:bg-neutral-100",
+                  ? "bg-brand text-brand-fg"
+                  : "text-fg-muted hover:bg-bg-subtle",
               )}
             >
               {f === "auto" ? "Auto-detect" : f === "sql" ? "SQL DDL" : "Prisma"}
             </button>
           ))}
           {format === "auto" && text.trim() ? (
-            <span className="ml-1 text-xs text-neutral-400">
+            <span className="ml-1 text-xs text-fg-subtle">
               detected: {resolved === "prisma" ? "Prisma" : "SQL"}
             </span>
           ) : null}
@@ -89,14 +89,14 @@ export const ImportDialog = ({
           onChange={(e) => setText(e.target.value)}
           spellCheck={false}
           placeholder={"CREATE TABLE users (\n  id uuid PRIMARY KEY,\n  email varchar(255) NOT NULL UNIQUE\n);\n\n-- or paste a Prisma schema"}
-          className="h-64 w-full resize-none rounded-md border border-neutral-200 p-3 font-mono text-xs leading-relaxed outline-none focus:border-neutral-400"
+          className="h-64 w-full resize-none rounded-md border border-line p-3 font-mono text-xs leading-relaxed outline-none focus:border-brand"
         />
 
         <div className="flex items-end justify-between gap-x-4">
           <div className="min-w-0 flex-1 text-xs">
             {preview ? (
               <>
-                <p className="text-neutral-600">
+                <p className="text-fg-muted">
                   {preview.nodes.length} table
                   {preview.nodes.length === 1 ? "" : "s"} &middot;{" "}
                   {preview.edges.length} relation
@@ -117,7 +117,7 @@ export const ImportDialog = ({
                 ) : null}
               </>
             ) : (
-              <p className="text-neutral-400">
+              <p className="text-fg-subtle">
                 Paste SQL DDL or a Prisma schema. Nothing leaves your browser.
               </p>
             )}

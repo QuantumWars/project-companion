@@ -14,11 +14,11 @@ export const ZoomControls = () => {
   const zoom = useStore((s) => s.transform[2]);
 
   return (
-    <div className="absolute bottom-3 right-3 z-20 flex items-center gap-x-0.5 rounded-lg border border-neutral-200 bg-white p-1 shadow-md">
+    <div className="absolute bottom-3 right-3 z-20 flex items-center gap-x-0.5 rounded-lg border border-line bg-panel p-1 shadow-md">
       <Hint label="Zoom out" side="top" sideOffset={8}>
         <button
           onClick={() => zoomOut({ duration: 150 })}
-          className="rounded p-1.5 text-neutral-600 hover:bg-neutral-100"
+          className="rounded p-1.5 text-fg-muted hover:bg-bg-subtle"
         >
           <Minus className="h-4 w-4" />
         </button>
@@ -26,7 +26,7 @@ export const ZoomControls = () => {
 
       <button
         onClick={() => zoomTo(1, { duration: 200 })}
-        className="min-w-[52px] rounded px-1 py-1 text-center text-xs font-medium tabular-nums text-neutral-700 hover:bg-neutral-100"
+        className="min-w-[52px] rounded px-1 py-1 text-center text-xs font-medium tabular-nums text-fg hover:bg-bg-subtle"
         title="Reset to 100%"
       >
         {Math.round(zoom * 100)}%
@@ -35,7 +35,7 @@ export const ZoomControls = () => {
       <Hint label="Zoom in" side="top" sideOffset={8}>
         <button
           onClick={() => zoomIn({ duration: 150 })}
-          className="rounded p-1.5 text-neutral-600 hover:bg-neutral-100"
+          className="rounded p-1.5 text-fg-muted hover:bg-bg-subtle"
         >
           <Plus className="h-4 w-4" />
         </button>
@@ -46,7 +46,7 @@ export const ZoomControls = () => {
       <Hint label="Fit to screen" side="top" sideOffset={8}>
         <button
           onClick={() => fitView({ duration: 300, padding: 0.15 })}
-          className="rounded p-1.5 text-neutral-600 hover:bg-neutral-100"
+          className="rounded p-1.5 text-fg-muted hover:bg-bg-subtle"
         >
           <Maximize2 className="h-4 w-4" />
         </button>

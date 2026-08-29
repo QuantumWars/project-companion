@@ -132,9 +132,9 @@ export const NodePalette = ({
     (!showTech || techResults.length === 0);
 
   return (
-    <div className="absolute left-[76px] top-[50%] z-20 flex max-h-[74vh] w-[330px] -translate-y-[50%] flex-col rounded-lg border border-neutral-200 bg-white shadow-lg">
+    <div className="absolute left-[76px] top-[50%] z-20 flex max-h-[74vh] w-[330px] -translate-y-[50%] flex-col rounded-lg border border-line bg-panel shadow-lg">
       <div className="flex items-center gap-x-2 border-b p-2">
-        <Search className="ml-1 h-4 w-4 shrink-0 text-neutral-400" />
+        <Search className="ml-1 h-4 w-4 shrink-0 text-fg-subtle" />
         <Input
           autoFocus
           value={query}
@@ -144,7 +144,7 @@ export const NodePalette = ({
         />
         <button
           onClick={onClose}
-          className="rounded p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700"
+          className="rounded p-1 text-fg-subtle hover:bg-bg-subtle hover:text-fg"
           aria-label="Close palette"
         >
           <X className="h-4 w-4" />
@@ -160,8 +160,8 @@ export const NodePalette = ({
               className={cn(
                 "rounded px-2.5 py-1 text-xs font-medium transition-colors",
                 filter === f.id
-                  ? "bg-neutral-900 text-white"
-                  : "text-neutral-600 hover:bg-neutral-100",
+                  ? "bg-brand text-brand-fg"
+                  : "text-fg-muted hover:bg-bg-subtle",
               )}
             >
               {f.label}
@@ -172,7 +172,7 @@ export const NodePalette = ({
 
       <div className="overflow-y-auto p-2">
         {nothingFound ? (
-          <p className="px-2 py-8 text-center text-sm text-neutral-400">
+          <p className="px-2 py-8 text-center text-sm text-fg-subtle">
             Nothing matches &ldquo;{query}&rdquo;
           </p>
         ) : (
@@ -184,12 +184,12 @@ export const NodePalette = ({
                     <button
                       key={special.id}
                       onClick={() => onPickSpecial(special.id)}
-                      className="flex items-center justify-between rounded px-2 py-1.5 text-left hover:bg-neutral-100 focus:bg-neutral-100 focus:outline-none"
+                      className="flex items-center justify-between rounded px-2 py-1.5 text-left hover:bg-bg-subtle focus:bg-bg-subtle focus:outline-none"
                     >
-                      <span className="text-sm text-neutral-800">
+                      <span className="text-sm text-fg">
                         {special.label}
                       </span>
-                      <span className="text-[10px] text-neutral-400">
+                      <span className="text-[10px] text-fg-subtle">
                         {special.hint}
                       </span>
                     </button>
@@ -244,7 +244,7 @@ const Section = ({
   children: React.ReactNode;
 }) => (
   <div className="mb-3">
-    <p className="px-1 pb-1.5 text-[11px] font-medium uppercase tracking-wide text-neutral-400">
+    <p className="px-1 pb-1.5 text-[11px] font-medium uppercase tracking-wide text-fg-subtle">
       {title}
     </p>
     {children}
@@ -267,7 +267,7 @@ const ShapeGrid = ({
           key={geometry.id}
           onClick={() => onPick(geometry)}
           title={geometry.label}
-          className="flex flex-col items-center gap-y-1 rounded p-1.5 hover:bg-neutral-100 focus:bg-neutral-100 focus:outline-none"
+          className="flex flex-col items-center gap-y-1 rounded p-1.5 hover:bg-bg-subtle focus:bg-bg-subtle focus:outline-none"
         >
           <svg width={46} height={32} viewBox="0 0 46 32" className="overflow-visible">
             <path d={outline} fill="#ffffff" stroke="#64748b" strokeWidth={1.4} strokeLinejoin="round" />
@@ -275,7 +275,7 @@ const ShapeGrid = ({
               <path key={d} d={d} fill="none" stroke="#64748b" strokeWidth={1.4} />
             ))}
           </svg>
-          <span className="w-full truncate text-center text-[9px] leading-tight text-neutral-500">
+          <span className="w-full truncate text-center text-[9px] leading-tight text-fg-muted">
             {geometry.label}
           </span>
         </button>
@@ -296,16 +296,16 @@ const TechGrid = ({
       <button
         key={tech.id}
         onClick={() => onPick(tech)}
-        className="flex items-center gap-x-2.5 rounded px-2 py-1.5 text-left hover:bg-neutral-100 focus:bg-neutral-100 focus:outline-none"
+        className="flex items-center gap-x-2.5 rounded px-2 py-1.5 text-left hover:bg-bg-subtle focus:bg-bg-subtle focus:outline-none"
       >
         <span className="flex h-6 w-6 shrink-0 items-center justify-center">
           <TechIcon techId={tech.id} size={17} />
         </span>
-        <span className="min-w-0 flex-1 truncate text-sm text-neutral-800">
+        <span className="min-w-0 flex-1 truncate text-sm text-fg">
           {tech.label}
         </span>
         {tech.provider ? (
-          <span className="shrink-0 rounded bg-neutral-100 px-1.5 py-0.5 text-[10px] uppercase text-neutral-500">
+          <span className="shrink-0 rounded bg-bg-subtle px-1.5 py-0.5 text-[10px] uppercase text-fg-muted">
             {tech.provider}
           </span>
         ) : null}

@@ -2,81 +2,233 @@
 @tailwind components;
 @tailwind utilities;
 
-html,
-body,
-:root {
-  height: 100%;
-}
- 
+/**
+ * Design tokens.
+ *
+ * Two systems live here on purpose. The `--foo` triples are the product's own
+ * palette, written as space-separated RGB so Tailwind's opacity modifiers work
+ * (`bg-panel/60`). The shadcn `--background`-style HSL variables are kept and
+ * retuned to match, so the existing Radix primitives inherit the new theme
+ * without being rewritten.
+ *
+ * The palette is Linear's density with Clerk's surface craft: a near-neutral
+ * ground, one violet accent, and status colours that hold their meaning in
+ * both themes rather than being picked per component.
+ */
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Surfaces, back to front. */
+    --bg: 250 250 251;
+    --bg-subtle: 244 244 246;
+    --panel: 255 255 255;
+    --panel-raised: 255 255 255;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
- 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
- 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
- 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
- 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
- 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
- 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --border: 230 230 234;
+    --border-strong: 214 214 220;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
- 
+    /* Text, in descending emphasis. */
+    --fg: 24 24 27;
+    --fg-muted: 106 106 118;
+    --fg-subtle: 148 148 160;
+
+    --accent: 108 71 255;
+    --accent-hover: 96 60 240;
+    --accent-fg: 255 255 255;
+    --accent-subtle: 240 237 255;
+    --accent-border: 214 205 255;
+
+    /* Status. One definition, used everywhere a status is shown. */
+    --backlog: 148 148 160;
+    --todo: 14 165 233;
+    --progress: 245 158 11;
+    --review: 139 92 246;
+    --done: 16 185 129;
+    --danger: 244 63 94;
+
+    --shadow-sm: 0 1px 2px 0 rgb(18 18 23 / 0.04);
+    --shadow: 0 1px 3px 0 rgb(18 18 23 / 0.06), 0 1px 2px -1px rgb(18 18 23 / 0.04);
+    --shadow-md: 0 4px 12px -2px rgb(18 18 23 / 0.08), 0 2px 6px -2px rgb(18 18 23 / 0.04);
+    --shadow-lg: 0 12px 32px -8px rgb(18 18 23 / 0.12), 0 4px 12px -4px rgb(18 18 23 / 0.06);
+
     --radius: 0.5rem;
+
+    /* shadcn compatibility, retuned to the palette above. */
+    --background: 0 0% 100%;
+    --foreground: 240 6% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 6% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 6% 10%;
+    --primary: 252 100% 64%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 6% 10%;
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
+    --accent-shadcn: 240 5% 96%;
+    --destructive: 350 89% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --input: 240 6% 90%;
+    --ring: 252 100% 64%;
   }
- 
+
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
- 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
- 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
- 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
- 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
- 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
- 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
- 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
- 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --bg: 11 11 15;
+    --bg-subtle: 8 8 11;
+    --panel: 19 19 23;
+    --panel-raised: 26 26 31;
+
+    --border: 35 35 41;
+    --border-strong: 52 52 60;
+
+    --fg: 237 237 239;
+    --fg-muted: 150 150 162;
+    --fg-subtle: 105 105 118;
+
+    --accent: 132 108 255;
+    --accent-hover: 146 124 255;
+    --accent-fg: 255 255 255;
+    --accent-subtle: 32 26 62;
+    --accent-border: 62 50 112;
+
+    --backlog: 105 105 118;
+    --todo: 56 189 248;
+    --progress: 251 191 36;
+    --review: 167 139 250;
+    --done: 52 211 153;
+    --danger: 251 113 133;
+
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.3);
+    --shadow-md: 0 4px 12px -2px rgb(0 0 0 / 0.5), 0 2px 6px -2px rgb(0 0 0 / 0.3);
+    --shadow-lg: 0 12px 32px -8px rgb(0 0 0 / 0.6), 0 4px 12px -4px rgb(0 0 0 / 0.4);
+
+    --background: 240 15% 5%;
+    --foreground: 240 6% 93%;
+    --card: 240 10% 8%;
+    --card-foreground: 240 6% 93%;
+    --popover: 240 10% 8%;
+    --popover-foreground: 240 6% 93%;
+    --primary: 252 100% 71%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 8% 14%;
+    --secondary-foreground: 240 6% 93%;
+    --muted: 240 8% 14%;
+    --muted-foreground: 240 5% 60%;
+    --destructive: 350 95% 71%;
+    --destructive-foreground: 240 15% 5%;
+    --input: 240 8% 18%;
+    --ring: 252 100% 71%;
   }
 }
- 
+
 @layer base {
+  html,
+  body,
+  :root {
+    height: 100%;
+  }
+
   * {
-    @apply border-border;
+    border-color: rgb(var(--border));
   }
+
   body {
-    @apply bg-background text-foreground;
+    background-color: rgb(var(--bg));
+    color: rgb(var(--fg));
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    /* Tabular figures keep counts and diffs from shifting as they change. */
+    font-feature-settings: "cv11", "ss01";
   }
+
+  /**
+   * One focus ring for the whole app.
+   *
+   * `:focus-visible` rather than `:focus` so a mouse click never draws it but
+   * every keyboard path does -- the tool is meant to be driven from the
+   * keyboard, and an invisible focus position makes that impossible.
+   */
+  :focus-visible {
+    outline: 2px solid rgb(var(--accent));
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background-color: rgb(var(--accent) / 0.25);
+  }
+}
+
+@layer utilities {
+  /* Thin, self-effacing scrollbars; the dense views have many of them. */
+  .scrollbar-slim {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--border-strong)) transparent;
+  }
+  .scrollbar-slim::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .scrollbar-slim::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-slim::-webkit-scrollbar-thumb {
+    background-color: rgb(var(--border-strong));
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+}
+
+/**
+ * React Flow's own chrome.
+ *
+ * The library ships light-only styling for the minimap, controls and node
+ * selection. Rather than fork its stylesheet, point its published custom
+ * properties and the few hard-coded surfaces at our tokens, so the canvas
+ * follows the theme without any component knowing about it.
+ */
+/*
+ * NOT wrapped in @layer.
+ *
+ * Unlayered CSS beats layered CSS in the cascade, and React Flow's stylesheet
+ * is unlayered -- so the same rules inside `@layer components` were silently
+ * losing and the minimap stayed white in dark mode.
+ */
+.react-flow {
+  --xy-background-color: rgb(var(--bg));
+  --xy-edge-stroke-default: rgb(var(--fg-subtle));
+  --xy-edge-stroke-selected-default: rgb(var(--accent));
+  --xy-connectionline-stroke-default: rgb(var(--accent));
+  --xy-handle-background-color-default: rgb(var(--panel));
+  --xy-handle-border-color-default: rgb(var(--accent));
+  --xy-selection-background-color-default: rgb(var(--accent) / 0.06);
+  --xy-selection-border-default: 1px dotted rgb(var(--accent) / 0.6);
+}
+
+/*
+ * The minimap is driven through React Flow's published variables rather than
+ * by restyling its elements: a `maskColor`/`nodeColor` prop compiles to
+ * `--xy-minimap-*-props`, which outranks any stylesheet rule.
+ */
+.react-flow__minimap {
+  --xy-minimap-background-color: rgb(var(--panel));
+  --xy-minimap-mask-background-color: rgb(var(--bg-subtle) / 0.65);
+  --xy-minimap-mask-stroke-color: rgb(var(--border-strong));
+  --xy-minimap-node-background-color: rgb(var(--border-strong));
+  --xy-minimap-node-stroke-color: rgb(var(--border-strong));
+  border-radius: 0.5rem;
+}
+
+.react-flow__attribution,
+.react-flow__attribution a {
+  background: transparent;
+  color: rgb(var(--fg-subtle));
+}
+
+/* Edge labels are chips floating over the canvas, so they follow the theme. */
+.react-flow__edge-textbg {
+  fill: rgb(var(--panel));
 }

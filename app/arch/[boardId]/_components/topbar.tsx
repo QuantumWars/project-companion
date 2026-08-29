@@ -74,7 +74,7 @@ export const Topbar = ({
   const title = source === "file" ? fileTitle ?? boardId : board?.title ?? "Untitled";
 
   return (
-    <header className="absolute inset-x-0 top-0 z-30 flex h-14 items-center gap-x-3 border-b border-neutral-200 bg-white px-3">
+    <header className="absolute inset-x-0 top-0 z-30 flex h-14 items-center gap-x-3 border-b border-line bg-panel px-3">
       <Hint label="Go to boards" side="bottom" sideOffset={8}>
         <Button asChild variant="ghost" size="icon" className="shrink-0">
           <Link href="/">
@@ -91,7 +91,7 @@ export const Topbar = ({
 
       {source === "file" ? (
         <div className="flex min-w-0 items-center gap-x-2">
-          <span className="truncate text-sm font-medium text-neutral-800">
+          <span className="truncate text-sm font-medium text-fg">
             {title}
           </span>
           {/* Say which store is being edited -- the difference matters. */}
@@ -100,14 +100,14 @@ export const Topbar = ({
       ) : (
         <>
           <Actions id={boardId} title={title} side="bottom" sideOffset={8}>
-            <button className="flex min-w-0 items-center gap-x-1.5 rounded px-2 py-1 text-sm font-medium text-neutral-800 hover:bg-neutral-100">
+            <button className="flex min-w-0 items-center gap-x-1.5 rounded px-2 py-1 text-sm font-medium text-fg hover:bg-bg-subtle">
               <span className="truncate">{title}</span>
-              <ChevronDown className="h-3.5 w-3.5 shrink-0 text-neutral-400" />
+              <ChevronDown className="h-3.5 w-3.5 shrink-0 text-fg-subtle" />
             </button>
           </Actions>
           <button
             onClick={() => board && onOpen(board.id, board.title)}
-            className="shrink-0 rounded px-1.5 py-1 text-xs text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700"
+            className="shrink-0 rounded px-1.5 py-1 text-xs text-fg-subtle hover:bg-bg-subtle hover:text-fg"
           >
             Rename
           </button>
@@ -120,7 +120,7 @@ export const Topbar = ({
       <div className="pointer-events-none absolute inset-x-0 flex justify-center">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="pointer-events-auto flex min-w-[112px] items-center justify-center gap-x-2 rounded-full bg-neutral-900 px-4 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-neutral-800">
+            <button className="pointer-events-auto flex min-w-[112px] items-center justify-center gap-x-2 rounded-full bg-brand px-4 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-neutral-800">
               {mounted ? current.label : "\u00a0"}
               <ChevronDown className="h-3 w-3 opacity-70" />
             </button>
@@ -131,7 +131,7 @@ export const Topbar = ({
                 key={type.id}
                 className={cn(
                   "cursor-pointer text-sm",
-                  type.id === diagramType && "font-medium text-blue-600",
+                  type.id === diagramType && "font-medium text-brand",
                 )}
                 onClick={() => onDiagramTypeChange(type.id)}
               >

@@ -89,7 +89,7 @@ export const SelectionTools = memo(({
 
   return (
     <div
-      className="absolute p-3 rounded-xl bg-white shadow-sm border flex select-none"
+      className="absolute p-3 rounded-xl bg-panel shadow-sm border flex select-none"
       style={{
         transform: `translate(
           calc(${x}px - 50%),
@@ -120,7 +120,7 @@ export const SelectionTools = memo(({
           </Button>
         </Hint>
       </div>
-      <div className="flex items-center pl-2 ml-2 border-l border-neutral-200">
+      <div className="flex items-center pl-2 ml-2 border-l border-line">
         <Hint label="Delete">
           <Button
             variant="board"

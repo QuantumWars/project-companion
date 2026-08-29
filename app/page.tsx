@@ -84,17 +84,17 @@ const DashboardPage = () => {
       {project?.configured && project.diagrams?.length ? (
         <section className="mb-10">
           <div className="mb-3 flex items-center gap-x-2">
-            <FolderGit2 className="h-4 w-4 text-emerald-600" />
-            <h2 className="text-sm font-semibold text-neutral-800">
+            <FolderGit2 className="h-4 w-4 text-status-done" />
+            <h2 className="text-sm font-semibold text-fg">
               {project.name}
             </h2>
             <StoreBadge />
-            <span className="truncate text-xs text-neutral-400">
+            <span className="truncate text-xs text-fg-subtle">
               {project.root}
             </span>
             <Link
               href="/project/tasks"
-              className="ml-auto rounded-md border border-neutral-200 px-2.5 py-1 text-xs font-medium text-neutral-700 hover:bg-neutral-100"
+              className="ml-auto rounded-md border border-line px-2.5 py-1 text-xs font-medium text-fg hover:bg-bg-subtle"
             >
               Task board
             </Link>
@@ -108,17 +108,17 @@ const DashboardPage = () => {
                     ? `/project/board/${d.id}`
                     : `/project/${d.id}`
                 }
-                className="group rounded-lg border border-neutral-200 bg-white p-4 transition-colors hover:border-emerald-400"
+                className="group rounded-lg border border-line bg-panel p-4 transition-colors hover:border-emerald-400"
               >
                 {d.kind === "whiteboard" ? (
-                  <Pencil className="mb-3 h-6 w-6 text-amber-500" />
+                  <Pencil className="mb-3 h-6 w-6 text-status-progress" />
                 ) : (
-                  <Network className="mb-3 h-6 w-6 text-emerald-500" />
+                  <Network className="mb-3 h-6 w-6 text-status-done" />
                 )}
-                <p className="truncate text-sm font-medium text-neutral-800">
+                <p className="truncate text-sm font-medium text-fg">
                   {d.title}
                 </p>
-                <p className="truncate text-xs text-neutral-400">
+                <p className="truncate text-xs text-fg-subtle">
                   {d.kind === "whiteboard" ? "whiteboard" : d.type}
                 </p>
               </Link>
@@ -130,30 +130,30 @@ const DashboardPage = () => {
       {indexed.projects.length > 1 ? (
         <section className="mb-10">
           <div className="mb-3 flex items-center gap-x-2">
-            <FolderGit2 className="h-4 w-4 text-neutral-500" />
-            <h2 className="text-sm font-semibold text-neutral-800">
+            <FolderGit2 className="h-4 w-4 text-fg-muted" />
+            <h2 className="text-sm font-semibold text-fg">
               All projects on this machine
             </h2>
-            <span className="text-xs text-neutral-400">
+            <span className="text-xs text-fg-subtle">
               {indexed.projects.length}
             </span>
           </div>
-          <div className="divide-y divide-neutral-100 rounded-lg border border-neutral-200 bg-white">
+          <div className="divide-y divide-line rounded-lg border border-line bg-panel">
             {indexed.projects.map((p) => (
               <div
                 key={p.path}
                 className="flex items-center gap-x-3 px-4 py-2.5 text-sm"
               >
-                <span className="font-medium text-neutral-800">{p.name}</span>
+                <span className="font-medium text-fg">{p.name}</span>
                 {p.path === indexed.current ? (
-                  <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-700">
+                  <span className="rounded bg-status-done/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-status-done">
                     open here
                   </span>
                 ) : null}
-                <span className="ml-auto shrink-0 text-xs text-neutral-400">
+                <span className="ml-auto shrink-0 text-xs text-fg-subtle">
                   {p.diagrams} diagrams &middot; {p.tasks} tasks
                 </span>
-                <span className="w-[38%] truncate text-xs text-neutral-400">
+                <span className="w-[38%] truncate text-xs text-fg-subtle">
                   {p.path}
                 </span>
               </div>
@@ -193,12 +193,12 @@ const DashboardPage = () => {
             return (
               <div
                 key={board.id}
-                className="group flex aspect-[100/127] flex-col justify-between overflow-hidden rounded-lg border bg-white"
+                className="group flex aspect-[100/127] flex-col justify-between overflow-hidden rounded-lg border bg-panel"
               >
                 <Link
                   href={boardHref(board)}
                   className={`relative flex flex-1 items-center justify-center ${
-                    isArch ? "bg-sky-50" : "bg-amber-50"
+                    isArch ? "bg-status-todo/10" : "bg-status-progress/10"
                   }`}
                 >
                   {isArch ? (

@@ -122,27 +122,27 @@ export const Delivery = ({
   }
 
   return (
-    <section className="rounded-lg border border-neutral-200 bg-white">
-      <div className="border-b border-neutral-100 px-4 py-3">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+    <section className="rounded-lg border border-line bg-panel">
+      <div className="border-b border-line px-4 py-3">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-fg-muted">
           Delivery
         </h2>
-        <p className="mt-1 text-xs text-neutral-500">
+        <p className="mt-1 text-xs text-fg-muted">
           What the PRD claims, beside what the repository shows.{" "}
-          <span className="text-neutral-700">
+          <span className="text-fg">
             {evidenced} of {rows.length} features have commit evidence.
           </span>
         </p>
       </div>
 
       {flagged.length ? (
-        <ul className="border-b border-neutral-100 bg-amber-50/40">
+        <ul className="border-b border-line bg-status-progress/5">
           {flagged.map((row) => (
             <li
               key={row.feature.id}
-              className="flex items-start gap-x-2 px-4 py-2 text-xs text-amber-900"
+              className="flex items-start gap-x-2 px-4 py-2 text-xs text-status-progress"
             >
-              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-status-progress" />
               <span>
                 <span className="font-medium">{row.feature.title}</span>{" "}
                 {row.unevidenced
@@ -154,18 +154,18 @@ export const Delivery = ({
         </ul>
       ) : null}
 
-      <ul className="divide-y divide-neutral-50">
+      <ul className="divide-y divide-line">
         {rows.map((row) => {
           const churn = row.insertions + row.deletions;
           return (
             <li key={row.feature.id} className="flex items-center gap-x-3 px-4 py-2.5">
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-x-2">
-                  <span className="truncate text-sm text-neutral-800">
+                  <span className="truncate text-sm text-fg">
                     {row.feature.title}
                   </span>
                   {row.phase ? (
-                    <span className="shrink-0 rounded bg-neutral-100 px-1.5 py-0.5 text-[10px] text-neutral-500">
+                    <span className="shrink-0 rounded bg-bg-subtle px-1.5 py-0.5 text-[10px] text-fg-muted">
                       {row.phase.name}
                     </span>
                   ) : null}
@@ -173,18 +173,18 @@ export const Delivery = ({
 
                 {/* Claim: acceptance criteria ticked in the PRD. */}
                 <span className="mt-1 flex items-center gap-x-2">
-                  <span className="h-1 w-28 overflow-hidden rounded-full bg-neutral-100">
+                  <span className="h-1 w-28 overflow-hidden rounded-full bg-bg-subtle">
                     <span
                       className={cn(
                         "block h-full",
                         row.done === row.total && row.total > 0
-                          ? "bg-emerald-500"
-                          : "bg-amber-400",
+                          ? "bg-status-done"
+                          : "bg-status-progress",
                       )}
                       style={{ width: `${row.total ? (row.done / row.total) * 100 : 0}%` }}
                     />
                   </span>
-                  <span className="text-[11px] tabular-nums text-neutral-400">
+                  <span className="text-[11px] tabular-nums text-fg-subtle">
                     {row.done}/{row.total} criteria
                   </span>
                 </span>
@@ -194,29 +194,29 @@ export const Delivery = ({
               <span className="flex w-40 shrink-0 items-center justify-end gap-x-2">
                 {churn ? (
                   <>
-                    <span className="font-mono text-[11px] text-neutral-400">
-                      <span className="text-emerald-600">+{row.insertions}</span>{" "}
-                      <span className="text-rose-500">&minus;{row.deletions}</span>
+                    <span className="font-mono text-[11px] text-fg-subtle">
+                      <span className="text-status-done">+{row.insertions}</span>{" "}
+                      <span className="text-status-danger">&minus;{row.deletions}</span>
                     </span>
                     <span
-                      className="h-1.5 rounded-full bg-sky-400"
+                      className="h-1.5 rounded-full bg-status-todo"
                       style={{ width: `${Math.max(4, (churn / maxChurn) * 64)}px` }}
                       title={`${churn} lines changed across ${row.commits.length} commits`}
                     />
                   </>
                 ) : (
-                  <span className="text-[11px] text-neutral-300">no commits</span>
+                  <span className="text-[11px] text-fg-subtle">no commits</span>
                 )}
               </span>
 
-              <span className="flex w-16 shrink-0 items-center justify-end gap-x-1 text-xs text-neutral-500">
+              <span className="flex w-16 shrink-0 items-center justify-end gap-x-1 text-xs text-fg-muted">
                 {row.commits.length ? (
                   <>
                     <GitCommit className="h-3 w-3" />
                     {row.commits.length}
                   </>
                 ) : row.feature.status === "done" ? (
-                  <Check className="h-3.5 w-3.5 text-emerald-500" />
+                  <Check className="h-3.5 w-3.5 text-status-done" />
                 ) : null}
               </span>
             </li>

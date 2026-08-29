@@ -462,7 +462,7 @@ const Flow = ({ boardId, source }: FlowProps) => {
   }, [store]);
 
   return (
-    <main className="relative h-full w-full touch-none bg-neutral-50 pt-14">
+    <main className="relative h-full w-full touch-none bg-bg pt-14">
       <Topbar
         boardId={boardId}
         source={source}
@@ -532,13 +532,22 @@ const Flow = ({ boardId, source }: FlowProps) => {
         minZoom={0.1}
         maxZoom={2.5}
       >
-        <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="#cbd5e1" />
+        <Background
+          variant={BackgroundVariant.Dots}
+          gap={16}
+          size={1}
+          color="rgb(var(--border-strong))"
+        />
+        {/*
+          No maskColor/nodeColor props: React Flow turns those into
+          `--xy-minimap-*-props`, which outrank anything a stylesheet can say.
+          Hardcoding them there is what pinned the minimap to light. The colours
+          come from tokens in globals.css instead.
+        */}
         <MiniMap
           pannable
           zoomable
-          className="!bottom-16 !right-3 !rounded-lg !border !border-neutral-200 !shadow-md"
-          maskColor="rgba(241,245,249,0.7)"
-          nodeColor="#cbd5e1"
+          className="!bottom-16 !right-3 !rounded-lg !border !border-line !shadow-md"
         />
       </ReactFlow>
     </main>

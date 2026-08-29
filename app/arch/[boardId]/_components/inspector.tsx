@@ -64,21 +64,21 @@ export const Inspector = ({ node, onChange, onChangeTech }: InspectorProps) => {
   const restricted = tech && iconLicense(tech.id) === "vendor-restricted";
 
   return (
-    <aside className="absolute right-2 top-2 z-20 w-[268px] rounded-lg border border-neutral-200 bg-white p-3 shadow-lg">
-      <p className="mb-3 text-[11px] font-medium uppercase tracking-wide text-neutral-400">
+    <aside className="absolute right-2 top-2 z-20 w-[268px] rounded-lg border border-line bg-panel p-3 shadow-lg">
+      <p className="mb-3 text-[11px] font-medium uppercase tracking-wide text-fg-subtle">
         Node
       </p>
 
-      <div className="mb-3 flex items-center gap-x-2.5 rounded-md border border-neutral-200 p-2">
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-neutral-50">
+      <div className="mb-3 flex items-center gap-x-2.5 rounded-md border border-line p-2">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-bg-subtle">
           <TechIcon techId={data.tech} size={20} />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm text-neutral-800">
+          <p className="truncate text-sm text-fg">
             {tech?.label ?? "No technology"}
           </p>
           {restricted ? (
-            <p className="truncate text-[10px] text-neutral-400">
+            <p className="truncate text-[10px] text-fg-subtle">
               Vendor mark &middot; not recoloured
             </p>
           ) : null}
@@ -94,14 +94,14 @@ export const Inspector = ({ node, onChange, onChangeTech }: InspectorProps) => {
         </Button>
       </div>
 
-      <label className="mb-1 block text-xs text-neutral-500">Label</label>
+      <label className="mb-1 block text-xs text-fg-muted">Label</label>
       <Input
         value={data.label}
         onChange={(e) => onChange({ label: e.target.value })}
         className="mb-3 h-8"
       />
 
-      <label className="mb-1 block text-xs text-neutral-500">Sublabel</label>
+      <label className="mb-1 block text-xs text-fg-muted">Sublabel</label>
       <Input
         value={data.sublabel ?? ""}
         placeholder="v16 - primary"
@@ -119,19 +119,19 @@ const GroupInspector = ({
   data: GroupData;
   onChange: (patch: Partial<GroupData>) => void;
 }) => (
-  <aside className="absolute right-2 top-2 z-20 w-[268px] rounded-lg border border-neutral-200 bg-white p-3 shadow-lg">
-    <p className="mb-3 text-[11px] font-medium uppercase tracking-wide text-neutral-400">
+  <aside className="absolute right-2 top-2 z-20 w-[268px] rounded-lg border border-line bg-panel p-3 shadow-lg">
+    <p className="mb-3 text-[11px] font-medium uppercase tracking-wide text-fg-subtle">
       Container
     </p>
 
-    <label className="mb-1 block text-xs text-neutral-500">Label</label>
+    <label className="mb-1 block text-xs text-fg-muted">Label</label>
     <Input
       value={data.label}
       onChange={(e) => onChange({ label: e.target.value })}
       className="mb-3 h-8"
     />
 
-    <label className="mb-1.5 block text-xs text-neutral-500">Type</label>
+    <label className="mb-1.5 block text-xs text-fg-muted">Type</label>
     <div className="flex flex-wrap gap-1">
       {GROUP_VARIANTS.map((variant) => (
         <button
@@ -148,8 +148,8 @@ const GroupInspector = ({
           className={cn(
             "rounded border px-2 py-1 text-xs capitalize transition-colors",
             data.variant === variant
-              ? "border-blue-500 bg-blue-50 text-blue-700"
-              : "border-neutral-200 text-neutral-600 hover:bg-neutral-50",
+              ? "border-brand bg-brand-subtle text-blue-700"
+              : "border-line text-fg-muted hover:bg-bg-subtle",
           )}
         >
           {variant}
@@ -159,11 +159,11 @@ const GroupInspector = ({
 
     {data.variant === "frame" ? (
       <>
-        <label className="mb-1 mt-3 block text-xs text-neutral-500">Diagram</label>
+        <label className="mb-1 mt-3 block text-xs text-fg-muted">Diagram</label>
         <select
           value={data.diagramType ?? "flowchart"}
           onChange={(e) => onChange({ diagramType: e.target.value as DiagramType })}
-          className="h-8 w-full rounded-md border border-neutral-200 px-2 text-xs outline-none focus:border-neutral-400"
+          className="h-8 w-full rounded-md border border-line px-2 text-xs outline-none focus:border-brand"
         >
           {DIAGRAM_TYPE_IDS.map((id) => (
             <option key={id} value={id}>
@@ -171,7 +171,7 @@ const GroupInspector = ({
             </option>
           ))}
         </select>
-        <p className="mt-1.5 text-[11px] leading-snug text-neutral-400">
+        <p className="mt-1.5 text-[11px] leading-snug text-fg-subtle">
           Tidy up lays this frame out under its own rules, so it can hold a different
           kind of diagram from the rest of the board.
         </p>
@@ -200,19 +200,19 @@ const ShapeInspector = ({
   const current = getGeometry(data.geometry);
 
   return (
-    <aside className="absolute right-2 top-2 z-20 max-h-[80vh] w-[268px] overflow-y-auto rounded-lg border border-neutral-200 bg-white p-3 shadow-lg">
-      <p className="mb-3 text-[11px] font-medium uppercase tracking-wide text-neutral-400">
+    <aside className="absolute right-2 top-2 z-20 max-h-[80vh] w-[268px] overflow-y-auto rounded-lg border border-line bg-panel p-3 shadow-lg">
+      <p className="mb-3 text-[11px] font-medium uppercase tracking-wide text-fg-subtle">
         Shape
       </p>
 
-      <label className="mb-1 block text-xs text-neutral-500">Label</label>
+      <label className="mb-1 block text-xs text-fg-muted">Label</label>
       <Input
         value={data.label}
         onChange={(e) => onChange({ label: e.target.value })}
         className="mb-3 h-8"
       />
 
-      <label className="mb-1.5 block text-xs text-neutral-500">Colour</label>
+      <label className="mb-1.5 block text-xs text-fg-muted">Colour</label>
       <div className="mb-3 flex flex-wrap gap-1">
         {TONES.map((tone) => (
           <button
@@ -223,14 +223,14 @@ const ShapeInspector = ({
             className={cn(
               "h-6 w-6 rounded border-2 transition-colors",
               (data.tone ?? "neutral") === tone.id
-                ? "border-blue-500"
-                : "border-neutral-200 hover:border-neutral-400",
+                ? "border-brand"
+                : "border-line hover:border-neutral-400",
             )}
           />
         ))}
       </div>
 
-      <label className="mb-1.5 block text-xs text-neutral-500">
+      <label className="mb-1.5 block text-xs text-fg-muted">
         Geometry &middot; {current.label}
       </label>
       <div className="grid grid-cols-5 gap-1">
@@ -245,8 +245,8 @@ const ShapeInspector = ({
               className={cn(
                 "flex items-center justify-center rounded border p-1 transition-colors",
                 active
-                  ? "border-blue-500 bg-blue-50"
-                  : "border-neutral-200 hover:bg-neutral-50",
+                  ? "border-brand bg-brand-subtle"
+                  : "border-line hover:bg-bg-subtle",
               )}
             >
               <svg width={30} height={22} viewBox="0 0 30 22" className="overflow-visible">

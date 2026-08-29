@@ -3,7 +3,7 @@
   "id": "archboard-architecture",
   "title": "Project Companion architecture",
   "type": "architecture",
-  "updatedAt": "2026-08-28T20:34:06.787Z",
+  "updatedAt": "2026-08-29T14:35:46.040Z",
   "nodes": [
     {
       "id": "db683a06",
@@ -255,7 +255,7 @@
         "tech": "nodejs"
       },
       "measured": {
-        "width": 190,
+        "width": 231,
         "height": 54
       }
     },
@@ -581,8 +581,8 @@
     }
   ],
   "viewport": {
-    "x": 242.01885853402206,
-    "y": 283.2812868032513,
-    "zoom": 0.7402066490000242
+    "x": -92.77496835605791,
+    "y": -33.270326849852665,
+    "zoom": 0.56330961424864
   }
 }

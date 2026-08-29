@@ -10,11 +10,11 @@ import { useRoadmap } from "@/lib/project/use-roadmap";
 import { cn } from "@/lib/utils";
 
 const STATUS_COLOR: Record<TaskStatus, string> = {
-  backlog: "bg-neutral-300",
-  todo: "bg-sky-400",
-  in_progress: "bg-amber-400",
-  review: "bg-violet-400",
-  done: "bg-emerald-500",
+  backlog: "bg-status-backlog",
+  todo: "bg-status-todo",
+  in_progress: "bg-status-progress",
+  review: "bg-status-review",
+  done: "bg-status-done",
 };
 
 const STATUS_LABEL: Record<TaskStatus, string> = {
@@ -61,7 +61,7 @@ export const Overview = ({
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold text-neutral-900">Overview</h1>
+      <h1 className="text-xl font-semibold text-fg">Overview</h1>
 
       <div className="grid gap-3 sm:grid-cols-3">
         <Stat
@@ -85,8 +85,8 @@ export const Overview = ({
       </div>
 
       {roadmap.phases.length ? (
-        <section className="rounded-lg border border-neutral-200 bg-white p-4">
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+        <section className="rounded-lg border border-line bg-panel p-4">
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-fg-muted">
             Phases
           </h2>
           <div className="space-y-3">
@@ -97,16 +97,16 @@ export const Overview = ({
               return (
                 <div key={phase.id}>
                   <div className="mb-1 flex items-baseline gap-x-2 text-sm">
-                    <span className="font-medium text-neutral-800">{phase.name}</span>
-                    <span className="text-xs text-neutral-400">
+                    <span className="font-medium text-fg">{phase.name}</span>
+                    <span className="text-xs text-fg-subtle">
                       {done}/{features.length}
                     </span>
                     {phase.goal ? (
-                      <span className="truncate text-xs text-neutral-400">{phase.goal}</span>
+                      <span className="truncate text-xs text-fg-subtle">{phase.goal}</span>
                     ) : null}
                   </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-neutral-100">
-                    <div className="h-full bg-emerald-500" style={{ width: `${pct}%` }} />
+                  <div className="h-1.5 overflow-hidden rounded-full bg-bg-subtle">
+                    <div className="h-full bg-status-done" style={{ width: `${pct}%` }} />
                   </div>
                 </div>
               );
@@ -116,8 +116,8 @@ export const Overview = ({
       ) : null}
 
       <div className="grid gap-3 md:grid-cols-2">
-        <section className="rounded-lg border border-neutral-200 bg-white p-4">
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+        <section className="rounded-lg border border-line bg-panel p-4">
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-fg-muted">
             Work in flight
           </h2>
           <div className="space-y-1.5">
@@ -126,16 +126,16 @@ export const Overview = ({
               return (
                 <div key={status} className="flex items-center gap-x-2 text-sm">
                   <span className={cn("h-2 w-2 rounded-full", STATUS_COLOR[status])} />
-                  <span className="flex-1 text-neutral-600">{STATUS_LABEL[status]}</span>
-                  <span className="tabular-nums text-neutral-400">{count}</span>
+                  <span className="flex-1 text-fg-muted">{STATUS_LABEL[status]}</span>
+                  <span className="tabular-nums text-fg-subtle">{count}</span>
                 </div>
               );
             })}
           </div>
         </section>
 
-        <section className="rounded-lg border border-neutral-200 bg-white p-4">
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+        <section className="rounded-lg border border-line bg-panel p-4">
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-fg-muted">
             Diagrams
           </h2>
           {diagrams.length ? (
@@ -146,15 +146,15 @@ export const Overview = ({
                     href={href(
                       d.kind === "whiteboard" ? `/project/board/${d.id}` : `/project/diagram/${d.id}`,
                     )}
-                    className="flex items-center gap-x-2 text-sm text-neutral-700 hover:text-neutral-950"
+                    className="flex items-center gap-x-2 text-sm text-fg hover:text-fg"
                   >
                     {d.kind === "whiteboard" ? (
-                      <Pencil className="h-3.5 w-3.5 text-amber-500" />
+                      <Pencil className="h-3.5 w-3.5 text-status-progress" />
                     ) : (
-                      <Network className="h-3.5 w-3.5 text-emerald-500" />
+                      <Network className="h-3.5 w-3.5 text-status-done" />
                     )}
                     <span className="flex-1 truncate">{d.title}</span>
-                    <span className="text-xs text-neutral-400">
+                    <span className="text-xs text-fg-subtle">
                       {d.kind === "whiteboard" ? "whiteboard" : d.type}
                     </span>
                   </Link>
@@ -162,24 +162,24 @@ export const Overview = ({
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-neutral-400">No diagrams yet.</p>
+            <p className="text-sm text-fg-subtle">No diagrams yet.</p>
           )}
         </section>
       </div>
 
       {commits.length ? (
-        <section className="rounded-lg border border-neutral-200 bg-white p-4">
-          <h2 className="mb-3 flex items-center gap-x-1.5 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+        <section className="rounded-lg border border-line bg-panel p-4">
+          <h2 className="mb-3 flex items-center gap-x-1.5 text-xs font-semibold uppercase tracking-wide text-fg-muted">
             <GitCommit className="h-3 w-3" />
             Latest commits
           </h2>
           <ul className="space-y-1">
             {commits.slice(0, 5).map((commit) => (
               <li key={commit.sha} className="flex items-baseline gap-x-2 text-sm">
-                <span className="font-mono text-xs text-neutral-400">{commit.short}</span>
-                <span className="min-w-0 flex-1 truncate text-neutral-700">{commit.subject}</span>
+                <span className="font-mono text-xs text-fg-subtle">{commit.short}</span>
+                <span className="min-w-0 flex-1 truncate text-fg">{commit.subject}</span>
                 {commit.signal ? (
-                  <span className="shrink-0 text-[10px] uppercase tracking-wide text-neutral-400">
+                  <span className="shrink-0 text-[10px] uppercase tracking-wide text-fg-subtle">
                     {commit.signal}
                   </span>
                 ) : null}
@@ -205,10 +205,10 @@ const Stat = ({
 }) => (
   <Link
     href={href}
-    className="rounded-lg border border-neutral-200 bg-white p-4 transition-colors hover:border-neutral-400"
+    className="rounded-lg border border-line bg-panel p-4 transition-colors hover:border-line-strong"
   >
-    <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">{label}</p>
-    <p className="mt-1 text-2xl font-semibold tabular-nums text-neutral-900">{value}</p>
-    <p className="mt-0.5 text-xs text-neutral-400">{hint}</p>
+    <p className="text-xs font-medium uppercase tracking-wide text-fg-muted">{label}</p>
+    <p className="mt-1 text-2xl font-semibold tabular-nums text-fg">{value}</p>
+    <p className="mt-0.5 text-xs text-fg-subtle">{hint}</p>
   </Link>
 );
