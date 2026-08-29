@@ -57,3 +57,6 @@ next-env.d.ts
 
 # derived git attribution; safe to delete at any time
 /.project-cache/
+
+# transient write lock
+/.project.lock

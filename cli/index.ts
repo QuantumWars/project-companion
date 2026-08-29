@@ -15,6 +15,7 @@ import {
   createDiagram,
   createTask,
   createWhiteboard,
+  deleteDiagram,
   deleteProject,
   deleteTask,
   findProject,
@@ -73,6 +74,8 @@ project-companion - architecture and task boards that live in your repo
   project-companion diagram new <title> [--type architecture|flowchart|erd|...]
   project-companion diagram import <file> [--title T] [--id ID]
                                      SQL DDL or Prisma schema -> ER diagram
+
+  project-companion diagram rm <id>          delete a diagram
 
   project-companion board new <title>        create a freehand whiteboard
 
@@ -422,6 +425,13 @@ const main = () => {
       const type = (flag("type") ?? "architecture") as DiagramType;
       const diagram = createDiagram(root, title, type);
       process.stdout.write(`Created ${diagram.id}\n`);
+      return;
+    }
+
+    if (sub === "rm" || sub === "delete") {
+      const id = rest[0] ?? die("Usage: project-companion diagram rm <id>");
+      if (!deleteDiagram(root, id)) die(`No diagram "${id}"`);
+      process.stdout.write(`Deleted ${id}\n`);
       return;
     }
 

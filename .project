@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-08-29T16:16:46.380Z",
-  "revision": 3,
+  "updatedAt": "2026-08-29T16:34:06.214Z",
+  "revision": 14,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -11,7 +11,7 @@
       "id": "archboard-architecture",
       "title": "Project Companion architecture",
       "type": "architecture",
-      "updatedAt": "2026-08-29T14:40:11.504Z",
+      "updatedAt": "2026-08-29T16:32:59.409Z",
       "nodes": [
         {
           "id": "db683a06",
@@ -43,7 +43,7 @@
             "tech": "nextjs"
           },
           "measured": {
-            "width": 222,
+            "width": 223,
             "height": 54
           }
         },
@@ -77,7 +77,7 @@
             "tech": "react"
           },
           "measured": {
-            "width": 212,
+            "width": 210,
             "height": 54
           }
         },
@@ -263,7 +263,7 @@
             "tech": "nodejs"
           },
           "measured": {
-            "width": 231,
+            "width": 232,
             "height": 54
           }
         },
@@ -297,7 +297,7 @@
             "tech": "client"
           },
           "measured": {
-            "width": 193,
+            "width": 191,
             "height": 54
           }
         },
@@ -314,7 +314,7 @@
             "tech": "typescript"
           },
           "measured": {
-            "width": 223,
+            "width": 221,
             "height": 54
           }
         },
@@ -599,7 +599,7 @@
       "id": "ticketing-schema",
       "title": "Ticketing schema",
       "type": "erd",
-      "updatedAt": "2026-08-29T08:06:35.555Z",
+      "updatedAt": "2026-08-29T16:28:16.559Z",
       "nodes": [
         {
           "id": "venues",
@@ -1118,9 +1118,9 @@
         }
       ],
       "viewport": {
-        "x": 28.308029862453452,
-        "y": 6.133078449310133,
-        "zoom": 0.944747040997206
+        "x": 560,
+        "y": -5,
+        "zoom": 1
       }
     }
   },

@@ -22,7 +22,16 @@
  * without this the later writer would silently discard the earlier one.
  */
 
-import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import {
+  closeSync,
+  existsSync,
+  openSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 
 import type {
@@ -132,23 +141,92 @@ export const writeBundle = (
   return next;
 };
 
+/* --------------------------------- locking -------------------------------- */
+
+const LOCK_SUFFIX = ".lock";
+/** A lock older than this is assumed to belong to a process that died. */
+const STALE_LOCK_MS = 10_000;
+const LOCK_TIMEOUT_MS = 5_000;
+
 /**
- * Read, change, write, once.
+ * An exclusive lock around the whole read-modify-write.
  *
- * Every mutation goes through here so the revision check is never forgotten,
- * and a caller cannot accidentally write a bundle it read minutes ago.
+ * A revision check alone is not enough across processes. Two writers can both
+ * read revision N, both find it matches, and both write N+1 -- the second
+ * erasing the first. That is a time-of-check/time-of-use race, and no amount of
+ * re-checking inside the same window closes it.
+ *
+ * `openSync` with `wx` is atomic at the filesystem level: exactly one caller
+ * creates the file and everyone else gets EEXIST. That is the primitive this
+ * needs, and it works across processes, which an in-memory mutex would not.
+ */
+const withLock = <T>(root: string, fn: () => T): T => {
+  const lock = `${bundlePath(root)}${LOCK_SUFFIX}`;
+  const started = Date.now();
+
+  for (;;) {
+    try {
+      // `wx` fails if the file exists, which is what makes this a lock rather
+      // than a write.
+      closeSync(openSync(lock, "wx"));
+      break;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+
+      // A process that crashed mid-write would otherwise wedge the project
+      // permanently, so an old lock is broken rather than waited on forever.
+      try {
+        if (Date.now() - statSync(lock).mtimeMs > STALE_LOCK_MS) {
+          rmSync(lock, { force: true });
+          continue;
+        }
+      } catch {
+        // It disappeared between the check and the stat; try to take it again.
+        continue;
+      }
+
+      if (Date.now() - started > LOCK_TIMEOUT_MS) {
+        throw new BundleConflictError(
+          "Timed out waiting for the project lock. Another process may be stuck.",
+        );
+      }
+
+      // Busy-wait deliberately: these holds are sub-millisecond, and a promise
+      // would make every caller async for no benefit.
+      const until = Date.now() + 2;
+      while (Date.now() < until) {
+        /* spin */
+      }
+    }
+  }
+
+  try {
+    return fn();
+  } finally {
+    rmSync(lock, { force: true });
+  }
+};
+
+/**
+ * Read, change, write, once and exclusively.
+ *
+ * Every mutation goes through here, so the lock can never be forgotten and a
+ * caller cannot write a bundle it read minutes ago. The change function is
+ * given fresh state read inside the lock, which is what makes concurrent edits
+ * to different parts of the project compose instead of collide.
  */
 export const mutateBundle = (
   root: string,
   change: (bundle: ProjectBundle) => void,
-): ProjectBundle | null => {
-  const bundle = readBundle(root);
-  if (!bundle) return null;
+): ProjectBundle | null =>
+  withLock(root, () => {
+    const bundle = readBundle(root);
+    if (!bundle) return null;
 
-  const revision = bundle.revision;
-  change(bundle);
-  return writeBundle(root, bundle, revision);
-};
+    const revision = bundle.revision;
+    change(bundle);
+    return writeBundle(root, bundle, revision);
+  });
 
 /** The diagram index, derived rather than stored, so it cannot drift. */
 export const bundleRefs = (bundle: ProjectBundle): DiagramRef[] => [

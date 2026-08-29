@@ -639,6 +639,30 @@ export const readTasks = (root: string): TasksFile =>
     ? { version: FORMAT_VERSION, tasks: requireBundle(root).tasks }
     : legacyReadTasks(root);
 
+/**
+ * Changes the task list inside the lock.
+ *
+ * `readTasks` then `writeTasks` is not safe under concurrency: the read happens
+ * outside the lock, so the write puts back a snapshot taken before anything
+ * else landed, silently erasing it. That is not a hypothetical -- twenty
+ * concurrent writes reliably produced seventeen tasks. Every task mutation goes
+ * through here instead, so the change is applied to state read inside the lock.
+ */
+const mutateTasks = <T>(root: string, change: (tasks: Task[]) => T): T | null => {
+  if (usesBundle(root)) {
+    let result: T | undefined;
+    const written = mutateBundle(root, (b) => {
+      result = change(b.tasks);
+    });
+    return written ? (result as T) : null;
+  }
+
+  const file = legacyReadTasks(root);
+  const result = change(file.tasks);
+  legacyWriteTasks(root, file);
+  return result;
+};
+
 export const writeTasks = (root: string, tasks: TasksFile): void => {
   if (!usesBundle(root)) return legacyWriteTasks(root, tasks);
   mutateBundle(root, (b) => {
@@ -771,127 +795,108 @@ const taskId = (taken: readonly Task[]): string => {
 };
 
 export const createTask = (root: string, input: TaskInput): Task => {
-  const file = readTasks(root);
   const status = input.status ?? "backlog";
 
-  const task: Task = {
-    id: taskId(file.tasks),
-    title: input.title,
-    description: input.description,
-    status,
-    nodeIds: input.nodeIds,
-    diagramId: input.diagramId,
-    labels: input.labels,
-    assignee: input.assignee,
-    featureId: input.featureId,
-    phaseId: input.phaseId,
-    createdAt: now(),
-    updatedAt: now(),
-    order: file.tasks.filter((t) => t.status === status).length,
-  };
+  const created = mutateTasks(root, (tasks) => {
+    const task: Task = {
+      id: taskId(tasks),
+      title: input.title,
+      description: input.description,
+      status,
+      nodeIds: input.nodeIds,
+      diagramId: input.diagramId,
+      labels: input.labels,
+      assignee: input.assignee,
+      featureId: input.featureId,
+      phaseId: input.phaseId,
+      createdAt: now(),
+      updatedAt: now(),
+      order: tasks.filter((t) => t.status === status).length,
+    };
+    tasks.push(task);
+    return task;
+  });
 
-  file.tasks.push(task);
-  writeTasks(root, file);
-  return task;
+  if (!created) throw new Error("No project store found");
+  return created;
 };
-
-/**
- * Moves a task to a position within a column, not just onto the end of it.
- *
- * The board could only ever append before this, so dragging a card between two
- * others had nowhere to record the result. Orders are repacked densely in both
- * the source and target columns so gaps do not accumulate.
- */
 export const reorderTask = (
   root: string,
   id: string,
   status: TaskStatus,
   index: number,
-): Task | null => {
-  const file = readTasks(root);
-  const task = file.tasks.find((t) => t.id === id);
-  if (!task) return null;
+): Task | null =>
+  mutateTasks(root, (tasks) => {
+    const task = tasks.find((t) => t.id === id);
+    if (!task) return null;
 
-  const from = task.status;
-  task.status = status;
-  task.updatedAt = now();
+    const from = task.status;
+    task.status = status;
+    task.updatedAt = now();
 
-  const column = file.tasks
-    .filter((t) => t.status === status && t.id !== id)
-    .sort((a, b) => a.order - b.order);
+    const column = tasks
+      .filter((t) => t.status === status && t.id !== id)
+      .sort((a, b) => a.order - b.order);
 
-  column.splice(Math.max(0, Math.min(index, column.length)), 0, task);
-  column.forEach((t, i) => (t.order = i));
+    column.splice(Math.max(0, Math.min(index, column.length)), 0, task);
+    column.forEach((t, i) => (t.order = i));
 
-  if (from !== status) {
-    file.tasks
-      .filter((t) => t.status === from)
-      .sort((a, b) => a.order - b.order)
-      .forEach((t, i) => (t.order = i));
-  }
+    if (from !== status) {
+      tasks
+        .filter((t) => t.status === from)
+        .sort((a, b) => a.order - b.order)
+        .forEach((t, i) => (t.order = i));
+    }
 
-  writeTasks(root, file);
-  return task;
-};
-
-/** Tasks implementing a given feature, in board order. */
+    return task;
+  }) ?? null;
 export const tasksForFeature = (root: string, featureId: string): Task[] =>
   readTasks(root)
     .tasks.filter((t) => t.featureId === featureId)
     .sort((a, b) => a.order - b.order);
 
 /** Records commits against a task -- the strongest git attribution signal. */
-export const recordCommits = (root: string, id: string, shas: string[]): Task | null => {
-  const file = readTasks(root);
-  const task = file.tasks.find((t) => t.id === id);
-  if (!task) return null;
+export const recordCommits = (root: string, id: string, shas: string[]): Task | null =>
+  mutateTasks(root, (tasks) => {
+    const task = tasks.find((t) => t.id === id);
+    if (!task) return null;
 
-  const existing = task.commits ?? [];
-  task.commits = existing.concat(shas.filter((sha) => !existing.includes(sha)));
-  task.updatedAt = now();
-
-  writeTasks(root, file);
-  return task;
-};
-
+    const existing = task.commits ?? [];
+    task.commits = existing.concat(shas.filter((sha) => !existing.includes(sha)));
+    task.updatedAt = now();
+    return task;
+  }) ?? null;
 export const updateTask = (
   root: string,
   id: string,
   patch: Partial<Omit<Task, "id" | "createdAt">>,
-): Task | null => {
-  const file = readTasks(root);
-  const task = file.tasks.find((t) => t.id === id);
-  if (!task) return null;
-
-  Object.assign(task, patch, { updatedAt: now() });
-  writeTasks(root, file);
-  return task;
-};
-
+): Task | null =>
+  mutateTasks(root, (tasks) => {
+    const task = tasks.find((t) => t.id === id);
+    if (!task) return null;
+    Object.assign(task, patch, { updatedAt: now() });
+    return task;
+  }) ?? null;
 export const moveTask = (
   root: string,
   id: string,
   status: TaskStatus,
-): Task | null => {
-  const file = readTasks(root);
-  const task = file.tasks.find((t) => t.id === id);
-  if (!task) return null;
+): Task | null =>
+  mutateTasks(root, (tasks) => {
+    const task = tasks.find((t) => t.id === id);
+    if (!task) return null;
 
-  if (task.status !== status) {
-    task.order = file.tasks.filter((t) => t.status === status).length;
-    task.status = status;
-  }
-  task.updatedAt = now();
-
-  writeTasks(root, file);
-  return task;
-};
-
-export const deleteTask = (root: string, id: string): boolean => {
-  const file = readTasks(root);
-  const next = file.tasks.filter((t) => t.id !== id);
-  if (next.length === file.tasks.length) return false;
-
-  writeTasks(root, { ...file, tasks: next });
-  return true;
-};
+    if (task.status !== status) {
+      task.order = tasks.filter((t) => t.status === status).length;
+      task.status = status;
+    }
+    task.updatedAt = now();
+    return task;
+  }) ?? null;
+export const deleteTask = (root: string, id: string): boolean =>
+  mutateTasks(root, (tasks) => {
+    const at = tasks.findIndex((t) => t.id === id);
+    if (at === -1) return false;
+    tasks.splice(at, 1);
+    return true;
+  }) ?? false;
