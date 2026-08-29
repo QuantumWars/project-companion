@@ -52,27 +52,36 @@
       "title": "Add diagramType to GroupData and a frame variant",
       "status": "done",
       "createdAt": "2026-08-28T21:23:35.732Z",
-      "updatedAt": "2026-08-28T21:56:59.702Z",
+      "updatedAt": "2026-08-28T22:10:56.081Z",
       "order": 2,
-      "featureId": "frames"
+      "featureId": "frames",
+      "commits": [
+        "3119c8611c1df7a7425d61410f295cddd3549937"
+      ]
     },
     {
       "id": "c56c63d6",
       "title": "Per-frame ELK options via a resolver in layoutGraph",
       "status": "done",
       "createdAt": "2026-08-28T21:23:35.799Z",
-      "updatedAt": "2026-08-28T21:56:59.774Z",
+      "updatedAt": "2026-08-28T22:10:56.214Z",
       "order": 3,
-      "featureId": "frames"
+      "featureId": "frames",
+      "commits": [
+        "3119c8611c1df7a7425d61410f295cddd3549937"
+      ]
     },
     {
       "id": "e2802f5e",
       "title": "Shape palette leads with the frame's family",
       "status": "done",
       "createdAt": "2026-08-28T21:23:35.869Z",
-      "updatedAt": "2026-08-28T21:56:59.851Z",
+      "updatedAt": "2026-08-28T22:10:56.350Z",
       "order": 4,
-      "featureId": "frames"
+      "featureId": "frames",
+      "commits": [
+        "3119c8611c1df7a7425d61410f295cddd3549937"
+      ]
     },
     {
       "id": "d5a69221",
@@ -109,6 +118,17 @@
       "updatedAt": "2026-08-28T21:23:36.153Z",
       "order": 6,
       "featureId": "commit-attribution"
+    },
+    {
+      "id": "f11130cc",
+      "title": "Rename the product to Project Companion",
+      "status": "done",
+      "createdAt": "2026-08-28T22:10:56.421Z",
+      "updatedAt": "2026-08-28T22:10:56.608Z",
+      "order": 5,
+      "commits": [
+        "d75b04a341d18a183df49e483b0c5697b6e000d1"
+      ]
     }
   ]
 }
