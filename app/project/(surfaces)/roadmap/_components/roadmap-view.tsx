@@ -84,7 +84,7 @@ export const RoadmapView = ({ root }: { root?: string }) => {
     <div className="space-y-8">
       <div className="flex items-start justify-between gap-x-4">
         <div>
-          <h1 className="text-xl font-semibold text-fg">
+          <h1 className="text-[19px] font-semibold leading-tight text-fg">
             {roadmap.title ?? "Roadmap"}
           </h1>
           <p className="mt-1 font-mono text-xs text-fg-subtle">{roadmap.source}</p>
@@ -131,8 +131,8 @@ export const RoadmapView = ({ root }: { root?: string }) => {
 
       {roadmap.phases.map((phase) => (
         <section key={phase.id}>
-          <div className="mb-3 flex items-baseline gap-x-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-fg">
+          <div className="mb-2.5 flex items-baseline gap-x-2.5">
+            <h2 className="text-2xs font-semibold uppercase tracking-wider text-fg-subtle">
               {phase.name}
             </h2>
             <span className={cn("rounded px-1.5 py-0.5 text-[10px] font-medium uppercase", STATUS_STYLE[phase.status === "active" ? "in_progress" : phase.status === "done" ? "done" : "backlog"])}>

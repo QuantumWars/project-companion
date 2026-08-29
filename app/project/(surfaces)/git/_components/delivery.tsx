@@ -124,7 +124,7 @@ export const Delivery = ({
   return (
     <section className="rounded-lg border border-line bg-panel">
       <div className="border-b border-line px-4 py-3">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-fg-muted">
+        <h2 className="text-2xs font-semibold uppercase tracking-wider text-fg-subtle">
           Delivery
         </h2>
         <p className="mt-1 text-xs text-fg-muted">

@@ -175,7 +175,7 @@ export const GitSurface = ({ root }: { root?: string }) => {
     <div className="space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-fg">Git</h1>
+          <h1 className="text-[19px] font-semibold leading-tight text-fg">Git</h1>
           <p className="mt-1 text-sm text-fg-muted">
             {linked} of {commits.length} recent commits are linked to work on the board.
           </p>
@@ -408,7 +408,7 @@ const Panel = ({
   icon, title, children,
 }: { icon?: React.ReactNode; title: string; children: React.ReactNode }) => (
   <div className="rounded-lg border border-line bg-panel p-4">
-    <h2 className="mb-2 flex items-center gap-x-1.5 text-xs font-semibold uppercase tracking-wide text-fg-muted">
+    <h2 className="mb-2 flex items-center gap-x-1.5 text-2xs font-semibold uppercase tracking-wider text-fg-subtle">
       {icon}
       {title}
     </h2>

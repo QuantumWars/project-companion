@@ -61,7 +61,7 @@ export const Overview = ({
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold text-fg">Overview</h1>
+      <h1 className="text-[19px] font-semibold leading-tight text-fg">Overview</h1>
 
       <div className="grid gap-3 sm:grid-cols-3">
         <Stat
@@ -86,7 +86,7 @@ export const Overview = ({
 
       {roadmap.phases.length ? (
         <section className="rounded-lg border border-line bg-panel p-4">
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-fg-muted">
+          <h2 className="mb-3 text-2xs font-semibold uppercase tracking-wider text-fg-subtle">
             Phases
           </h2>
           <div className="space-y-3">
@@ -117,7 +117,7 @@ export const Overview = ({
 
       <div className="grid gap-3 md:grid-cols-2">
         <section className="rounded-lg border border-line bg-panel p-4">
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-fg-muted">
+          <h2 className="mb-3 text-2xs font-semibold uppercase tracking-wider text-fg-subtle">
             Work in flight
           </h2>
           <div className="space-y-1.5">
@@ -135,7 +135,7 @@ export const Overview = ({
         </section>
 
         <section className="rounded-lg border border-line bg-panel p-4">
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-fg-muted">
+          <h2 className="mb-3 text-2xs font-semibold uppercase tracking-wider text-fg-subtle">
             Diagrams
           </h2>
           {diagrams.length ? (
@@ -207,8 +207,8 @@ const Stat = ({
     href={href}
     className="rounded-lg border border-line bg-panel p-4 transition-colors hover:border-line-strong"
   >
-    <p className="text-xs font-medium uppercase tracking-wide text-fg-muted">{label}</p>
-    <p className="mt-1 text-2xl font-semibold tabular-nums text-fg">{value}</p>
+    <p className="text-2xs font-medium uppercase tracking-wider text-fg-subtle">{label}</p>
+    <p className="mt-1.5 text-[26px] font-semibold leading-none text-fg">{value}</p>
     <p className="mt-0.5 text-xs text-fg-subtle">{hint}</p>
   </Link>
 );

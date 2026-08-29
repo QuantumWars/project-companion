@@ -42,7 +42,7 @@ export const PanelHeader = ({
 }) => (
   <div className="flex items-start justify-between gap-x-3 border-b border-line px-4 py-3">
     <div className="min-w-0">
-      <h2 className="flex items-center gap-x-1.5 text-xs font-semibold uppercase tracking-wider text-fg-muted">
+      <h2 className="flex items-center gap-x-1.5 text-2xs font-semibold uppercase tracking-wider text-fg-subtle">
         {icon}
         {title}
       </h2>

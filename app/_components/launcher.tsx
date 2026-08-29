@@ -80,8 +80,8 @@ export const Launcher = () => {
       <header className="mb-12 flex items-center gap-x-3">
         <Image src="/logo.svg" alt="" height={36} width={36} priority />
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-fg">Project Companion</h1>
-          <p className="text-sm text-fg-muted">
+          <h1 className="text-[22px] font-semibold leading-tight text-fg">Project Companion</h1>
+          <p className="mt-0.5 text-[13px] text-fg-muted">
             Project management that runs with your coding agent
           </p>
         </div>
@@ -89,7 +89,7 @@ export const Launcher = () => {
 
       <div className="grid gap-10 md:grid-cols-[minmax(0,1fr)_240px]">
         <section>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-fg-muted">
+          <h2 className="mb-3 text-2xs font-semibold uppercase tracking-wider text-fg-subtle">
             Recent projects
           </h2>
 
@@ -126,7 +126,7 @@ export const Launcher = () => {
 
           {boards.length ? (
             <>
-              <h2 className="mb-3 mt-10 text-xs font-semibold uppercase tracking-wider text-fg-muted">
+              <h2 className="mb-3 mt-10 text-2xs font-semibold uppercase tracking-wider text-fg-subtle">
                 Local boards
               </h2>
               <p className="mb-3 text-xs text-fg-subtle">
@@ -162,7 +162,7 @@ export const Launcher = () => {
         </section>
 
         <aside>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-fg-muted">
+          <h2 className="mb-3 text-2xs font-semibold uppercase tracking-wider text-fg-subtle">
             Start
           </h2>
           <div className="flex flex-col gap-y-1">
@@ -178,7 +178,7 @@ export const Launcher = () => {
             />
           </div>
 
-          <h2 className="mb-2 mt-8 text-xs font-semibold uppercase tracking-wider text-fg-muted">
+          <h2 className="mb-2 mt-8 text-2xs font-semibold uppercase tracking-wider text-fg-subtle">
             Add a project
           </h2>
           <Panel className="p-3">

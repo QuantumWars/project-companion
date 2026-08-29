@@ -117,7 +117,7 @@ export const Board = ({ nodeLookup, root }: { nodeLookup: NodeLookup; root?: str
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <h1 className="text-xl font-semibold text-fg">Board</h1>
+        <h1 className="text-[19px] font-semibold leading-tight text-fg">Board</h1>
 
         <div className="flex items-center gap-x-0.5 rounded-md border border-line bg-panel p-0.5">
           {(["none", "phase", "feature"] as const).map((mode) => (
@@ -265,7 +265,7 @@ const Column = ({
     >
       <header className="mb-2 flex items-center gap-x-2 px-1">
         <span className={cn("h-2 w-2 rounded-full", COLUMN_ACCENT[status])} />
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-fg-muted">
+        <h3 className="text-2xs font-semibold uppercase tracking-wider text-fg-subtle">
           {COLUMN_LABELS[status]}
         </h3>
         <span className="text-xs text-fg-subtle">{tasks.length}</span>
