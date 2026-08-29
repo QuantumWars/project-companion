@@ -31,6 +31,25 @@ export type LinkedCommit = GitCommit & {
   taskId?: string;
   featureId?: string;
   signal?: AttributionSignal;
+  /**
+   * Every feature whose declared paths this commit touched, with the churn that
+   * actually landed inside them.
+   *
+   * Deliberately separate from `featureId`. Those answer different questions:
+   * `featureId` is what the commit was FOR, a single claim; this is what it
+   * TOUCHED, which is plural and measurable. A commit that lands the parser and
+   * the git layer together belongs to one task but built two features, and
+   * crediting all of its churn to whichever task it was recorded against would
+   * make delivery accounting a lie.
+   */
+  touched: TouchedFeature[];
+};
+
+export type TouchedFeature = {
+  featureId: string;
+  insertions: number;
+  deletions: number;
+  files: number;
 };
 
 export type AttributionResult = {
@@ -114,12 +133,27 @@ export const attribute = (
   const featureOfTask = new Map(tasks.map((t) => [t.id, t.featureId]));
   const withPaths = features.filter((f) => (f.paths?.length ?? 0) > 0);
 
+  /** Churn this commit landed inside each feature's declared paths. */
+  const touchedBy = (commit: GitCommit): TouchedFeature[] =>
+    withPaths
+      .map((feature) => {
+        const hits = commit.files.filter((f) => matchesAny(f.path, feature.paths!));
+        return {
+          featureId: feature.id,
+          insertions: hits.reduce((n, f) => n + f.insertions, 0),
+          deletions: hits.reduce((n, f) => n + f.deletions, 0),
+          files: hits.length,
+        };
+      })
+      .filter((t) => t.files > 0);
+
   const linked: LinkedCommit[] = commits.map((commit) => {
+    const touched = touchedBy(commit);
     // 1. Recorded. Matched on both the full sha and the abbreviation, because a
     // caller passing `HEAD` gets the full one back while a human types the short.
     const byRecord = recorded.get(commit.sha) ?? recorded.get(commit.short);
     if (byRecord) {
-      return { ...commit, taskId: byRecord, featureId: featureOfTask.get(byRecord), signal: "recorded" };
+      return { ...commit, touched, taskId: byRecord, featureId: featureOfTask.get(byRecord), signal: "recorded" };
     }
 
     // 2. Trailer.
@@ -128,28 +162,27 @@ export const attribute = (
     if (trailer) {
       const id = trailer.toLowerCase();
       const task = taskIds.find((t) => t === id || id.startsWith(t));
-      if (task) return { ...commit, taskId: task, featureId: featureOfTask.get(task), signal: "trailer" };
+      if (task) return { ...commit, touched, taskId: task, featureId: featureOfTask.get(task), signal: "trailer" };
       const feature = featureIds.find((f) => f === id);
-      if (feature) return { ...commit, featureId: feature, signal: "trailer" };
+      if (feature) return { ...commit, touched, featureId: feature, signal: "trailer" };
     }
 
     // 3. Branch name.
     for (const branch of branchesByCommit.get(commit.sha) ?? []) {
       const task = idInBranch(branch, taskIds);
-      if (task) return { ...commit, taskId: task, featureId: featureOfTask.get(task), signal: "branch" };
+      if (task) return { ...commit, touched, taskId: task, featureId: featureOfTask.get(task), signal: "branch" };
       const feature = idInBranch(branch, featureIds);
-      if (feature) return { ...commit, featureId: feature, signal: "branch" };
+      if (feature) return { ...commit, touched, featureId: feature, signal: "branch" };
     }
 
     // 4. Path overlap. Feature level only, and only when exactly one feature
     // claims the commit -- an ambiguous match is no match, because presenting a
     // guess as evidence is worse than presenting nothing.
-    const claiming = withPaths.filter((f) => commit.paths.some((p) => matchesAny(p, f.paths!)));
-    if (claiming.length === 1) {
-      return { ...commit, featureId: claiming[0].id, signal: "paths" };
+    if (touched.length === 1) {
+      return { ...commit, touched, featureId: touched[0].featureId, signal: "paths" };
     }
 
-    return { ...commit };
+    return { ...commit, touched };
   });
 
   const byTask: Record<string, LinkedCommit[]> = {};

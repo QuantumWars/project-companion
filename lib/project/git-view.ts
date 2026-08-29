@@ -11,7 +11,14 @@
  * makes it safe to gitignore.
  */
 
-import { gitRoot, readBranches, readStatus, readWorktrees, repoFingerprint } from "./git";
+import {
+  gitRoot,
+  readBranches,
+  readStatus,
+  readTags,
+  readWorktrees,
+  repoFingerprint,
+} from "./git";
 import { linkRepository, type AttributionResult } from "./git-link";
 import { readJson, projectPaths, readTasks, writeJson } from "./store";
 import type { Feature } from "./types";
@@ -24,6 +31,7 @@ export type GitView = {
   status?: Awaited<ReturnType<typeof readStatus>>;
   branches?: Awaited<ReturnType<typeof readBranches>>;
   worktrees?: Awaited<ReturnType<typeof readWorktrees>>;
+  tags?: Awaited<ReturnType<typeof readTags>>;
   attribution?: AttributionResult;
 };
 
@@ -43,10 +51,11 @@ export const readGitView = async (
   }
 
   try {
-    const [status, branches, worktrees, fingerprint] = await Promise.all([
+    const [status, branches, worktrees, tags, fingerprint] = await Promise.all([
       readStatus(repo),
       readBranches(repo),
       readWorktrees(repo),
+      readTags(repo),
       repoFingerprint(repo),
     ]);
 
@@ -62,7 +71,7 @@ export const readGitView = async (
       writeJson(cachePath, { fingerprint, attribution } satisfies CacheFile);
     }
 
-    return { available: true, root: repo, status, branches, worktrees, attribution };
+    return { available: true, root: repo, status, branches, worktrees, tags, attribution };
   } catch (error) {
     // A repository that exists but cannot be read is still a degraded state,
     // not a broken page.

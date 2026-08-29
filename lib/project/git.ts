@@ -40,8 +40,19 @@ export type GitCommit = {
   refs: string[];
   insertions: number;
   deletions: number;
+  /** Every path touched. Kept for convenience; `files` carries the detail. */
   paths: string[];
+  /**
+   * Per-file churn.
+   *
+   * `--numstat` reports this already and summing it away loses the ability to
+   * say how much of a commit landed in one area -- which is the difference
+   * between "this commit touched the parser" and "this commit WAS the parser".
+   */
+  files: FileChange[];
 };
+
+export type FileChange = { path: string; insertions: number; deletions: number };
 
 export type GitBranch = {
   name: string;
@@ -167,7 +178,20 @@ export type CommitQuery = {
 export const readCommits = async (root: string, query: CommitQuery = {}): Promise<GitCommit[]> => {
   const limit = Math.min(Math.max(query.limit ?? 200, 1), 2000);
 
-  const args = ["log", `--format=${RS}${FORMAT}`, "--numstat", `--max-count=${limit}`];
+  // `--topo-order` is not optional for a graph.
+  //
+  // git log sorts by commit date by default, and any repository with commits
+  // sharing a timestamp -- scripted commits, an import, a fast CI job -- comes
+  // back in an order where a parent can precede its own child. Lane assignment
+  // assumes children are seen first, so without this the diagram is scrambled
+  // rather than merely untidy.
+  const args = [
+    "log",
+    "--topo-order",
+    `--format=${RS}${FORMAT}`,
+    "--numstat",
+    `--max-count=${limit}`,
+  ];
   if (query.since) args.push(`--since=${query.since}`);
   if (query.all) args.push("--all");
   if (query.ref) args.push(assertRef(query.ref));
@@ -207,7 +231,7 @@ const parseCommit = (record: string): GitCommit | null => {
 
   const lines = bodyAndStats.split("\n");
   const body: string[] = [];
-  const paths: string[] = [];
+  const files: FileChange[] = [];
   let insertions = 0;
   let deletions = 0;
   let inStats = false;
@@ -216,10 +240,16 @@ const parseCommit = (record: string): GitCommit | null => {
     const stat = /^(\d+|-)\t(\d+|-)\t(.+)$/.exec(line);
     if (stat) {
       inStats = true;
-      insertions += stat[1] === "-" ? 0 : Number(stat[1]);
-      deletions += stat[2] === "-" ? 0 : Number(stat[2]);
+      // A dash means a binary file, which has no line count.
+      const added = stat[1] === "-" ? 0 : Number(stat[1]);
+      const removed = stat[2] === "-" ? 0 : Number(stat[2]);
+      insertions += added;
+      deletions += removed;
       // A rename is reported as `old => new`; record where the file ended up.
-      paths.push(stat[3].includes(" => ") ? stat[3].split(" => ").pop()!.replace(/[{}]/g, "") : stat[3]);
+      const path = stat[3].includes(" => ")
+        ? stat[3].split(" => ").pop()!.replace(/[{}]/g, "")
+        : stat[3];
+      files.push({ path, insertions: added, deletions: removed });
       continue;
     }
     if (!inStats) body.push(line);
@@ -239,7 +269,8 @@ const parseCommit = (record: string): GitCommit | null => {
       : [],
     insertions,
     deletions,
-    paths,
+    paths: files.map((f) => f.path),
+    files,
   };
 };
 
@@ -330,6 +361,51 @@ export const readStatus = async (root: string): Promise<GitStatus> => {
   }
 
   return { branch, head, ahead, behind, dirty, detached };
+};
+
+/* ---------------------------------- tags ---------------------------------- */
+
+export type GitTag = {
+  name: string;
+  sha: string;
+  /** Tagger date for an annotated tag, committer date for a lightweight one. */
+  at: string;
+  subject?: string;
+};
+
+/**
+ * Tags, newest first.
+ *
+ * Tags are how a repository says "this is what shipped". Without them a commit
+ * list can show activity but never delivery, which is the question a team
+ * actually asks.
+ *
+ * `refname:strip=2` unwraps annotated tags to the commit they point at, so an
+ * annotated and a lightweight tag are reported the same way.
+ */
+export const readTags = async (root: string): Promise<GitTag[]> => {
+  const format = [
+    "%(refname:strip=2)",
+    "%(objectname)",
+    "%(*objectname)",
+    "%(creatordate:iso-strict)",
+    "%(contents:subject)",
+  ].join(US);
+
+  const stdout = await git(root, [
+    "for-each-ref",
+    `--format=${format}`,
+    "--sort=-creatordate",
+    "refs/tags",
+  ]);
+
+  return stdout
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => {
+      const [name, object, peeled, at, subject] = line.split(US);
+      return { name, sha: peeled || object, at, subject: subject || undefined };
+    });
 };
 
 /** A cheap fingerprint of repository state, for keying a derived cache. */

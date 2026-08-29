@@ -3,7 +3,16 @@ import { mkdtempSync, mkdirSync, realpathSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { assertRef, GitError, gitRoot, readBranches, readCommits, readStatus, readWorktrees } from "@/lib/project/git";
+import {
+  assertRef,
+  GitError,
+  gitRoot,
+  readBranches,
+  readCommits,
+  readStatus,
+  readTags,
+  readWorktrees,
+} from "@/lib/project/git";
 import { attribute, branchMembership, globToRegExp, matchesAny } from "@/lib/project/git-link";
 import { addWorktree, branchNameFor, createBranch } from "@/lib/project/git-write";
 import { buildGraph } from "@/lib/project/commit-graph";
@@ -406,34 +415,259 @@ test("commits on other branches are visible, not just the current one", async ()
   }
 });
 
+test("a commit touching several features credits each with its own churn", async () => {
+  const r = repo();
+  try {
+    // One commit landing code in two features' declared paths, plus a file in
+    // neither -- the shape of a large change that builds more than one thing.
+    r.commit("Land the parser and the git layer", {
+      "lib/prd.ts": "a\nb\nc\n",
+      "lib/git.ts": "x\n",
+      "README.md": "unrelated\n",
+    });
+
+    const commits = await readCommits(r.dir);
+    const result = attribute(
+      commits,
+      [],
+      [
+        feature({ id: "roundtrip", paths: ["lib/prd.ts"] }),
+        feature({ id: "gitlayer", paths: ["lib/git.ts"] }),
+      ],
+      new Map(),
+    );
+
+    const touched = result.commits[0].touched;
+    eq(touched.length, 2, "both features are credited");
+    eq(touched.find((t) => t.featureId === "roundtrip")!.insertions, 3);
+    eq(touched.find((t) => t.featureId === "gitlayer")!.insertions, 1);
+    // The README is in neither feature's paths, so its churn is credited to
+    // neither -- the totals deliberately do not have to sum to the commit.
+    eq(result.commits[0].insertions, 5);
+  } finally {
+    r.cleanup();
+  }
+});
+
+test("a commit recorded against a task still reports what it touched", async () => {
+  const r = repo();
+  try {
+    const sha = r.commit("Big change", { "lib/prd.ts": "a\nb\n" });
+    const commits = await readCommits(r.dir);
+    const result = attribute(
+      commits,
+      [task({ commits: [sha], featureId: "frames" })],
+      [feature({ id: "roundtrip", paths: ["lib/prd.ts"] })],
+      new Map(),
+    );
+    const c = result.commits[0];
+    eq(c.signal, "recorded", "the explicit record still wins for primary attribution");
+    eq(c.featureId, "frames");
+    // ...but the churn it landed in another feature's paths is not lost.
+    eq(c.touched.map((t) => t.featureId), ["roundtrip"]);
+  } finally {
+    r.cleanup();
+  }
+});
+
+test("per-file churn is captured, not just the commit total", async () => {
+  const r = repo();
+  try {
+    r.commit("two files", { "a.txt": "1\n2\n3\n", "b.txt": "1\n" });
+    const [c] = await readCommits(r.dir);
+    eq(c.files.length, 2);
+    eq(c.files.find((f) => f.path === "a.txt")!.insertions, 3);
+    eq(c.files.find((f) => f.path === "b.txt")!.insertions, 1);
+    eq(c.insertions, 4, "the total still agrees with the parts");
+  } finally {
+    r.cleanup();
+  }
+});
+
+/* ---------------------------------- tags ---------------------------------- */
+
+test("tags read, with annotated tags dereferenced to their commit", async () => {
+  const r = repo();
+  try {
+    r.commit("one", { "a.txt": "1" });
+    r.sh("tag", "v0.1.0");
+    const head = r.commit("two", { "b.txt": "2" });
+    r.sh("tag", "-a", "v0.2.0", "-m", "Second release");
+
+    const tags = await readTags(r.dir);
+    eq(tags.map((t) => t.name).sort(), ["v0.1.0", "v0.2.0"]);
+
+    // An annotated tag is its own object; `%(*objectname)` unwraps it to the
+    // commit. Without that a release would point at a sha no commit has.
+    const annotated = tags.find((t) => t.name === "v0.2.0")!;
+    eq(annotated.sha, head, "annotated tag must resolve to the commit");
+    eq(annotated.subject, "Second release");
+
+    const lightweight = tags.find((t) => t.name === "v0.1.0")!;
+    ok(lightweight.sha.length === 40, "lightweight tag points straight at its commit");
+    ok(lightweight.sha !== head, "and it is the older commit");
+  } finally {
+    r.cleanup();
+  }
+});
+
+test("a repository with no tags returns an empty list", async () => {
+  const r = repo();
+  try {
+    r.commit("one", { "a.txt": "1" });
+    eq(await readTags(r.dir), []);
+  } finally {
+    r.cleanup();
+  }
+});
+
 /* ------------------------------ commit graph ------------------------------ */
 
+/** Compact fixture: [sha, ...parents]. Input order is newest-first, as git log gives. */
+const dag = (...rows: string[][]) =>
+  rows.map(([sha, ...parents]) => ({ sha, parents }));
+
+/** Every commit's lane must be free of other commits between it and its parent. */
+const noEdgeCrossesACommit = (graph: ReturnType<typeof buildGraph>) => {
+  const laneAtRow = new Map<number, number>();
+  graph.rows.forEach((r, i) => laneAtRow.set(i, r.lane));
+
+  for (let i = 0; i < graph.rows.length; i++) {
+    for (const edge of graph.rows[i].edges) {
+      if (edge.fromLane !== edge.toLane) continue;
+      // A vertical edge passes through every row between child and parent.
+      for (let row = i + 1; row < edge.toRow; row++) {
+        if (laneAtRow.get(row) === edge.toLane) {
+          return `edge in lane ${edge.toLane} from row ${i} to ${edge.toRow} passes through the commit at row ${row}`;
+        }
+      }
+    }
+  }
+  return null;
+};
+
 test("a linear history occupies one lane", () => {
-  const { rows, width } = buildGraph([
-    { sha: "c", parents: ["b"] },
-    { sha: "b", parents: ["a"] },
-    { sha: "a", parents: [] },
-  ]);
+  const { rows, width } = buildGraph(dag(["c", "b"], ["b", "a"], ["a"]));
   eq(width, 1);
   eq(rows.map((r) => r.lane), [0, 0, 0]);
 });
 
-test("a merge forks a second lane and rejoins", () => {
-  // m has two parents; the side branch gets its own lane until it merges back.
-  const { rows, width } = buildGraph([
-    { sha: "m", parents: ["a", "b"] },
-    { sha: "b", parents: ["root"] },
-    { sha: "a", parents: ["root"] },
-    { sha: "root", parents: [] },
-  ]);
-  ok(width >= 2, "a merge should occupy at least two lanes");
-  eq(rows[0].parentLanes.length, 2);
-  eq(rows[rows.length - 1].commit.sha, "root");
+test("a branch stays in one column for its whole life", () => {
+  // main:  m4 -> m3 -> m1
+  // side:  s2 -> s1 -> m1     (merged into m4 as its second parent)
+  const { rows } = buildGraph(
+    dag(["m4", "m3", "s2"], ["m3", "m1"], ["s2", "s1"], ["s1", "m1"], ["m1"]),
+  );
+  const laneOf = Object.fromEntries(rows.map((r) => [r.commit.sha, r.lane]));
+  eq(laneOf.s1, laneOf.s2, "the side branch must not change column between its two commits");
+  eq(laneOf.m3, laneOf.m4, "trunk must not change column either");
+  ok(laneOf.s1 !== laneOf.m4, "the side branch needs its own column");
+});
+
+test("a merge is recorded as a merge edge, the first parent is not", () => {
+  const { rows } = buildGraph(dag(["m", "a", "b"], ["a", "r"], ["b", "r"], ["r"]));
+  const merge = rows[0];
+  eq(merge.edges.length, 2);
+  eq(merge.edges[0].isMerge, false, "first parent continues the branch");
+  eq(merge.edges[1].isMerge, true, "second parent is the merge");
+});
+
+test("no edge is routed through a commit sitting in the same lane", () => {
+  // A long-lived branch whose merge edge must travel past several trunk commits.
+  const graph = buildGraph(
+    dag(
+      ["h", "g", "f"],
+      ["g", "e"],
+      ["e", "d"],
+      ["d", "c"],
+      ["c", "b"],
+      ["f", "b"],
+      ["b", "a"],
+      ["a"],
+    ),
+  );
+  eq(noEdgeCrossesACommit(graph), null);
+});
+
+test("lanes freed by a finished branch are reused", () => {
+  // Two side branches that never overlap in time should share a column.
+  const { width } = buildGraph(
+    dag(
+      ["m3", "m2", "s2"],
+      ["s2", "m2"],
+      ["m2", "m1", "s1"],
+      ["s1", "m1"],
+      ["m1"],
+    ),
+  );
+  ok(width <= 2, `two sequential side branches should not need ${width} lanes`);
+});
+
+test("a parent outside the window gets no dangling edge", () => {
+  // --max-count truncates history; the oldest commit's parent is not present.
+  const { rows } = buildGraph(dag(["b", "a"], ["a", "truncated"]));
+  eq(rows[1].edges, [], "no edge should point at a commit we cannot place");
+});
+
+test("an octopus merge records every parent", () => {
+  const { rows } = buildGraph(
+    dag(["o", "a", "b", "c"], ["a", "r"], ["b", "r"], ["c", "r"], ["r"]),
+  );
+  eq(rows[0].edges.length, 3);
+  eq(rows[0].edges.filter((e) => e.isMerge).length, 2);
 });
 
 test("the graph handles an empty history", () => {
   eq(buildGraph([]).rows, []);
   eq(buildGraph([]).width, 0);
+});
+
+test("the trunk holds lane 0 across merges", () => {
+  // A feature branch cut from the same commit the trunk continues through will
+  // claim that commit as ITS first parent and, without pinning, take the lane.
+  // The trunk then visibly drifts sideways at every merge.
+  const { rows } = buildGraph(
+    dag(
+      ["tip", "merge2"],
+      ["merge2", "mid", "search"],
+      ["search", "docs"],
+      ["mid", "merge1"],
+      ["merge1", "docs", "logout"],
+      ["logout", "login"],
+      ["login", "setup"],
+      ["docs", "setup"],
+      ["setup", "root"],
+      ["root"],
+    ),
+  );
+  const laneOf = Object.fromEntries(rows.map((r) => [r.commit.sha, r.lane]));
+  for (const sha of ["tip", "merge2", "mid", "merge1", "docs", "setup", "root"]) {
+    eq(laneOf[sha], 0, `${sha} is on the first-parent chain and belongs in lane 0`);
+  }
+  for (const sha of ["search", "logout", "login"]) {
+    ok(laneOf[sha] > 0, `${sha} is off-trunk and must not sit in lane 0`);
+  }
+});
+
+test("real repository history lays out without crossings", async () => {
+  const r = repo();
+  try {
+    r.commit("root", { "a.txt": "1" });
+    r.sh("checkout", "-q", "-b", "feature");
+    r.commit("feature work", { "f.txt": "1" });
+    r.sh("checkout", "-q", "main");
+    r.commit("trunk work", { "b.txt": "1" });
+    r.sh("merge", "-q", "--no-ff", "feature", "-m", "merge feature");
+
+    const commits = await readCommits(r.dir, { all: true });
+    const graph = buildGraph(commits);
+    eq(graph.rows.length, commits.length);
+    eq(noEdgeCrossesACommit(graph), null);
+    ok(graph.width >= 2, "a real merge should occupy two lanes");
+    ok(graph.rows.some((row) => row.edges.some((e) => e.isMerge)), "the merge edge is detected");
+  } finally {
+    r.cleanup();
+  }
 });
 
 runAll().then((failed) => process.exit(failed ? 1 : 0));
