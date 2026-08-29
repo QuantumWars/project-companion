@@ -1,24 +1,33 @@
 # Using the board from a coding agent
 
-The project's diagrams and tasks live as plain JSON **inside the coding agent's
-own project directory**, committed to the repository. That is deliberate on two
-counts: a coding agent runs on the filesystem, so state kept in browser
-localStorage would be invisible to it; and putting the data where the agent
-already looks means it is found without configuration.
+A project is a single file in the repository, so a coding agent can read and
+write it with ordinary tools. State kept in browser localStorage would be
+invisible to an agent; a file at the repo root is not.
 
 ```
-.claude/project-companion/project.json          name, version, diagram index
-.claude/project-companion/diagrams/<id>.json    one diagram each
-.claude/project-companion/boards/<id>.json      one whiteboard each
-.claude/project-companion/tasks.json            the Kanban board
-.claude/skills/project-companion/SKILL.md       teaches the agent the commands
+.project                                  the whole project, as JSON
+docs/prd.md                               the feature list, as a document
+.claude/skills/project-companion/SKILL.md teaches the agent the commands
+.project-cache/                           derived git attribution; gitignored
 ```
 
-Discovery order is `.claude/` → `.codex/` → `.cursor/` → `.gemini/` → `.arch/`
-(legacy). `init` puts the store in whichever agent directory the repo already
-has, and there is exactly **one** store per project — a repo with two agent
-directories must not end up with two divergent copies of its architecture. Move
-an existing store with `project-companion move .codex/project-companion`.
+`.project` holds diagrams, whiteboards, tasks, phases, feature overrides and git
+settings. Two things stay outside it on purpose:
+
+- **`docs/prd.md`** is a document people read and review. Folding it into a JSON
+  blob would make it uneditable by hand and unreadable in a pull request, so the
+  bundle records where it lives and the document stays a document.
+- **The git cache** is derived and regenerable, and was larger than everything
+  the project actually owns.
+
+Writes hold an exclusive lock and run as transactions, so a canvas autosave in
+the browser and a `task add` in a terminal compose rather than overwrite each
+other.
+
+Projects created before this format used a directory under `.claude/`,
+`.codex/`, `.cursor/`, `.gemini/` or `.arch/`. Those still open unchanged;
+`project-companion migrate` converts one, verifying the result before removing
+anything.
 
 Because the format is JSON in the repo, changes show up in `git diff` and in
 code review like any other source change.
@@ -68,7 +77,7 @@ claude                  # approve "project-companion" when prompted
 ```
 
 Claude Code starts the server as a stdio subprocess and sets
-`CLAUDE_PROJECT_DIR` to the repo root, which is how the server locates `.arch/`
+`CLAUDE_PROJECT_DIR` to the repo root, which is how the server locates the project
 regardless of its own working directory.
 
 Tools exposed:
@@ -109,18 +118,23 @@ npx project-companion task move <taskId> in_progress
 Statuses: `backlog`, `todo`, `in_progress`, `review`, `done`.
 
 Commands work from any directory inside the project — the root is found by
-walking up for `.arch/`.
+walking up for a `.project` file.
 
 ## Seeing it
 
 | Surface | URL |
 |---|---|
-| Project diagrams and task board | `/` (the project section) |
-| A file-backed diagram | `/project/<diagramId>` |
-| A file-backed whiteboard | `/project/board/<boardId>` |
-| The Kanban board | `/project/tasks` |
+| Launcher: every project on this machine | `/` |
+| Overview: progress across the project | `/project` |
+| Roadmap: the PRD's features and phases | `/project/roadmap` |
+| Board: the Kanban | `/project/tasks` |
+| Git: commit graph and delivery evidence | `/project/git` |
+| A file-backed diagram | `/project/diagram/<id>` |
+| A file-backed whiteboard | `/project/board/<id>` |
 
-Boards under `/project/*` read and write `.arch/` and carry an `.arch` badge.
+Every surface accepts `?root=<path>` to open a different indexed project.
+
+Boards under `/project/*` read and write `.project` and carry a store badge.
 Boards under `/arch/*` and `/board/*` are the standalone browser playground and
 live in localStorage — an agent cannot see those.
 

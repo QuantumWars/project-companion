@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-08-29T16:34:06.214Z",
-  "revision": 14,
+  "updatedAt": "2026-08-29T17:17:15.383Z",
+  "revision": 22,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -599,7 +599,7 @@
       "id": "ticketing-schema",
       "title": "Ticketing schema",
       "type": "erd",
-      "updatedAt": "2026-08-29T16:28:16.559Z",
+      "updatedAt": "2026-08-29T17:17:15.383Z",
       "nodes": [
         {
           "id": "venues",
@@ -1118,9 +1118,9 @@
         }
       ],
       "viewport": {
-        "x": 560,
-        "y": -5,
-        "zoom": 1
+        "x": -7.848078534079946,
+        "y": -142.87795900683534,
+        "zoom": 0.8952953722662572
       }
     }
   },
