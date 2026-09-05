@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-09-05T11:58:28.614Z",
-  "revision": 79,
+  "updatedAt": "2026-09-05T11:58:28.814Z",
+  "revision": 81,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1577,12 +1577,15 @@
     {
       "id": "43028bbe",
       "title": "Fix what only showed up in a browser",
-      "status": "in_progress",
+      "status": "done",
       "componentId": "canvas",
       "featureId": "drill-down",
       "createdAt": "2026-09-05T11:58:28.614Z",
-      "updatedAt": "2026-09-05T11:58:28.614Z",
-      "order": 0
+      "updatedAt": "2026-09-05T11:58:28.814Z",
+      "order": 19,
+      "commits": [
+        "373f2fcaa4e1cb34cb39535b84f9fc7b0427d39c"
+      ]
     }
   ],
   "roadmap": {
