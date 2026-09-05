@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-09-05T12:43:08.258Z",
-  "revision": 97,
+  "updatedAt": "2026-09-05T12:43:08.473Z",
+  "revision": 99,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1617,12 +1617,15 @@
     {
       "id": "ab35cf79",
       "title": "One-click linking, and the whole PRD to done",
-      "status": "in_progress",
+      "status": "done",
       "componentId": "surfaces",
       "featureId": "commit-attribution",
       "createdAt": "2026-09-05T12:43:08.258Z",
-      "updatedAt": "2026-09-05T12:43:08.258Z",
-      "order": 0
+      "updatedAt": "2026-09-05T12:43:08.473Z",
+      "order": 23,
+      "commits": [
+        "0a0a6b209aac3965298ae08330459f13bd349495"
+      ]
     }
   ],
   "roadmap": {
