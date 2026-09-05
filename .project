@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-09-05T14:24:45.829Z",
-  "revision": 153,
+  "updatedAt": "2026-09-05T14:24:46.021Z",
+  "revision": 155,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1745,12 +1745,15 @@
     {
       "id": "a400c600",
       "title": "Flow metrics, WIP limits and the attention router",
-      "status": "in_progress",
+      "status": "done",
       "componentId": "data-layer",
       "featureId": "flow-metrics",
       "createdAt": "2026-09-05T14:24:45.829Z",
-      "updatedAt": "2026-09-05T14:24:45.829Z",
-      "order": 0
+      "updatedAt": "2026-09-05T14:24:46.021Z",
+      "order": 33,
+      "commits": [
+        "4a215fafe46a14b1b59a7bfcc71e2f2c0dee6183"
+      ]
     }
   ],
   "roadmap": {

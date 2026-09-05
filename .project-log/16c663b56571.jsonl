@@ -87,3 +87,4 @@
 {"id":"16c663b56571:86","ts":1788617982345,"seq":86,"actor":"16c663b56571","prev":"2f1dacb9eda0398e","componentId":"evidence-engine","kind":"task.created","data":{"taskId":"fe5e97d2","title":"Review packets and grounded findings","status":"in_progress"}}
 {"id":"16c663b56571:87","ts":1788617982517,"seq":87,"actor":"16c663b56571","prev":"f788ed98f48d1294","componentId":"evidence-engine","kind":"task.moved","data":{"taskId":"fe5e97d2","from":"in_progress","to":"done"}}
 {"id":"16c663b56571:88","ts":1788618285831,"seq":88,"actor":"16c663b56571","prev":"e4b1fcb08dd340da","componentId":"data-layer","kind":"task.created","data":{"taskId":"a400c600","title":"Flow metrics, WIP limits and the attention router","status":"in_progress"}}
+{"id":"16c663b56571:89","ts":1788618286022,"seq":89,"actor":"16c663b56571","prev":"49ba2668f8fb1da8","componentId":"data-layer","kind":"task.moved","data":{"taskId":"a400c600","from":"in_progress","to":"done"}}
