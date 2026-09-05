@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-09-05T14:10:14.358Z",
-  "revision": 120,
+  "updatedAt": "2026-09-05T14:10:14.533Z",
+  "revision": 122,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1692,12 +1692,15 @@
     {
       "id": "214c32b3",
       "title": "Executable acceptance criteria",
-      "status": "in_progress",
+      "status": "done",
       "componentId": "spec-engine",
       "featureId": "executable-criteria",
       "createdAt": "2026-09-05T14:10:14.266Z",
-      "updatedAt": "2026-09-05T14:10:14.266Z",
-      "order": 0
+      "updatedAt": "2026-09-05T14:10:14.533Z",
+      "order": 30,
+      "commits": [
+        "ac6d5220cf8cc1c1c177edf750f50002fae97875"
+      ]
     },
     {
       "id": "0249640f",
