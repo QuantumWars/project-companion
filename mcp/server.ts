@@ -33,6 +33,11 @@ import {
   recordCommits,
   removeNode,
   tasksForFeature,
+  readRun,
+  readRuns,
+  reportRun,
+  setRunState,
+  startRun,
   trackNode,
   updateComponent,
   updateTask,
@@ -44,6 +49,7 @@ import {
   type ComponentNode,
 } from "../lib/project/component";
 import { componentContext } from "../lib/project/component-context";
+import { RUN_STATES } from "../lib/project/run";
 import { editPrd, readRoadmap } from "../lib/project/roadmap";
 import { gitRoot, readStatus } from "../lib/project/git";
 import { linkRepository } from "../lib/project/git-link";
@@ -698,6 +704,93 @@ const build = () => {
   );
 
   /* ---------------------------------- git --------------------------------- */
+
+  /* --------------------------------- runs --------------------------------- */
+
+  server.registerTool(
+    "run_start",
+    {
+      title: "Open a run",
+      description:
+        "Declare that you are starting work, so what you do is recorded against the " +
+        "right part of the system. Give the task id and the budget, autonomy and path " +
+        "boundary come from whichever component owns it -- you do not have to know them. " +
+        "Returns what you may write and how much you may spend.",
+      inputSchema: {
+        taskId: z.string().optional(),
+        componentId: z.string().optional().describe("Only when there is no task."),
+        model: z.string().optional().describe("The model doing the work, e.g. claude-opus-5."),
+        sessionId: z.string().optional().describe("Your harness session, so hooks find this run."),
+      },
+    },
+    async ({ taskId, componentId, model, sessionId }) => {
+      const run = startRun(requireRoot(), {
+        taskId,
+        componentId,
+        sessionId,
+        actor: { model, harness: "mcp" },
+      });
+      return text({
+        runId: run.id,
+        componentId: run.componentId ?? null,
+        autonomy: run.autonomy,
+        budget: run.budget,
+        mayWrite: run.writeGlobs ?? "anywhere",
+      });
+    },
+  );
+
+  server.registerTool(
+    "run_report",
+    {
+      title: "Report progress on a run",
+      description:
+        "Record what a run has spent and which files it changed, and find out whether it " +
+        "may continue. Call this as you work, not at the end: a run that has passed its " +
+        "budget is blocked, and a file outside its boundary is refused and reported back " +
+        "rather than counted. `ok: false` means stop and tell the person why.",
+      inputSchema: {
+        runId: z.string(),
+        inputTokens: z.number().optional(),
+        outputTokens: z.number().optional(),
+        toolCalls: z.number().optional(),
+        touched: z.array(z.string()).optional().describe("Repo-relative files you wrote."),
+      },
+    },
+    async ({ runId, ...progress }) => {
+      const result = reportRun(requireRoot(), runId, progress);
+      if (!result) throw new Error(`No run "${runId}".`);
+      return text({
+        ok: result.verdict.ok,
+        state: result.run.state,
+        exceeded: result.verdict.exceeded ?? null,
+        detail: result.verdict.detail ?? null,
+        refused: result.refused,
+        spent: result.run.spent,
+      });
+    },
+  );
+
+  server.registerTool(
+    "run_finish",
+    {
+      title: "Move a run along",
+      description:
+        "Hand a run to review when the work is done, or abandon it. A run cannot go " +
+        "straight from running to merged -- merging is a person's decision, and this tool " +
+        "will refuse it.",
+      inputSchema: {
+        runId: z.string(),
+        state: z.enum(RUN_STATES),
+        reason: z.string().optional(),
+      },
+    },
+    async ({ runId, state, reason }) => {
+      const run = setRunState(requireRoot(), runId, state, reason);
+      if (!run) throw new Error(`No run "${runId}".`);
+      return text({ runId: run.id, state: run.state, spent: run.spent, touched: run.touched });
+    },
+  );
 
   server.registerTool(
     "git_status",

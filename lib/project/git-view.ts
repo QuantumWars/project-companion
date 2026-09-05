@@ -20,7 +20,7 @@ import {
   repoFingerprint,
 } from "./git";
 import { linkRepository, type AttributionResult } from "./git-link";
-import { readJson, projectPaths, readTasks, writeJson } from "./store";
+import { readJson, projectPaths, readRuns, readTasks, writeJson } from "./store";
 import type { Feature } from "./types";
 
 export type GitView = {
@@ -36,6 +36,16 @@ export type GitView = {
 };
 
 type CacheFile = { fingerprint: string; attribution: AttributionResult };
+
+/**
+ * Turns over whenever a run could change an answer.
+ *
+ * Count, plus the newest update stamp: a new run, a file added to one, or a run
+ * ending all move it. Cheap, and it does not need to be a hash of everything --
+ * a cache key only has to change when the answer might.
+ */
+const runFingerprint = (runs: readonly { updatedAt: string }[]): string =>
+  `${runs.length}:${runs.map((r) => r.updatedAt).sort().at(-1) ?? "none"}`;
 
 export const readGitView = async (
   root: string,
@@ -62,13 +72,20 @@ export const readGitView = async (
     const cachePath = projectPaths(root).gitCache;
     const cached = options.refresh ? null : readJson<CacheFile | null>(cachePath, null);
 
+    // Runs are an attribution input that changes without the repository
+    // changing: an agent edits for ten minutes and the heads are identical
+    // throughout. Keying only on the repo would serve an attribution computed
+    // before any of that was known, so the run state is part of the key.
+    const runs = readRuns(root);
+    const key = `${fingerprint}:${runFingerprint(runs)}`;
+
     let attribution: AttributionResult;
-    if (cached && cached.fingerprint === fingerprint) {
+    if (cached && cached.fingerprint === key) {
       attribution = cached.attribution;
     } else {
       const tasks = readTasks(root).tasks;
-      attribution = await linkRepository(repo, tasks, features, options.limit);
-      writeJson(cachePath, { fingerprint, attribution } satisfies CacheFile);
+      attribution = await linkRepository(repo, tasks, features, options.limit, runs);
+      writeJson(cachePath, { fingerprint: key, attribution } satisfies CacheFile);
     }
 
     return { available: true, root: repo, status, branches, worktrees, tags, attribution };

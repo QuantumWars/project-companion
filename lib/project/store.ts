@@ -29,6 +29,7 @@ import {
   removeBundle,
   migrateToBundle,
   writeBundle,
+  type AgentPolicy,
   type ProjectBundle,
 } from "./bundle";
 import {
@@ -40,7 +41,17 @@ import {
   type ComponentLifecycle,
   type Reconciliation,
 } from "./component";
-import { appendEvent, type NewEvent } from "./events";
+import { appendEvent, readEvents, type NewEvent } from "./events";
+import {
+  canTransition,
+  checkBudget,
+  mayWrite,
+  runsFrom,
+  type AgentRun,
+  type BudgetVerdict,
+  type RunActor,
+  type RunState,
+} from "./run";
 import {
   DEFAULT_STORE_DIR,
   DEFAULT_PRD_PATH,
@@ -1129,6 +1140,188 @@ export const deleteComponent = (root: string, id: string): boolean => {
   });
 
   return removed;
+};
+
+/* ---------------------------------- runs ---------------------------------- */
+
+/**
+ * What an agent may do here, and how much of it.
+ *
+ * Resolved per component rather than per project, because the right answer
+ * differs by blast radius: a utility module can take autonomous edits, billing
+ * cannot. A component with no policy of its own inherits the project default,
+ * and `writeGlobs` falls back to the component's declared paths -- the boundary
+ * is the same declaration that drives attribution, so there is exactly one
+ * place to say where a component lives.
+ */
+export const resolvePolicy = (
+  root: string,
+  componentId?: string,
+): Required<Pick<AgentPolicy, "autonomy">> & AgentPolicy => {
+  const bundle = usesBundle(root) ? requireBundle(root) : null;
+  const agents = bundle?.agents ?? {};
+  const specific = componentId ? agents.byComponent?.[componentId] : undefined;
+  const component = componentId ? bundle?.components[componentId] : undefined;
+
+  return {
+    // `confirm` by default: an agent proposes and a person approves. Defaulting
+    // to autonomous would make the safest setting the one nobody chose.
+    autonomy: specific?.autonomy ?? agents.default?.autonomy ?? "confirm",
+    budget: { ...agents.default?.budget, ...specific?.budget },
+    writeGlobs: specific?.writeGlobs ?? agents.default?.writeGlobs ?? component?.paths,
+  };
+};
+
+export const readRuns = (root: string): AgentRun[] => runsFrom(readEvents(root));
+
+export const readRun = (root: string, id: string): AgentRun | null =>
+  readRuns(root).find((r) => r.id === id) ?? null;
+
+/**
+ * The run a harness session belongs to.
+ *
+ * Hooks fire with a session id and know nothing about runs, so the session is
+ * recorded on the run when it starts and looked up here. Only an unfinished run
+ * matches: a session id can be reused across a resume, and attributing new work
+ * to a merged run would quietly reopen it.
+ */
+export const runForSession = (root: string, sessionId: string): AgentRun | null =>
+  readRuns(root).find(
+    (r) =>
+      r.sessionId === sessionId && r.state !== "merged" && r.state !== "abandoned",
+  ) ?? null;
+
+export type RunInput = {
+  taskId?: string;
+  componentId?: string;
+  /** The harness session, so hooks can find this run again. */
+  sessionId?: string;
+  actor?: Partial<RunActor>;
+  branch?: string;
+  worktree?: string;
+  /** Overrides the resolved policy. For a caller that knows better, not a default. */
+  budget?: AgentPolicy["budget"];
+};
+
+/**
+ * Opens a run.
+ *
+ * The component is taken from the task when not given, so an agent picking up a
+ * card inherits that part of the system's budget and boundary without being
+ * told about either. That is the point: the constraints follow the work rather
+ * than having to be restated at every call site.
+ */
+export const startRun = (root: string, input: RunInput): AgentRun => {
+  const task = input.taskId
+    ? readTasks(root).tasks.find((t) => t.id === input.taskId)
+    : undefined;
+  const componentId = input.componentId ?? task?.componentId;
+  const policy = resolvePolicy(root, componentId);
+  const id = randomUUID().slice(0, 8);
+
+  logEvent(root, {
+    kind: "run.started",
+    componentId,
+    data: {
+      runId: id,
+      taskId: input.taskId,
+      sessionId: input.sessionId,
+      actor: { kind: "agent", ...input.actor },
+      autonomy: policy.autonomy,
+      budget: input.budget ?? policy.budget ?? {},
+      writeGlobs: policy.writeGlobs,
+      branch: input.branch,
+      worktree: input.worktree,
+    },
+  });
+
+  const run = readRun(root, id);
+  if (!run) {
+    // The log is the run, so a log that cannot be written is a run that did not
+    // start. Saying so beats handing back a run object nothing will remember.
+    throw new Error(
+      "Could not record the run. The event log is not writable, so nothing would be tracked.",
+    );
+  }
+  return run;
+};
+
+/**
+ * Records what a run has spent, and says whether it may continue.
+ *
+ * The verdict is the return value rather than a thrown error because this is
+ * called from a hook on every tool use: an exception there would break the
+ * agent's session over a budget, which is a worse outcome than telling it to
+ * stop. A run that goes over is moved to `blocked`, which is recoverable.
+ */
+export const reportRun = (
+  root: string,
+  id: string,
+  progress: {
+    inputTokens?: number;
+    outputTokens?: number;
+    toolCalls?: number;
+    touched?: string[];
+  },
+): { run: AgentRun; verdict: BudgetVerdict; refused: string[] } | null => {
+  const before = readRun(root, id);
+  if (!before) return null;
+
+  // A write outside the boundary is recorded as attempted and reported back,
+  // not silently dropped: it usually means the task spans two components, and
+  // that is a fact about the architecture worth seeing.
+  const refused = (progress.touched ?? []).filter((path) => !mayWrite(before, path));
+  const allowed = (progress.touched ?? []).filter((path) => mayWrite(before, path));
+
+  logEvent(root, {
+    kind: "run.progress",
+    componentId: before.componentId,
+    data: {
+      runId: id,
+      inputTokens: progress.inputTokens ?? 0,
+      outputTokens: progress.outputTokens ?? 0,
+      toolCalls: progress.toolCalls ?? 0,
+      touched: allowed,
+      ...(refused.length ? { refused } : {}),
+    },
+  });
+
+  const run = readRun(root, id)!;
+  const verdict = checkBudget(run);
+
+  if (!verdict.ok && run.state === "running") {
+    setRunState(root, id, "blocked", `Budget exhausted: ${verdict.detail}`);
+    return { run: readRun(root, id)!, verdict, refused };
+  }
+  return { run, verdict, refused };
+};
+
+/**
+ * Moves a run along its lifecycle, refusing a transition that is not allowed.
+ *
+ * The check happens here as well as in the projection. The projection drops an
+ * illegal transition so a bad event cannot corrupt the fold; this refuses to
+ * write one in the first place, so the log stays a record of what happened
+ * rather than a record of what was attempted.
+ */
+export const setRunState = (
+  root: string,
+  id: string,
+  state: RunState,
+  reason?: string,
+): AgentRun | null => {
+  const run = readRun(root, id);
+  if (!run) return null;
+  if (!canTransition(run.state, state)) {
+    throw new Error(`A ${run.state} run cannot become ${state}.`);
+  }
+
+  logEvent(root, {
+    kind: "run.state",
+    componentId: run.componentId,
+    data: { runId: id, state, reason },
+  });
+  return readRun(root, id);
 };
 
 /* --------------------------------- tasks ---------------------------------- */

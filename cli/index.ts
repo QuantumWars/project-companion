@@ -36,6 +36,13 @@ import {
   writeDiagram,
   createComponent,
   deleteComponent,
+  readRun,
+  readRuns,
+  reportRun,
+  resolvePolicy,
+  runForSession,
+  setRunState,
+  startRun,
   readComponent,
   readComponents,
   updateComponent,
@@ -51,6 +58,8 @@ import {
   type ComponentNode,
 } from "../lib/project/component";
 import { readEvents } from "../lib/project/events";
+import { parseHook } from "../lib/project/ingest";
+import { RUN_STATES, type RunState } from "../lib/project/run";
 import {
   editPrd,
   readRoadmap,
@@ -125,6 +134,14 @@ project-companion - architecture and task boards that live in your repo
   project-companion task done <id> [--commit SHA]
   project-companion task rm <id>
 
+  project-companion run start [taskId] [--component C] [--model M] [--session S]
+                                             open a run, with that work's budget
+  project-companion run list [--all]         runs still in flight
+  project-companion run show <id>            spend, boundary, files touched
+  project-companion run <state> <id> [reason]
+                                             ${RUN_STATES.join(" | ")}
+  project-companion ingest                   a harness hook payload, on stdin
+
   project-companion log [--limit N] [--component ID]
                                              the event log: what happened, in order
 
@@ -198,6 +215,57 @@ const AGENT_DIRS = [".claude", ".codex", ".cursor", ".gemini"] as const;
 
 const agentDirFor = (root: string): string =>
   AGENT_DIRS.find((dir) => existsSync(join(root, dir))) ?? AGENT_DIRS[0];
+
+const HOOK_EVENTS = ["SessionStart", "PostToolUse", "SessionEnd"] as const;
+const HOOK_COMMAND = "npx project-companion ingest";
+
+/**
+ * Wires the agent's hooks so runs record themselves.
+ *
+ * Merged into whatever is already in `settings.json` rather than written over
+ * it. Somebody's formatter, their linter, their notification -- all of those
+ * live in the same file, and a tool that installs itself by deleting them is a
+ * tool that gets uninstalled. An existing entry for this command is left alone,
+ * so running `init` twice does not stack three copies.
+ */
+const installHooks = (root: string, agentDir: string): "added" | "present" | "skipped" => {
+  const path = join(root, agentDir, "settings.json");
+  let settings: Record<string, unknown> = {};
+
+  if (existsSync(path)) {
+    try {
+      settings = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
+    } catch {
+      // Refusing to touch a file we cannot parse: rewriting it would lose
+      // whatever is in there, and that is worse than not installing a hook.
+      return "skipped";
+    }
+  }
+
+  const hooks = (settings.hooks ?? {}) as Record<string, unknown[]>;
+  let added = false;
+
+  for (const event of HOOK_EVENTS) {
+    const matchers = Array.isArray(hooks[event]) ? (hooks[event] as Record<string, unknown>[]) : [];
+    const already = matchers.some((m) =>
+      (Array.isArray(m.hooks) ? (m.hooks as Record<string, unknown>[]) : []).some(
+        (h) => h.command === HOOK_COMMAND,
+      ),
+    );
+    if (already) continue;
+
+    matchers.push({ hooks: [{ type: "command", command: HOOK_COMMAND }] });
+    hooks[event] = matchers;
+    added = true;
+  }
+
+  if (!added) return "present";
+
+  settings.hooks = hooks;
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+  return "added";
+};
 
 /** `--paths "a/**,b/**"` -- comma or whitespace separated, both are natural to type. */
 const splitList = (value: string | undefined): string[] | undefined =>
@@ -423,9 +491,15 @@ const main = () => {
       mkdirSync(dirname(skill), { recursive: true });
       writeFileSync(skill, SKILL_MD, "utf8");
     }
+    const hooks = installHooks(root, agentDirFor(root));
     process.stdout.write(
       `Initialised "${project.name}" in ${root}/${findProject(root)?.storeDir}\n` +
         `Wrote ${relative(root, skill)} so your agent can use it directly.\n` +
+        (hooks === "added"
+          ? `Hooked ${agentDirFor(root)}/settings.json so agent runs record themselves.\n`
+          : hooks === "skipped"
+            ? `Left ${agentDirFor(root)}/settings.json alone -- it is not valid JSON. Add the ingest hook by hand to track runs.\n`
+            : "") +
         `Next: project-companion diagram new "System architecture"\n`,
     );
     return;
@@ -719,6 +793,146 @@ const main = () => {
         `${when}  ${who.padEnd(14)} ${e.kind.padEnd(20)} ${scope}${summarise(e.data)}\n`,
       );
     }
+    return;
+  }
+
+  /* ---------------------------------- runs ---------------------------------- */
+
+  if (command === "run") {
+    if (sub === "start") {
+      const taskId = rest[0];
+      if (taskId && !readTasks(root).tasks.some((t) => t.id === taskId)) {
+        die(`No task "${taskId}".`);
+      }
+      const run = startRun(root, {
+        taskId,
+        componentId: flag("component"),
+        sessionId: flag("session"),
+        actor: { model: flag("model"), harness: flag("harness") },
+      });
+
+      const policy = [
+        run.componentId ? `component ${run.componentId}` : "no component",
+        `autonomy ${run.autonomy}`,
+        run.budget.tokens ? `${run.budget.tokens} tokens` : "no token ceiling",
+      ].join("  ");
+
+      process.stdout.write(
+        `Run ${run.id}  ${policy}\n` +
+          (run.writeGlobs?.length
+            ? `May write: ${run.writeGlobs.join(", ")}\n`
+            : `May write: anywhere (this run is not scoped to a component)\n`),
+      );
+      return;
+    }
+
+    if (sub === "show") {
+      const id = rest[0] ?? die("Usage: project-companion run show <id>");
+      const run = readRun(root, id) ?? die(`No run "${id}"`);
+      const spent = run.spent;
+      process.stdout.write(
+        [
+          `${run.id}  ${run.state}${run.reason ? `  (${run.reason})` : ""}`,
+          `actor:    ${run.actor.model ?? "?"}${run.actor.harness ? ` via ${run.actor.harness}` : ""}`,
+          run.componentId ? `component: ${run.componentId}` : "",
+          run.taskId ? `task:     ${run.taskId}` : "",
+          `spent:    ${spent.inputTokens + spent.outputTokens} tokens, ${spent.toolCalls} tool calls, ${Math.round(spent.wallClockMs / 1000)}s`,
+          `boundary: ${run.writeGlobs?.join(", ") || "anywhere"}`,
+          run.touched.length ? `touched:\n${run.touched.map((f) => `  ${f}`).join("\n")}` : "touched: nothing yet",
+        ].filter(Boolean).join("\n") + "\n",
+      );
+      return;
+    }
+
+    if (sub && (RUN_STATES as readonly string[]).includes(sub)) {
+      const id = rest[0] ?? die(`Usage: project-companion run ${sub} <id>`);
+      try {
+        const run = setRunState(root, id, sub as RunState, rest.slice(1).join(" ") || undefined);
+        if (!run) die(`No run "${id}"`);
+        process.stdout.write(`${id} -> ${run!.state}\n`);
+      } catch (error) {
+        die(error instanceof Error ? error.message : String(error));
+      }
+      return;
+    }
+
+    // `run list`, and the default.
+    const runs = readRuns(root).filter(
+      (r) => has("all") || (r.state !== "merged" && r.state !== "abandoned"),
+    );
+    if (!runs.length) {
+      process.stdout.write(
+        has("all") ? "No runs yet.\n" : "Nothing in flight. `project-companion run list --all` for finished ones.\n",
+      );
+      return;
+    }
+    for (const r of runs) {
+      const tokens = r.spent.inputTokens + r.spent.outputTokens;
+      process.stdout.write(
+        `${r.id}  ${r.state.padEnd(16)} ${(r.componentId ?? "-").padEnd(18)} ` +
+          `${String(tokens).padStart(7)} tok  ${String(r.touched.length).padStart(3)} files  ${r.actor.model ?? ""}\n`,
+      );
+    }
+    return;
+  }
+
+  /**
+   * A harness hook, on stdin.
+   *
+   * Silent on anything it does not recognise, and never non-zero: this runs
+   * inside somebody's coding session, and a tracking tool that can break the
+   * session it is tracking will be removed from the settings within a day.
+   */
+  if (command === "ingest") {
+    let raw = "";
+    process.stdin.setEncoding("utf8");
+    process.stdin.on("data", (chunk) => (raw += chunk));
+    process.stdin.on("end", () => {
+      try {
+        const event = parseHook(JSON.parse(raw));
+        if (event.kind === "unknown") return;
+
+        if (event.kind === "session.start") {
+          if (runForSession(root, event.sessionId)) return; // A resume, not a new run.
+          startRun(root, {
+            sessionId: event.sessionId,
+            actor: { model: event.model, harness: event.harness },
+          });
+          return;
+        }
+
+        const run = runForSession(root, event.sessionId);
+        if (!run) return;
+
+        if (event.kind === "tool.use") {
+          const result = reportRun(root, run.id, {
+            inputTokens: event.inputTokens,
+            outputTokens: event.outputTokens,
+            toolCalls: 1,
+            touched: event.touched,
+          });
+          // The one thing worth interrupting for: the agent is about to keep
+          // going past a ceiling somebody set, or outside a boundary.
+          if (result && !result.verdict.ok) {
+            process.stderr.write(
+              `project-companion: run ${run.id} is over budget (${result.verdict.detail}) and is now blocked.\n`,
+            );
+          }
+          if (result?.refused.length) {
+            process.stderr.write(
+              `project-companion: ${result.refused.join(", ")} is outside ${run.componentId ?? "this run"}'s boundary.\n`,
+            );
+          }
+          return;
+        }
+
+        if (event.kind === "session.end" && run.state === "running") {
+          setRunState(root, run.id, "awaiting_review", event.reason);
+        }
+      } catch {
+        // See above: a hook must not fail the session it is observing.
+      }
+    });
     return;
   }
 

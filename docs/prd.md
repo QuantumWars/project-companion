@@ -164,3 +164,50 @@ Paths: lib/project/roadmap.ts, lib/project/bundle.ts
 - [x] The project lock is re-entrant, so a nested write does not deadlock against itself
 - [x] Editing the PRD holds that lock across the whole read-check-write
 - [x] Concurrent ticks from separate processes all land, and the prose is untouched
+
+## Phase: Agent plane
+
+Goal: make an agent a supervised contributor rather than an anonymous one -- with a
+budget, a boundary, and a record of what it actually did that the repository can be
+checked against.
+
+### Agent runs
+<!-- id: agent-runs -->
+
+A run is a unit of agent work with a state machine, a budget and a path boundary, derived
+from the event log rather than stored -- a run updates on every tool call, and taking the
+project lock that often would stall every other writer.
+
+Paths: lib/project/run.ts
+
+- [x] A run's lifecycle refuses the transitions that make no sense
+- [x] A run inherits its budget and boundary from the component that owns the work
+- [x] Going over budget blocks the run rather than failing the agent's session
+- [x] A write outside the boundary is refused and reported, never silently counted
+- [ ] Mission control shows what is in flight and what it is spending
+
+### Harness ingestion
+<!-- id: harness-ingestion -->
+
+Runs record themselves from the coding agent's own hooks, normalised onto the
+OpenTelemetry GenAI conventions so a harness other than Claude Code needs no adapter.
+
+Paths: lib/project/ingest.ts
+
+- [x] A session start, tool use and session end each become the right event
+- [x] Only files the agent wrote are counted, not everything it read
+- [x] A payload this build does not understand is ignored, never an error
+- [x] `init` installs the hooks without disturbing what is already there
+
+### Run attribution
+<!-- id: run-attribution -->
+
+The fifth and second-strongest signal: a commit of files a run was watched writing,
+inside the window it was open. This is what makes attribution work without the trailer.
+
+Paths: lib/project/git-link.ts
+
+- [x] A commit matching a run's files and window attributes to that run's task
+- [x] A window without a file overlap is not a match, and neither is the reverse
+- [x] Two runs claiming one commit attribute to neither
+- [x] A recorded sha still outranks it, and it outranks a trailer

@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-09-05T12:43:08.473Z",
-  "revision": 99,
+  "updatedAt": "2026-09-05T12:53:36.705Z",
+  "revision": 102,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1341,6 +1341,19 @@
       "lifecycle": "active",
       "createdAt": "2026-09-05T09:16:13.234Z",
       "updatedAt": "2026-09-05T09:16:13.234Z"
+    },
+    "agent-plane": {
+      "id": "agent-plane",
+      "title": "Agent plane",
+      "owner": "subhapattnaik@theboringpeople.in",
+      "paths": [
+        "lib/project/run.ts",
+        "lib/project/ingest.ts"
+      ],
+      "parentId": "component-model",
+      "lifecycle": "active",
+      "createdAt": "2026-09-05T12:53:36.519Z",
+      "updatedAt": "2026-09-05T12:53:36.519Z"
     }
   },
   "tasks": [
@@ -1626,6 +1639,26 @@
       "commits": [
         "0a0a6b209aac3965298ae08330459f13bd349495"
       ]
+    },
+    {
+      "id": "0914c01f",
+      "title": "The agent plane: runs, budgets, boundaries and ingestion",
+      "status": "in_progress",
+      "componentId": "agent-plane",
+      "featureId": "agent-runs",
+      "createdAt": "2026-09-05T12:53:36.610Z",
+      "updatedAt": "2026-09-05T12:53:36.610Z",
+      "order": 0
+    },
+    {
+      "id": "72323b78",
+      "title": "Mission control: what is in flight and what it is spending",
+      "status": "todo",
+      "componentId": "surfaces",
+      "featureId": "agent-runs",
+      "createdAt": "2026-09-05T12:53:36.705Z",
+      "updatedAt": "2026-09-05T12:53:36.705Z",
+      "order": 2
     }
   ],
   "roadmap": {

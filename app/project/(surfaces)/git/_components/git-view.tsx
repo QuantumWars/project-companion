@@ -41,6 +41,13 @@ const SIGNAL: Record<AttributionSignal, { label: string; hint: string; className
     hint: "The sha was recorded on the task explicitly. Strongest signal.",
     className: "bg-status-done/10 text-status-done ring-status-done/25",
   },
+  run: {
+    label: "run",
+    hint:
+      "An agent run was watched writing these files, inside the window it was open. " +
+      "Observed rather than declared, so it holds without the trailer convention.",
+    className: "bg-brand-subtle text-brand ring-brand-border",
+  },
   trailer: {
     label: "trailer",
     hint: "The commit message carries a project-companion: <id> trailer.",
