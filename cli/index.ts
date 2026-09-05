@@ -9,6 +9,7 @@
  */
 
 import { basename, dirname, join, relative, resolve } from "node:path";
+import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 import {
@@ -59,6 +60,7 @@ import {
 } from "../lib/project/component";
 import { readEvents } from "../lib/project/events";
 import { parseHook } from "../lib/project/ingest";
+import { mergeBundles } from "../lib/project/merge";
 import { RUN_STATES, type RunState } from "../lib/project/run";
 import {
   editPrd,
@@ -134,6 +136,8 @@ project-companion - architecture and task boards that live in your repo
   project-companion task done <id> [--commit SHA]
   project-companion task rm <id>
 
+  project-companion merge-driver <base> <ours> <theirs>
+                                             git calls this; init registers it
   project-companion run start [taskId] [--component C] [--model M] [--session S]
                                              open a run, with that work's budget
   project-companion run list [--all]         runs still in flight
@@ -215,6 +219,44 @@ const AGENT_DIRS = [".claude", ".codex", ".cursor", ".gemini"] as const;
 
 const agentDirFor = (root: string): string =>
   AGENT_DIRS.find((dir) => existsSync(join(root, dir))) ?? AGENT_DIRS[0];
+
+/**
+ * Teaches this clone to merge `.project` structurally.
+ *
+ * Two halves, because git needs both: `.gitattributes` says which driver a path
+ * uses and is committed, so everybody gets it; `.git/config` says what the
+ * driver actually runs and is local, because a repository that could ship
+ * executable commands to whoever clones it would be a supply-chain problem.
+ *
+ * That split is why this is idempotent and why a clone that never runs `init`
+ * simply falls back to git's line merge -- degraded, not broken.
+ */
+const installMergeDriver = (root: string): "added" | "present" => {
+  const attributes = join(root, ".gitattributes");
+  const line = ".project merge=project-companion";
+  const existing = existsSync(attributes) ? readFileSync(attributes, "utf8") : "";
+
+  let added: "added" | "present" = "present";
+  if (!existing.includes(line)) {
+    writeFileSync(
+      attributes,
+      `${existing}${existing && !existing.endsWith("\n") ? "\n" : ""}${line}\n`,
+      "utf8",
+    );
+    added = "added";
+  }
+
+  try {
+    const git = (...args: string[]) =>
+      execFileSync("git", args, { cwd: root, stdio: "pipe" }).toString();
+    git("config", "merge.project-companion.name", "project-companion structural merge");
+    git("config", "merge.project-companion.driver", "npx project-companion merge-driver %O %A %B");
+  } catch {
+    // Not a repository, or git is unavailable. The attribute is still correct
+    // for whenever it becomes one.
+  }
+  return added;
+};
 
 const HOOK_EVENTS = ["SessionStart", "PostToolUse", "SessionEnd"] as const;
 const HOOK_COMMAND = "npx project-companion ingest";
@@ -471,6 +513,39 @@ const main = () => {
     return;
   }
 
+  /**
+   * Git's merge driver for `.project`.
+   *
+   * Registered by `init`, invoked by git with three temporary files. Exits 0
+   * when it merged cleanly and 1 when it could not, which is the contract --
+   * a non-zero exit leaves git's conflict markers in place rather than
+   * pretending the merge worked.
+   */
+  if (command === "merge-driver") {
+    const [base, ours, theirs] = [sub, rest[0], rest[1]];
+    if (!base || !ours || !theirs) die("Usage: project-companion merge-driver <base> <ours> <theirs>");
+
+    const read = (path: string) => {
+      try {
+        return readFileSync(path, "utf8");
+      } catch {
+        return "";
+      }
+    };
+
+    const result = mergeBundles(read(base!), read(ours!), read(theirs!));
+    if (!result.merged || result.conflicts.length) {
+      process.stderr.write(
+        `project-companion: cannot merge ${result.conflicts.join(", ")} automatically.\n`,
+      );
+      process.exit(1);
+    }
+
+    // Git reads the result back out of `ours`.
+    writeFileSync(ours!, `${JSON.stringify(result.merged, null, 2)}\n`, "utf8");
+    return;
+  }
+
   if (command === "init") {
     const root = process.cwd();
     const name = sub ?? basename(root);
@@ -492,9 +567,13 @@ const main = () => {
       writeFileSync(skill, SKILL_MD, "utf8");
     }
     const hooks = installHooks(root, agentDirFor(root));
+    const merge = installMergeDriver(root);
     process.stdout.write(
       `Initialised "${project.name}" in ${root}/${findProject(root)?.storeDir}\n` +
         `Wrote ${relative(root, skill)} so your agent can use it directly.\n` +
+        (merge === "added"
+          ? `Registered a merge driver for .project, so two people's boards merge.\n`
+          : "") +
         (hooks === "added"
           ? `Hooked ${agentDirFor(root)}/settings.json so agent runs record themselves.\n`
           : hooks === "skipped"

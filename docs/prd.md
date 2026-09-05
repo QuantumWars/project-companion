@@ -211,3 +211,17 @@ Paths: lib/project/git-link.ts
 - [x] A window without a file overlap is not a match, and neither is the reverse
 - [x] Two runs claiming one commit attribute to neither
 - [x] A recorded sha still outranks it, and it outranks a trailer
+
+### Two clones, one board
+<!-- id: shared-board -->
+
+`.project` is one file everybody writes, so git's line merge turns two people editing
+different parts of the project into a conflict neither can resolve. A structural merge
+makes it disappear, because it was never a real one.
+
+Paths: lib/project/merge.ts
+
+- [x] Two people adding different things both keep them
+- [x] Both sides editing one entity takes the later one, not half of each
+- [x] A genuine collision fails rather than picking a winner
+- [x] Two clones that both edited the board merge through real git

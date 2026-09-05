@@ -85,10 +85,53 @@ import type { ArchEdge, ArchNode, DiagramType } from "@/types/arch";
  * than one agent directory and the caller must not have to guess which one is
  * in use.
  */
+/**
+ * Discovery is cached, and the cache checks itself.
+ *
+ * `usesBundle` calls this, and `usesBundle` runs on every read and every write
+ * -- so listing tasks walked the tree once per task, stat-ing four candidate
+ * paths at every level on the way up.
+ *
+ * The cache re-confirms its answer with a single `existsSync` rather than
+ * relying on every code path that creates, moves, migrates or deletes a project
+ * remembering to invalidate it. That discipline is the kind that holds until
+ * somebody adds a fifth such path and does not know they have to; one stat
+ * instead of four-per-level is nearly all of the win and cannot go stale.
+ *
+ * Only positive answers are cached. "There is no project here" has nothing to
+ * re-confirm cheaply, and it is the answer most likely to stop being true --
+ * `init` is precisely the act of making it false.
+ *
+ * Keyed by the directory asked about rather than held as one value, because a
+ * long-lived process (the dev server) serves several projects through `?root=`.
+ */
+const discovered = new Map<string, { root: string; storeDir: string }>();
+
+export const forgetDiscovery = () => discovered.clear();
+
+const stillThere = (found: { root: string; storeDir: string }): boolean =>
+  existsSync(
+    found.storeDir === BUNDLE_FILE
+      ? join(found.root, BUNDLE_FILE)
+      : join(found.root, found.storeDir, "project.json"),
+  );
+
 export const findProject = (
   from?: string,
 ): { root: string; storeDir: string } | null => {
-  let dir = resolvePath(from ?? process.env.CLAUDE_PROJECT_DIR ?? process.cwd());
+  const start = resolvePath(from ?? process.env.CLAUDE_PROJECT_DIR ?? process.cwd());
+
+  const cached = discovered.get(start);
+  if (cached && stillThere(cached)) return cached;
+  if (cached) discovered.delete(start);
+
+  const found = discover(start);
+  if (found) discovered.set(start, found);
+  return found;
+};
+
+const discover = (start: string): { root: string; storeDir: string } | null => {
+  let dir = start;
 
   for (;;) {
     // A `.project` file is the current format and wins wherever it is found.
@@ -310,6 +353,8 @@ export const moveStore = (
   mkdirSync(dirname(to.dir), { recursive: true });
   renameSync(from.dir, to.dir);
 
+  // The store is somewhere else now; a cached answer would point at the old one.
+  forgetDiscovery();
   return { from: current.storeDir, to: toStoreDir };
 };
 

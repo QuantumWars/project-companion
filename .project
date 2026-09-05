@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-09-05T12:53:36.911Z",
-  "revision": 104,
+  "updatedAt": "2026-09-05T14:01:23.748Z",
+  "revision": 107,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1509,20 +1509,20 @@
     {
       "id": "302d624c",
       "title": "Validate the bundle on read instead of degrading to defaults",
-      "status": "todo",
+      "status": "done",
       "componentId": "data-layer",
       "createdAt": "2026-09-05T09:16:48.481Z",
-      "updatedAt": "2026-09-05T09:16:48.481Z",
-      "order": 6
+      "updatedAt": "2026-09-05T14:01:23.677Z",
+      "order": 25
     },
     {
       "id": "a777c062",
       "title": "Memoise the project root and cache the parsed bundle",
-      "status": "todo",
+      "status": "done",
       "componentId": "data-layer",
       "createdAt": "2026-09-05T09:16:48.552Z",
-      "updatedAt": "2026-09-05T12:42:20.922Z",
-      "order": 7,
+      "updatedAt": "2026-09-05T14:01:23.748Z",
+      "order": 26,
       "commits": []
     },
     {
@@ -1662,6 +1662,16 @@
       "createdAt": "2026-09-05T12:53:36.705Z",
       "updatedAt": "2026-09-05T12:53:36.705Z",
       "order": 2
+    },
+    {
+      "id": "9c66c872",
+      "title": "Structural merge for .project, and two P0 debts",
+      "status": "in_progress",
+      "componentId": "data-layer",
+      "featureId": "shared-board",
+      "createdAt": "2026-09-05T14:01:23.607Z",
+      "updatedAt": "2026-09-05T14:01:23.607Z",
+      "order": 0
     }
   ],
   "roadmap": {

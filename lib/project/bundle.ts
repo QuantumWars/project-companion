@@ -127,10 +127,51 @@ export class BundleConflictError extends Error {}
 
 export const hasBundle = (root: string): boolean => existsSync(bundlePath(root));
 
+/**
+ * What a bundle must look like to be one.
+ *
+ * Deliberately shallow. Validating every diagram node would reject a file
+ * written by a newer build the moment it adds a field, and this format is
+ * explicitly forward-compatible -- unknown keys are preserved, missing ones are
+ * filled. What is checked is only what the code below would crash on: the
+ * containers it iterates and the counter it compares.
+ *
+ * A file that fails this returns null, which callers already treat as "no
+ * project here" -- the same path a missing file takes. The alternative was the
+ * old behaviour: spread a corrupt object over the defaults and carry on with a
+ * project that has silently lost its diagrams.
+ */
+const SHAPE: Record<string, "object" | "array" | "number" | "string"> = {
+  diagrams: "object",
+  boards: "object",
+  tasks: "array",
+  revision: "number",
+};
+
+const looksLikeBundle = (value: unknown): value is ProjectBundle => {
+  if (typeof value !== "object" || value === null) return false;
+  const bundle = value as Record<string, unknown>;
+
+  for (const [key, kind] of Object.entries(SHAPE)) {
+    const found = bundle[key];
+    // Absent is fine: a field added after this file was written is filled in
+    // below. Present but the wrong shape is not -- that is corruption.
+    if (found === undefined) continue;
+    const ok =
+      kind === "array"
+        ? Array.isArray(found)
+        : kind === "object"
+          ? typeof found === "object" && found !== null && !Array.isArray(found)
+          : typeof found === kind;
+    if (!ok) return false;
+  }
+  return bundle.diagrams !== undefined;
+};
+
 export const readBundle = (root: string): ProjectBundle | null => {
   try {
-    const parsed = JSON.parse(readFileSync(bundlePath(root), "utf8")) as ProjectBundle;
-    if (!parsed || typeof parsed !== "object" || !parsed.diagrams) return null;
+    const parsed: unknown = JSON.parse(readFileSync(bundlePath(root), "utf8"));
+    if (!looksLikeBundle(parsed)) return null;
     // Older files may predate a field; fill rather than fail.
     return {
       ...emptyBundle(parsed.name ?? "Untitled project"),
