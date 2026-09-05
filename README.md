@@ -33,12 +33,58 @@ the browser changes exactly one character in the file.
 progress. Your agent ticks a box and the board moves; you move a card and the
 document is untouched.
 
-**Commits attribute themselves.** Four signals, strongest first: a recorded sha, a
-`project-companion: <id>` trailer, the branch name, then overlap with a feature's
-declared paths. Path overlap only ever names a *feature*, never a task — it is an
-inference, and a task is a specific claim.
+**Commits attribute themselves.** Five signals, strongest first: a recorded sha,
+an agent run that was watched writing those files, a `project-companion: <id>`
+trailer, the branch name, then overlap with a component's declared paths. The
+last one only ever names a *component*, never a task — it is an inference, and a
+task is a specific claim. Where two things claim a commit equally well, neither
+gets it.
 
 <img src="docs/media/git.png" alt="The git surface, with a commit graph and per-feature delivery evidence">
+
+**Every node on the canvas can own work.** A component is an architecture node
+with a directly responsible individual, a region of the source, and its own
+board, spec slice and evidence. `Paths:` is the join key — declare it once, and
+commits, tasks, features, agent runs and review findings all resolve through it.
+
+```bash
+project-companion whose lib/auth/token.ts
+# auth-service  grace@example.com
+#   matched lib/auth/**
+```
+
+**Agents are supervised, not anonymous.** A run has a budget, a path boundary
+inherited from its component, and a state machine a person controls. It records
+itself from your coding agent's own hooks, so nothing has to be reported. Going
+over budget blocks the run rather than failing the session; writing outside the
+boundary is refused and reported.
+
+**Done can be proven.** A feature names the command that proves it works. If the
+check fails, the ticked criteria are unticked — a claim the repository just
+refused should not still be standing. The roadmap draws *proven*, *failing* and
+*claimed* differently, which is the distinction every other board hides.
+
+**The architecture is checked against the code.** The canvas is a claim about
+how the system should be structured; the import graph is what it is. `drift`
+reports the difference — coupling that exists and is not drawn.
+
+```bash
+project-companion drift
+# 21 undeclared dependencies:
+#   canvas -> surfaces  (21 imports)
+#       app/arch/[boardId]/_components/c4-inspector.tsx imports components/ui/input.tsx
+```
+
+**Review is prepared, not just requested.** `review <sha>` writes a packet: the
+criteria the change has to satisfy and whether their checks pass, what to read
+and in what order, what to skip, and which boundaries it crosses. Findings come
+back through MCP, and any finding anchored outside the diff is dropped before a
+person sees it.
+
+**Flow is measured, and limited.** Every number is a fold over the event log —
+nothing is reported and nothing entered, because moving the card *is* the
+measurement. A WIP limit is a refusal: when review is full, starting more work
+is declined. No velocity, no points, no burndown.
 
 **Diagrams, on one canvas.** Architecture, ER schemas with column-level foreign
 keys, flowcharts, UML, and the rest of the Miro diagram families. Frames let one
@@ -69,9 +115,13 @@ Cursor or Gemini CLI learn the tool from the repository itself — no MCP
 configuration, no setup step.
 
 ```bash
-project-companion feature list              # the PRD's features
-project-companion task start <id>           # get the branch name for a task
-project-companion task done <id> --commit HEAD
+project-companion component list            # what the system is made of, and who owns it
+project-companion whose <path>              # which component owns a file
+project-companion run start <taskId>        # open a supervised run, with its budget
+project-companion verify [featureId]        # run the PRD's Verify: commands
+project-companion drift                     # the canvas, against what the code does
+project-companion review <sha>              # write a review packet
+project-companion next                      # what a person should look at first
 project-companion git unlinked              # commits linked to nothing
 ```
 
@@ -83,7 +133,7 @@ Add refund endpoint
 project-companion: 978ce4d6
 ```
 
-An MCP server with 20 tools is configured at `.mcp.json` for agents that prefer
+An MCP server with 28 tools is configured at `.mcp.json` for agents that prefer
 them to a shell. The bundle it points at is gitignored, so build it once after
 cloning:
 
@@ -93,16 +143,24 @@ npm run build:tools
 
 ## How a project is stored
 
-One file at the repository root:
-
 ```
-.project              diagrams, whiteboards, tasks, phases, overrides, git settings
+.project              diagrams, whiteboards, components, tasks, phases, policy
+.project-log/         the event log — one file per actor, so it merges cleanly
 docs/prd.md           the feature list — a document, so it stays reviewable
-.project-cache/       derived git attribution; gitignored, safe to delete
+.project-cache/       derived data; gitignored, safe to delete at any time
 ```
 
 Writes hold an exclusive lock and run as transactions, so a canvas autosave and a
-CLI edit in another terminal compose rather than collide.
+CLI edit in another terminal compose rather than collide. `.project` gets a
+structural merge driver, so two people editing different parts of the board do
+not conflict.
+
+The event log is sharded one file per actor, which means two people's histories
+merge with nothing to resolve — not by a merge driver, not by a CRDT, but because
+no two writers ever touch the same file. Each shard is hash-chained, so editing
+history after the fact is detectable.
+
+Deleting `.project-cache/` may only ever change latency, never an answer.
 
 Projects created before the single-file format keep opening unchanged;
 `project-companion migrate` converts one when you are ready.
@@ -111,13 +169,15 @@ Projects created before the single-file format keep opening unchanged;
 
 ```bash
 npm run dev          # the app
-npm test             # 106 assertions across seven suites
+npm test             # 335 assertions across nineteen suites
 npm run build:tools  # rebuild the CLI and MCP bundles
+npm run build:icons  # needed once before the typecheck below
 npx tsc --noEmit     # typecheck, CLI and MCP included
 ```
 
 The test harness is dependency-free — `node:assert` plus esbuild — and runs each
-suite in a fresh process against real temporary git repositories.
+suite in a fresh process against real temporary git repositories. Git is never
+mocked: the attribution, merge and run suites drive actual clones.
 
 ## Built on
 

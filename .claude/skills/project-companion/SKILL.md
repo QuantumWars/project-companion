@@ -21,8 +21,13 @@ project-companion: 978ce4d6
 ```
 
 That trailer is what links your commit to the board. Without it the link falls
-back to guessing from the branch name and the files you touched, which is
-weaker and sometimes wrong.
+back to the run you were working under, then to the branch name, then to a guess
+from the files you touched -- weaker each step down, and the last one is an
+inference rather than a claim.
+
+Opening a run (below) makes attribution work even when you forget the trailer,
+because the tool watched you write the files. Do both: the run is observed, the
+trailer is stated, and a reader six months from now only has the trailer.
 
 ## Orient yourself
 
@@ -115,6 +120,70 @@ npx project-companion component add "Auth service" \
    some means in progress. There is no separate feature status to set, and
    ticking a box is what moves it.
 
+## Work inside a run
+
+Open a run before you start. It costs one command and it is what gives the tool
+anything to supervise:
+
+```bash
+npx project-companion run start <taskId> --model claude-opus-5
+# Run 1ef86859  component auth  autonomy confirm  40000 tokens
+# May write: lib/auth/**
+```
+
+The budget, the autonomy level and the paths you may write come from whichever
+component owns that task -- you do not have to know them, and you should not
+argue with them. If you find yourself needing to write outside the boundary, that
+is usually a real finding about the architecture rather than a limit to work
+around. Say so.
+
+```bash
+npx project-companion run list           # what is in flight, and what it has spent
+npx project-companion run show <id>      # spend, boundary, files touched
+npx project-companion run awaiting_review <id>
+```
+
+A run cannot go straight from running to merged. Merging is a person's decision
+and the tool will refuse it, which is the point rather than an obstacle.
+
+## Prove it, do not just claim it
+
+A feature can name the command that proves it works, beside the paths that say
+where it lives:
+
+```markdown
+Paths: lib/auth/**
+
+Verify: npm test -- auth
+```
+
+```bash
+npx project-companion verify <featureId>   # or all of them
+```
+
+If the check fails, every ticked criterion on that feature is UNTICKED. That is
+deliberate: a claim the repository just refused should not still be standing.
+Tick a box only when you have run the thing that backs it.
+
+## Before you hand work over
+
+```bash
+npx project-companion drift              # coupling the architecture does not draw
+npx project-companion review <sha>       # writes a review packet for the reviewer
+npx project-companion flow               # where work is piling up
+npx project-companion next               # what a person should look at first
+```
+
+`review` writes a packet -- the criteria the change has to satisfy, what to read
+and in what order, what to skip, and which boundaries it crosses. If you are the
+one reviewing, read it and report through `report_findings`; anchor every
+finding to a file:line inside the diff, because anything landing outside it is
+dropped before a person sees it.
+
+`drift` is worth running whenever you have added an import between two parts of
+the system. Undeclared coupling means either the canvas is missing an edge or the
+code should not be crossing there, and you are the one who just found out which.
+
 ## The PRD
 
 The feature list lives in `docs/prd.md`. It is an ordinary markdown file --
@@ -203,3 +272,5 @@ answers "why is this in review".
 - Do not track every node on a diagram. A component is a claim that something is
   owned; making one for every box produces a catalog that looks like coverage
   without being it.
+- If a column is full, `task start` and `run start` will refuse. That is a
+  signal to go and finish something, not to raise the limit.
