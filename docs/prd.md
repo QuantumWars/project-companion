@@ -137,7 +137,7 @@ Paths: lib/project/component.ts
 - [x] Path overlap resolves to the most specific claim, and an ambiguous one to nothing
 - [x] The catalog reports what is wrong with it: unowned, pathless, ambiguous, dangling
 - [x] The canvas stamps component ids onto its nodes, and orphans what it removes
-- [ ] A component's board, spec and evidence are one surface in the app
+- [x] A component's board, spec and evidence are one surface in the app
 
 ### The event log
 <!-- id: event-log -->

@@ -4,9 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
-  GitBranch, LayoutGrid, Map, Network, Pencil, SquareKanban,
+  Boxes, GitBranch, LayoutGrid, Map, Network, Pencil, SquareKanban,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Kbd } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
@@ -17,6 +17,22 @@ import { ThemeToggle } from "./theme-toggle";
 
 type DiagramRef = { id: string; title: string; type: string; kind?: string };
 type GitChip = { branch?: string; ahead: number; behind: number; dirty: number } | null;
+
+/** Only what the sidebar draws; the workspace reads the rest. */
+type CatalogNode = {
+  id: string;
+  title: string;
+  orphaned?: boolean;
+  children?: CatalogNode[];
+};
+
+type SidebarComponent = {
+  id: string;
+  title: string;
+  depth: number;
+  orphaned?: boolean;
+  open: number;
+};
 
 const SURFACES = [
   { href: "/project", label: "Overview", icon: LayoutGrid, exact: true },
@@ -50,6 +66,8 @@ export const ProjectNav = ({
   const root = params.get("root");
   const [git, setGit] = useState<GitChip>(null);
   const [remote, setRemote] = useState<{ name: string; diagrams: DiagramRef[] } | null>(null);
+  const [tree, setTree] = useState<CatalogNode[]>([]);
+  const [counts, setCounts] = useState<Record<string, { open: number }>>({});
 
   const href = (path: string) => (root ? `${path}?root=${encodeURIComponent(root)}` : path);
 
@@ -57,6 +75,14 @@ export const ProjectNav = ({
     fetch(href("/api/project/git"))
       .then((r) => r.json())
       .then((v) => setGit(v.available ? v.status : null))
+      .catch(() => {});
+
+    fetch(href("/api/project/components"))
+      .then((r) => r.json())
+      .then((v) => {
+        setTree(v.tree ?? []);
+        setCounts(v.counts ?? {});
+      })
       .catch(() => {});
 
     // The server rendered this for the project the app runs in; `?root=` may
@@ -75,6 +101,18 @@ export const ProjectNav = ({
 
   const shownName = remote?.name ?? name;
   const shownDiagrams = remote?.diagrams ?? diagrams;
+
+  // Flattened here rather than rendered recursively: the sidebar needs depth
+  // for indentation, not a nested DOM, and one list keeps the keyboard order
+  // matching the visual one.
+  const components = useMemo(() => {
+    const walk = (nodes: CatalogNode[], depth: number): SidebarComponent[] =>
+      nodes.flatMap((n) => [
+        { id: n.id, title: n.title, depth, orphaned: n.orphaned, open: counts[n.id]?.open ?? 0 },
+        ...walk(n.children ?? [], depth + 1),
+      ]);
+    return walk(tree, 0);
+  }, [tree, counts]);
   const active = SURFACES.find((s) =>
     s.exact ? pathname === s.href : pathname.startsWith(s.href),
   );
@@ -127,11 +165,47 @@ export const ProjectNav = ({
         </nav>
 
         {/*
-          Always rendered, even with nothing in it. Hiding the section when a
-          project has no diagrams also hides the only way to make one, which is
-          precisely the state where you need it.
+          Components before diagrams, because a component is what the work hangs
+          off and a diagram is one drawing of it. Indented by depth so the
+          containment tree reads at a glance rather than as a flat list.
         */}
         <div className="mt-5 min-h-0 flex-1 overflow-y-auto px-2 scrollbar-slim">
+          {components.length ? (
+            <div className="mb-5">
+              <p className="px-2 pb-1 text-2xs font-medium uppercase tracking-wider text-fg-subtle">
+                Components
+              </p>
+              <div className="flex flex-col gap-y-px">
+                {components.map((c) => (
+                  <Link
+                    key={c.id}
+                    href={href(`/project/node/${c.id}`)}
+                    style={{ paddingLeft: `${8 + c.depth * 12}px` }}
+                    className={cn(
+                      "flex items-center gap-x-2 rounded-lg py-1.5 pr-2 text-[13px] transition-colors duration-100",
+                      pathname === `/project/node/${c.id}`
+                        ? "bg-bg-subtle font-medium text-fg"
+                        : "text-fg-muted hover:bg-bg-subtle/70 hover:text-fg",
+                    )}
+                  >
+                    <Boxes
+                      className={cn(
+                        "h-3.5 w-3.5 shrink-0",
+                        c.orphaned ? "text-status-progress" : "text-brand",
+                      )}
+                    />
+                    <span className="truncate">{c.title}</span>
+                    {c.open ? (
+                      <span className="ml-auto shrink-0 text-2xs tabular-nums text-fg-subtle">
+                        {c.open}
+                      </span>
+                    ) : null}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
           <div className="flex items-center justify-between px-2 pb-1">
             <p className="text-2xs font-medium uppercase tracking-wider text-fg-subtle">
               Diagrams

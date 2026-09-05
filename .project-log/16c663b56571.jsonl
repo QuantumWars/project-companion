@@ -35,3 +35,7 @@
 {"id":"16c663b56571:34","ts":1788608822979,"seq":34,"actor":"16c663b56571","prev":"cbadd3c459202698","componentId":"canvas","kind":"task.moved","data":{"taskId":"265d45d9","from":"in_progress","to":"done"}}
 {"id":"16c663b56571:35","ts":1788609508616,"seq":35,"actor":"16c663b56571","prev":"f4ec90bc8018bfbe","componentId":"canvas","kind":"task.created","data":{"taskId":"43028bbe","title":"Fix what only showed up in a browser","status":"in_progress"}}
 {"id":"16c663b56571:36","ts":1788609508815,"seq":36,"actor":"16c663b56571","prev":"d92008974dc66dc5","componentId":"canvas","kind":"task.moved","data":{"taskId":"43028bbe","from":"in_progress","to":"done"}}
+{"id":"16c663b56571:37","ts":1788611219787,"seq":37,"actor":"16c663b56571","prev":"150d8319b0d13c13","componentId":"next-js-app","kind":"component.created","data":{"title":"Next.js app","nodeId":"5ffc391a","diagramId":"containers","via":"track"}}
+{"id":"16c663b56571:38","ts":1788611233696,"seq":38,"actor":"16c663b56571","prev":"679c94f832bc8c75","componentId":"next-js-app","kind":"component.orphaned","data":{"via":"untrack"}}
+{"id":"16c663b56571:39","ts":1788611278444,"seq":39,"actor":"16c663b56571","prev":"0f5edb7ba44e6229","componentId":"surfaces","kind":"task.moved","data":{"taskId":"efdcbd42","from":"todo","to":"done"}}
+{"id":"16c663b56571:40","ts":1788611333187,"seq":40,"actor":"16c663b56571","prev":"917e87d96a44b762","componentId":"surfaces","kind":"task.created","data":{"taskId":"16a744ff","title":"Component workspace: board, spec, evidence and health","status":"in_progress"}}

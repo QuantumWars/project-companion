@@ -39,17 +39,11 @@ import {
   writeDiagram,
 } from "../lib/project/store";
 import {
-  ancestorsOf,
-  catalogWarnings,
-  componentChurn,
   componentTree,
-  resolveComponent,
-  withDescendants,
   COMPONENT_LIFECYCLES,
   type ComponentNode,
 } from "../lib/project/component";
-import { readEvents } from "../lib/project/events";
-import { readGitView } from "../lib/project/git-view";
+import { componentContext } from "../lib/project/component-context";
 import { editPrd, readRoadmap } from "../lib/project/roadmap";
 import { gitRoot, readStatus } from "../lib/project/git";
 import { linkRepository } from "../lib/project/git-link";
@@ -472,90 +466,70 @@ const build = () => {
       },
     },
     async ({ componentId, path, includeEvidence = true }) => {
-      const root = requireRoot();
-      const components = readComponents(root);
+      // The same assembly the web app renders, from the same function. Two
+      // implementations of "everything about a component" would drift, and the
+      // failure would be an agent and a person disagreeing about what is true.
+      const context = await componentContext(requireRoot(), {
+        componentId,
+        path,
+        includeEvidence,
+      });
 
-      const id =
-        componentId ?? (path ? resolveComponent(path, components)?.componentId : undefined);
-      if (!id) {
+      if (!context.found) {
         return text({
           found: false,
-          reason: path
-            ? `No component owns ${path}. Either nothing claims it, or two things claim ` +
-              `it equally well -- in which case neither is attributed, deliberately.`
-            : "Give a componentId or a path.",
-          components: components.map((c) => ({ id: c.id, paths: c.paths ?? [] })),
+          reason: context.reason,
+          components: readComponents(requireRoot()).map((c) => ({
+            id: c.id,
+            paths: c.paths ?? [],
+          })),
         });
       }
 
-      const component = readComponent(root, id);
-      if (!component) return text({ found: false, reason: `No component "${id}".` });
-
-      const family = withDescendants(id, components);
-      const roadmap = readRoadmap(root);
-
-      // The spec slice: features whose declared paths fall inside this
-      // component, plus any explicitly linked to its node.
-      const spec = roadmap.features
-        .filter(
-          (f) =>
-            (f.paths ?? []).some(
-              (g) => resolveComponent(g.replace(/\*+.*$/, ""), components)?.componentId === id,
-            ) || (f.nodeIds ?? []).includes(component.nodeId ?? "\u0000"),
-        )
-        .map((f) => ({
-          id: f.id,
-          title: f.title,
-          status: f.status,
-          criteria: f.acceptance.map((c) => ({ text: c.text, done: c.done })),
-        }));
-
-      const tasks = readTasks(root).tasks.filter((t) => family.includes(t.componentId ?? ""));
-
-      let evidence: unknown = { skipped: true };
-      if (includeEvidence) {
-        const view = await readGitView(root, roadmap.features, { limit: 120 });
-        const commits = view.attribution?.commits ?? [];
-        const mine = commits.filter((c) =>
-          componentChurn(c.files, components).some((x) => x.componentId === id),
-        );
-        evidence = {
-          commits: mine.slice(0, 12).map((c) => ({
-            sha: c.short,
-            subject: c.subject,
-            author: c.author,
-            signal: c.signal ?? null,
-          })),
-          total: mine.length,
-          contributors: Array.from(new Set(mine.map((c) => c.author))),
-        };
-      }
-
+      const c = context.component!;
       return text({
         found: true,
         component: {
-          id: component.id,
-          title: component.title,
-          owner: component.owner ?? null,
-          paths: component.paths ?? [],
-          lifecycle: component.lifecycle,
-          ...(component.orphaned ? { orphaned: true } : {}),
-          ancestors: ancestorsOf(id, components).map((c) => c.id),
-          children: components.filter((c) => c.parentId === id).map((c) => c.id),
+          id: c.id,
+          title: c.title,
+          owner: c.owner ?? null,
+          paths: c.paths ?? [],
+          lifecycle: c.lifecycle,
+          ...(c.orphaned ? { orphaned: true } : {}),
+          ancestors: c.ancestors,
+          children: c.children,
         },
-        spec,
-        tasks: tasks
+        spec: context.spec.map((f) => ({
+          id: f.id,
+          title: f.title,
+          status: f.status,
+          criteria: f.criteria.map((x) => ({ text: x.text, done: x.done })),
+        })),
+        // Open work only, with a count for the rest: a component with two
+        // hundred finished tasks should not spend an agent's context listing
+        // them.
+        tasks: context.tasks
           .filter((t) => t.status !== "done")
           .map((t) => ({ id: t.id, title: t.title, status: t.status })),
-        doneCount: tasks.filter((t) => t.status === "done").length,
-        evidence,
-        recent: readEvents(root)
-          .filter((e) => e.componentId === id)
-          .slice(-8)
-          .map((e) => ({ at: new Date(e.ts).toISOString(), kind: e.kind, ...e.data })),
-        warnings: catalogWarnings(components)
-          .filter((w) => w.componentId === id)
-          .map((w) => w.detail),
+        doneCount: context.tasks.filter((t) => t.status === "done").length,
+        evidence: context.evidence
+          ? {
+              commits: context.evidence.commits.slice(0, 12).map((x) => ({
+                sha: x.sha,
+                subject: x.subject,
+                author: x.author,
+                signal: x.signal,
+              })),
+              total: context.evidence.total,
+              contributors: context.evidence.contributors,
+            }
+          : { skipped: true },
+        recent: context.recent.slice(0, 8).map((e) => ({
+          at: new Date(e.ts).toISOString(),
+          kind: e.kind,
+          ...e.data,
+        })),
+        warnings: context.warnings,
       });
     },
   );

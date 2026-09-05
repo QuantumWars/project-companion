@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-09-05T11:58:28.814Z",
-  "revision": 81,
+  "updatedAt": "2026-09-05T12:28:53.186Z",
+  "revision": 90,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1128,7 +1128,7 @@
       "id": "containers",
       "title": "Containers",
       "type": "architecture",
-      "updatedAt": "2026-09-05T11:45:28.337Z",
+      "updatedAt": "2026-09-05T12:27:13.694Z",
       "nodes": [
         {
           "id": "5ffc391a",
@@ -1142,6 +1142,10 @@
             "label": "Next.js app",
             "element": "container",
             "technology": "Next 14"
+          },
+          "measured": {
+            "width": 180,
+            "height": 60
           }
         },
         {
@@ -1156,10 +1160,19 @@
             "label": "CLI and MCP",
             "element": "container",
             "technology": "Node"
+          },
+          "measured": {
+            "width": 180,
+            "height": 60
           }
         }
       ],
-      "edges": []
+      "edges": [],
+      "viewport": {
+        "x": 30.28898312590934,
+        "y": 12.620409635795568,
+        "zoom": 0.921122439776278
+      }
     },
     "system-context": {
       "version": 1,
@@ -1473,12 +1486,12 @@
     {
       "id": "efdcbd42",
       "title": "Component workspace: board, spec and evidence on one surface",
-      "status": "todo",
+      "status": "done",
       "componentId": "surfaces",
       "featureId": "component-catalog",
       "createdAt": "2026-09-05T09:16:48.408Z",
-      "updatedAt": "2026-09-05T09:16:48.408Z",
-      "order": 5
+      "updatedAt": "2026-09-05T12:27:58.443Z",
+      "order": 20
     },
     {
       "id": "302d624c",
@@ -1586,6 +1599,16 @@
       "commits": [
         "373f2fcaa4e1cb34cb39535b84f9fc7b0427d39c"
       ]
+    },
+    {
+      "id": "16a744ff",
+      "title": "Component workspace: board, spec, evidence and health",
+      "status": "in_progress",
+      "componentId": "surfaces",
+      "featureId": "component-catalog",
+      "createdAt": "2026-09-05T12:28:53.186Z",
+      "updatedAt": "2026-09-05T12:28:53.186Z",
+      "order": 0
     }
   ],
   "roadmap": {

@@ -56,6 +56,7 @@ import { TableNode } from "./nodes/table-node";
 import { UmlClassNode } from "./nodes/uml-class-node";
 import { RelationEdge } from "./edges/relation-edge";
 import { ServiceNode } from "./nodes/service-node";
+import { ComponentStrip } from "./component-strip";
 import { C4Node } from "./nodes/c4-node";
 import { NoteNode } from "./nodes/note-node";
 
@@ -512,6 +513,20 @@ const Flow = ({ boardId, source }: FlowProps) => {
             store.getState().updateNodeData(selectedNode.id, patch)
           }
           onChangeTech={() => setPaletteMode("replace")}
+        />
+      ) : null}
+      {/* Only on the file-backed canvas: a scratch board in localStorage has no
+          project to own a component, and offering the button there would fail
+          on click rather than explain itself. */}
+      {selectedNode && source === "file" ? (
+        <ComponentStrip
+          diagramId={boardId}
+          nodeId={selectedNode.id}
+          componentId={selectedNode.data.componentId}
+          label={"label" in selectedNode.data ? selectedNode.data.label : selectedNode.id}
+          onTracked={(componentId) =>
+            store.getState().updateNodeData(selectedNode.id, { componentId })
+          }
         />
       ) : null}
       <ReactFlow

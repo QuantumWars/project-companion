@@ -1,9 +1,10 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, realpathSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { BUNDLE_FILE } from "@/lib/project/bundle";
+import { componentContext } from "@/lib/project/component-context";
 import { readEvents } from "@/lib/project/events";
 import {
   createComponent, createDiagram, createTask, deleteComponent, deleteTask,
@@ -399,6 +400,114 @@ test("an ordinary autosave logs nothing, because it happens constantly", () => {
     }
 
     eq(readEvents(dir).length, before, "dragging a box is not a catalog event");
+  } finally { cleanup(); }
+});
+
+/* --------------------------- the assembled context ------------------------- */
+
+/**
+ * One implementation, two callers.
+ *
+ * The MCP tool and the component page both render this. If they diverged, an
+ * agent and a person would disagree about what is true of the same component,
+ * which is the one failure this whole model exists to prevent.
+ */
+
+const withPrd = (dir: string, body: string) => {
+  execFileSync("mkdir", ["-p", join(dir, "docs")]);
+  writeFileSync(join(dir, "docs", "prd.md"), body, "utf8");
+};
+
+test("a component's features are the ones whose paths fall inside it", async () => {
+  const { dir, cleanup } = project();
+  try {
+    createComponent(dir, { title: "Auth", owner: "grace", paths: ["lib/auth/**"] });
+    createComponent(dir, { title: "Billing", owner: "sam", paths: ["lib/billing/**"] });
+    withPrd(dir, [
+      "# PRD", "", "## Phase: One", "",
+      "### Token refresh", "<!-- id: token-refresh -->", "",
+      "Paths: lib/auth/**", "", "- [x] It rejects a replayed token", "",
+      "### Invoicing", "<!-- id: invoicing -->", "",
+      "Paths: lib/billing/**", "", "- [ ] It renders a PDF", "",
+    ].join("\n"));
+
+    const context = await componentContext(dir, { componentId: "auth", includeEvidence: false });
+    eq(context.found, true);
+    eq(context.spec.map((f) => f.id), ["token-refresh"], "billing's feature stays on billing");
+    eq(context.spec[0].criteria.length, 1);
+  } finally { cleanup(); }
+});
+
+test("a glob resolves by its literal prefix, since a wildcard is not a path", async () => {
+  const { dir, cleanup } = project();
+  try {
+    createComponent(dir, { title: "Platform", owner: "x", paths: ["lib/**"] });
+    createComponent(dir, { title: "Auth", owner: "y", paths: ["lib/auth/**"] });
+    withPrd(dir, [
+      "# PRD", "", "## Phase: One", "",
+      "### Deep", "<!-- id: deep -->", "", "Paths: lib/auth/**", "", "- [ ] a", "",
+    ].join("\n"));
+
+    const auth = await componentContext(dir, { componentId: "auth", includeEvidence: false });
+    const platform = await componentContext(dir, { componentId: "platform", includeEvidence: false });
+    eq(auth.spec.map((f) => f.id), ["deep"], "the narrower component claims it");
+    eq(platform.spec, [], "and the broader one does not");
+  } finally { cleanup(); }
+});
+
+test("the board rolls a parent's children up into it", async () => {
+  const { dir, cleanup } = project();
+  try {
+    createComponent(dir, { title: "Platform", owner: "x", paths: ["lib/**"] });
+    createComponent(dir, { title: "Auth", owner: "y", paths: ["lib/auth/**"], parentId: "platform" });
+    createTask(dir, { title: "Parent work", status: "todo", componentId: "platform" });
+    createTask(dir, { title: "Child work", status: "todo", componentId: "auth" });
+
+    const parent = await componentContext(dir, { componentId: "platform", includeEvidence: false });
+    const child = await componentContext(dir, { componentId: "auth", includeEvidence: false });
+
+    eq(parent.tasks.length, 2, "the parent sees its children's work");
+    eq(child.tasks.length, 1, "the child does not see its parent's");
+    eq(parent.component?.children, ["auth"]);
+  } finally { cleanup(); }
+});
+
+test("looking up by path is the same answer as looking up by id", async () => {
+  const { dir, cleanup } = project();
+  try {
+    createComponent(dir, { title: "Auth", owner: "grace", paths: ["lib/auth/**"] });
+    const byId = await componentContext(dir, { componentId: "auth", includeEvidence: false });
+    const byPath = await componentContext(dir, { path: "lib/auth/token.ts", includeEvidence: false });
+    eq(byPath.component?.id, byId.component?.id);
+  } finally { cleanup(); }
+});
+
+test("an unowned path explains itself rather than returning empty", async () => {
+  const { dir, cleanup } = project();
+  try {
+    createComponent(dir, { title: "Auth", paths: ["lib/auth/**"] });
+    const context = await componentContext(dir, { path: "README.md", includeEvidence: false });
+    eq(context.found, false);
+    ok(context.reason?.includes("No component owns README.md"), context.reason);
+    ok(context.reason?.includes("equally well"), "it names the ambiguous case too");
+  } finally { cleanup(); }
+});
+
+test("catalog problems travel with the component that has them", async () => {
+  const { dir, cleanup } = project();
+  try {
+    createComponent(dir, { title: "Ghost" });
+    const context = await componentContext(dir, { componentId: "ghost", includeEvidence: false });
+    eq(context.warnings.length, 2, "unowned and pathless");
+  } finally { cleanup(); }
+});
+
+test("skipping evidence skips the repository read entirely", async () => {
+  const { dir, cleanup } = project();
+  try {
+    createComponent(dir, { title: "Auth", paths: ["lib/auth/**"] });
+    const context = await componentContext(dir, { componentId: "auth", includeEvidence: false });
+    eq(context.evidence, null);
   } finally { cleanup(); }
 });
 
