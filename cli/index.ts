@@ -47,6 +47,9 @@ import {
   startRun,
   declaredEdges,
   readComponent,
+  readBundleWip,
+  setWipLimit,
+  wipRoom,
   readComponents,
   updateComponent,
 } from "../lib/project/store";
@@ -67,6 +70,7 @@ import { mergeBundles } from "../lib/project/merge";
 import { runCheck } from "../lib/project/verify";
 import { dependencyGraph, drift } from "../lib/project/deps";
 import { packet, route, type PacketInput } from "../lib/project/review";
+import { attention, checkWip, summarise as summariseFlow, taskFlow } from "../lib/project/flow";
 import { RUN_STATES, type RunState } from "../lib/project/run";
 import {
   editPrd,
@@ -112,6 +116,9 @@ project-companion - architecture and task boards that live in your repo
   project-companion whose <path>             which component owns a file
   project-companion drift                    the canvas, against what the code does
   project-companion review [sha]             write a review packet for your agent
+  project-companion flow                     where work is piling up
+  project-companion wip [status] [n]         limit a column; starting is refused when full
+  project-companion next                     what to look at first
 
   project-companion diagram list             list diagrams
   project-companion diagram show <id>        print a diagram as text
@@ -216,6 +223,27 @@ const die = (message: string): never => {
 };
 
 const fmtStatus = (value: string) => value.replace("_", " ");
+
+/**
+ * Stops starting when the queue in front of the bottleneck is full.
+ *
+ * Theory of constraints, applied literally: the useful action when review is
+ * backed up is to go and finish something, not to add a fifth thing to it. The
+ * message names the column and the numbers, because a refusal somebody cannot
+ * argue with is a refusal they route around.
+ */
+const requireWipRoom = (root: string) => {
+  const verdict = wipRoom(root);
+  if (verdict.ok) return;
+  die(
+    `${fmtStatus(verdict.status!)} is full: ${verdict.count} of ${verdict.limit}.\n` +
+      `Finish something there before starting more, or raise the limit with ` +
+      `\`project-companion wip ${verdict.status} <n>\`.`,
+  );
+};
+
+const asDays = (ms: number) =>
+    ms < 3_600_000 ? `${Math.round(ms / 60_000)}m` : ms < 86_400_000 ? `${Math.round(ms / 3_600_000)}h` : `${Math.round(ms / 86_400_000)}d`;
 
 /**
  * Which agent directory the skill belongs in.
@@ -892,6 +920,7 @@ const main = () => {
       if (taskId && !readTasks(root).tasks.some((t) => t.id === taskId)) {
         die(`No task "${taskId}".`);
       }
+      requireWipRoom(root);
       const run = startRun(root, {
         taskId,
         componentId: flag("component"),
@@ -1092,6 +1121,7 @@ const main = () => {
 
     if (sub === "start" || sub === "done") {
       const id = rest[0] ?? die(`Usage: project-companion task ${sub} <id>`);
+      if (sub === "start") requireWipRoom(root);
       void runTaskGit(root, sub, id);
       return;
     }
@@ -1234,6 +1264,81 @@ const main = () => {
         `${f.id.padEnd(26)} ${fmtStatus(f.status).padEnd(12)} ${String(done).padStart(2)}/${f.acceptance.length}  ${f.title}\n`,
       );
     }
+    return;
+  }
+
+    if (command === "wip") {
+    if (!sub) {
+      const limits = readBundleWip(root);
+      const set = Object.entries(limits);
+      process.stdout.write(
+        set.length
+          ? set.map(([status, n]) => `${fmtStatus(status).padEnd(14)} ${n}\n`).join("")
+          : "No limits set. `project-companion wip review 3` caps how much can wait on a person.\n",
+      );
+      return;
+    }
+    if (!isTaskStatus(sub)) return die(`Unknown status "${sub}" (${TASK_STATUSES.join(" | ")})`);
+    const raw = rest[0];
+    const limit = raw === undefined || raw === "none" ? null : Number(raw);
+    if (limit !== null && (!Number.isFinite(limit) || limit < 0)) die(`"${raw}" is not a limit.`);
+    setWipLimit(root, sub, limit);
+    process.stdout.write(
+      limit === null ? `${fmtStatus(sub)} is no longer limited\n` : `${fmtStatus(sub)} limited to ${limit}\n`,
+    );
+    return;
+  }
+
+  if (command === "flow" || command === "next") {
+    const tasks = readTasks(root).tasks;
+    const flows = taskFlow(readEvents(root), tasks);
+
+    if (!flows.length) {
+      process.stdout.write(
+        "Nothing to measure yet. The log records a task's journey from the moment it is created.\n",
+      );
+      return;
+    }
+
+    if (command === "next") {
+      // Fan-in from the dependency graph: how many components import this one.
+      const components = readComponents(root);
+      const fanIn: Record<string, number> = {};
+      for (const edge of dependencyGraph(root, components)) {
+        fanIn[edge.to] = (fanIn[edge.to] ?? 0) + 1;
+      }
+      const componentOf = Object.fromEntries(
+        tasks.filter((t) => t.componentId).map((t) => [t.id, t.componentId!]),
+      );
+      const titles = new Map(tasks.map((t) => [t.id, t.title]));
+
+      const ranked = attention(flows, { fanIn, componentOf }).slice(0, 10);
+      if (!ranked.length) {
+        process.stdout.write("Nothing waiting. Everything is either done or not started.\n");
+        return;
+      }
+      for (const item of ranked) {
+        process.stdout.write(
+          `${item.taskId}  ${(titles.get(item.taskId) ?? "").slice(0, 46).padEnd(46)} ${item.why.join("; ")}\n`,
+        );
+      }
+      return;
+    }
+
+    const summary = summariseFlow(flows);
+    process.stdout.write(
+      `${summary.inFlight} in flight, ${summary.finished} finished` +
+        (summary.cycleMs ? `, median ${asDays(summary.cycleMs)} to done` : "") +
+        (summary.reworked ? `, ${summary.reworked} sent back from review` : "") +
+        "\n\n",
+    );
+    for (const queue of summary.queues) {
+      process.stdout.write(
+        `${fmtStatus(queue.status).padEnd(14)} ${String(queue.count).padStart(3)}  ` +
+          `oldest ${asDays(queue.oldestMs).padStart(5)}  median ${asDays(queue.medianAgeMs)}\n`,
+      );
+    }
+    process.stdout.write("\nThe oldest thing in a queue says more than the average; the average hides it.\n");
     return;
   }
 

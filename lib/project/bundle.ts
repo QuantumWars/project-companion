@@ -36,7 +36,7 @@ import { join } from "node:path";
 
 import type { Component } from "./component";
 import type {
-  DiagramFile, DiagramRef, Feature, FeatureOverride, Phase, Task, WhiteboardFile,
+  DiagramFile, DiagramRef, Feature, FeatureOverride, Phase, Task, TaskStatus, WhiteboardFile,
 } from "./types";
 
 export const BUNDLE_FILE = ".project";
@@ -81,6 +81,14 @@ export type ProjectBundle = {
     default?: AgentPolicy;
     byComponent?: Record<string, AgentPolicy>;
   };
+  /**
+   * How much unfinished work is allowed to sit in each column.
+   *
+   * Empty by default, because a limit somebody did not choose is a limit they
+   * will route around. Setting one turns the board from a report into a valve:
+   * `task start` and `run start` refuse once the column is full.
+   */
+  wip: Partial<Record<TaskStatus, number>>;
 };
 
 export const AUTONOMY_LEVELS = [
@@ -121,6 +129,7 @@ export const emptyBundle = (name: string): ProjectBundle => ({
   roadmap: { phases: [], overrides: {}, orphans: [] },
   git: {},
   agents: {},
+  wip: {},
 });
 
 export class BundleConflictError extends Error {}
@@ -184,6 +193,7 @@ export const readBundle = (root: string): ProjectBundle | null => {
       components: parsed.components ?? {},
       git: parsed.git ?? {},
       agents: parsed.agents ?? {},
+      wip: parsed.wip ?? {},
     };
   } catch {
     return null;

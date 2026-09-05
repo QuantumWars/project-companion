@@ -86,3 +86,4 @@
 {"id":"16c663b56571:85","ts":1788617821018,"seq":85,"actor":"16c663b56571","prev":"188c167b5585ae07","componentId":"data-layer","kind":"component.updated","data":{"changed":["paths"]}}
 {"id":"16c663b56571:86","ts":1788617982345,"seq":86,"actor":"16c663b56571","prev":"2f1dacb9eda0398e","componentId":"evidence-engine","kind":"task.created","data":{"taskId":"fe5e97d2","title":"Review packets and grounded findings","status":"in_progress"}}
 {"id":"16c663b56571:87","ts":1788617982517,"seq":87,"actor":"16c663b56571","prev":"f788ed98f48d1294","componentId":"evidence-engine","kind":"task.moved","data":{"taskId":"fe5e97d2","from":"in_progress","to":"done"}}
+{"id":"16c663b56571:88","ts":1788618285831,"seq":88,"actor":"16c663b56571","prev":"e4b1fcb08dd340da","componentId":"data-layer","kind":"task.created","data":{"taskId":"a400c600","title":"Flow metrics, WIP limits and the attention router","status":"in_progress"}}

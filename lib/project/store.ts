@@ -42,6 +42,7 @@ import {
   type Reconciliation,
 } from "./component";
 import { appendEvent, readEvents, type NewEvent } from "./events";
+import { checkWip, taskFlow, type WipVerdict } from "./flow";
 import {
   canTransition,
   checkBudget,
@@ -1301,6 +1302,32 @@ export const declaredEdges = (root: string): { from: string; to: string }[] => {
     }
   }
   return pairs;
+};
+
+/**
+ * Whether there is room to start something.
+ *
+ * Consulted by `task start` and `run start`, which is the difference between a
+ * limit and a chart. The verdict names the column and the numbers so the
+ * refusal is arguable -- an unexplained "no" gets worked around within a day.
+ */
+export const wipRoom = (root: string): WipVerdict => {
+  if (!usesBundle(root)) return { ok: true };
+  const limits = requireBundle(root).wip;
+  if (!Object.keys(limits).length) return { ok: true };
+  return checkWip(taskFlow(readEvents(root), readTasks(root).tasks), limits);
+};
+
+export const readBundleWip = (root: string): Partial<Record<TaskStatus, number>> =>
+  usesBundle(root) ? requireBundle(root).wip : {};
+
+export const setWipLimit = (root: string, status: TaskStatus, limit: number | null): void => {
+  mutateBundle(root, (b) => {
+    const wip = { ...b.wip };
+    if (limit === null || limit <= 0) delete wip[status];
+    else wip[status] = limit;
+    b.wip = wip;
+  });
 };
 
 export const readRuns = (root: string): AgentRun[] => runsFrom(readEvents(root));

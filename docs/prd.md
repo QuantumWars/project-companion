@@ -309,3 +309,50 @@ Verify: npm test -- review
 - [x] A finding anchored inside the diff is kept
 - [x] A finding on a file the diff does not contain is dropped
 - [x] A finding on a real file but an unchanged line is dropped, and told apart
+
+## Phase: Flow
+
+Goal: AI made generation cheap and review expensive, so work accumulates in front of the
+reviewer. Show that, and put a valve on it.
+
+### Flow metrics
+<!-- id: flow-metrics -->
+
+Every number is a fold over the event log. Nothing is reported and nothing is entered --
+moving the card is the measurement.
+
+Paths: lib/project/flow.ts
+
+Verify: npm test -- flow
+
+- [x] A task's time in each stage, and its age where it now sits, come from the log
+- [x] A queue reports its oldest, which is what a mean hides
+- [x] Work that reached review and came back is counted as rework
+- [x] No velocity, no points, no burndown
+
+### WIP limits
+<!-- id: wip-limits -->
+
+A limit is a refusal, not a warning. When the queue in front of the bottleneck is full,
+the useful action is to finish something, not to start a fifth thing.
+
+Paths: lib/project/flow.ts
+
+Verify: npm test -- flow
+
+- [x] A full column refuses `task start` and `run start`, naming itself and the numbers
+- [x] An unset limit is silence, not zero
+
+### The attention router
+<!-- id: attention-router -->
+
+What to look at first: age, weighted by how much rests on it -- and the reasons, so the
+ranking can be argued with.
+
+Paths: lib/project/flow.ts
+
+Verify: npm test -- flow
+
+- [x] Waiting on a person outranks waiting on a machine
+- [x] Blast radius lifts a task logarithmically, not linearly
+- [x] Every ranking carries the reasons that produced it
