@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-09-05T11:46:40.951Z",
-  "revision": 71,
+  "updatedAt": "2026-09-05T11:47:02.978Z",
+  "revision": 73,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1564,12 +1564,15 @@
     {
       "id": "265d45d9",
       "title": "Drill-down: c4 and note nodes, a breadcrumb, and a class inspector",
-      "status": "in_progress",
+      "status": "done",
       "componentId": "canvas",
       "featureId": "drill-down",
       "createdAt": "2026-09-05T11:46:40.950Z",
-      "updatedAt": "2026-09-05T11:46:40.950Z",
-      "order": 0
+      "updatedAt": "2026-09-05T11:47:02.978Z",
+      "order": 18,
+      "commits": [
+        "1d3e612a95487cb7f43e037759cc37b30ae777dd"
+      ]
     }
   ],
   "roadmap": {
