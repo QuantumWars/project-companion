@@ -74,8 +74,13 @@ export const DrilldownBadge = ({
         "nodrag flex items-center justify-center rounded-full border border-neutral-300",
         "bg-white text-neutral-500 shadow-sm transition-colors",
         "hover:border-blue-500 hover:text-blue-600",
+        // Offset from the bottom-right corner rather than centred on the bottom
+        // edge, and above the handles. A connection handle sits at the midpoint
+        // of every side with `pointer-events: all` and a hit area larger than
+        // it looks -- an invisible handle still swallows the click, so a badge
+        // centred on an edge renders perfectly and does nothing when pressed.
         variant === "float"
-          ? "absolute -bottom-2 left-1/2 h-5 w-5 -translate-x-1/2"
+          ? "absolute -bottom-2 right-2 z-10 h-5 w-5"
           : "h-4 w-4 shrink-0",
         className,
       )}

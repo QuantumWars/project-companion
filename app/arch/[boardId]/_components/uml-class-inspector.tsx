@@ -37,7 +37,7 @@ interface UmlClassInspectorProps {
 }
 
 export const UmlClassInspector = ({ data, onChange }: UmlClassInspectorProps) => (
-  <aside className="absolute right-2 top-2 z-20 flex max-h-[calc(100vh-5rem)] w-[320px] flex-col rounded-lg border border-line bg-panel shadow-lg">
+  <aside className="absolute right-2 top-16 z-20 flex max-h-[calc(100vh-5rem)] w-[320px] flex-col rounded-lg border border-line bg-panel shadow-lg">
     <div className="border-b border-line p-3">
       <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-fg-subtle">
         Class
@@ -78,7 +78,9 @@ export const UmlClassInspector = ({ data, onChange }: UmlClassInspectorProps) =>
       />
       <MemberList
         title="Methods"
-        placeholder="doThing()"
+        // No parentheses: the node draws them, so a name carrying its own
+        // renders as `doThing()()`.
+        placeholder="doThing"
         typePlaceholder="void"
         members={data.methods ?? []}
         onChange={(methods) => onChange({ methods })}
@@ -154,7 +156,7 @@ const MemberList = ({
             type="button"
             title={`${VISIBILITY.find((v) => v.value === (member.visibility ?? "public"))?.title} - click to change`}
             onClick={() => cycleVisibility(member)}
-            className="h-7 w-6 shrink-0 rounded border border-line font-mono text-xs text-fg-muted transition-colors hover:border-accent hover:text-fg"
+            className="h-7 w-6 shrink-0 rounded border border-line font-mono text-xs text-fg-muted transition-colors hover:border-brand hover:text-fg"
           >
             {VISIBILITY.find((v) => v.value === (member.visibility ?? "public"))?.glyph}
           </button>
@@ -179,7 +181,7 @@ const MemberList = ({
             className={cn(
               "h-7 w-6 shrink-0 rounded border text-[10px] font-medium transition-colors",
               member.isStatic
-                ? "border-accent bg-accent/10 text-accent"
+                ? "border-brand bg-brand/10 text-brand"
                 : "border-line text-fg-subtle hover:text-fg",
             )}
           >
