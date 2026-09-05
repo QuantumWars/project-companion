@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-09-05T12:28:53.186Z",
-  "revision": 90,
+  "updatedAt": "2026-09-05T12:28:53.410Z",
+  "revision": 92,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1603,12 +1603,15 @@
     {
       "id": "16a744ff",
       "title": "Component workspace: board, spec, evidence and health",
-      "status": "in_progress",
+      "status": "done",
       "componentId": "surfaces",
       "featureId": "component-catalog",
       "createdAt": "2026-09-05T12:28:53.186Z",
-      "updatedAt": "2026-09-05T12:28:53.186Z",
-      "order": 0
+      "updatedAt": "2026-09-05T12:28:53.410Z",
+      "order": 21,
+      "commits": [
+        "c97d03ee4bfecca2fbbba20e21e42dcff9a962a5"
+      ]
     }
   ],
   "roadmap": {

@@ -39,3 +39,4 @@
 {"id":"16c663b56571:38","ts":1788611233696,"seq":38,"actor":"16c663b56571","prev":"679c94f832bc8c75","componentId":"next-js-app","kind":"component.orphaned","data":{"via":"untrack"}}
 {"id":"16c663b56571:39","ts":1788611278444,"seq":39,"actor":"16c663b56571","prev":"0f5edb7ba44e6229","componentId":"surfaces","kind":"task.moved","data":{"taskId":"efdcbd42","from":"todo","to":"done"}}
 {"id":"16c663b56571:40","ts":1788611333187,"seq":40,"actor":"16c663b56571","prev":"917e87d96a44b762","componentId":"surfaces","kind":"task.created","data":{"taskId":"16a744ff","title":"Component workspace: board, spec, evidence and health","status":"in_progress"}}
+{"id":"16c663b56571:41","ts":1788611333415,"seq":41,"actor":"16c663b56571","prev":"6d65cabf54af6969","componentId":"surfaces","kind":"task.moved","data":{"taskId":"16a744ff","from":"in_progress","to":"done"}}
