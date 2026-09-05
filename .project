@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-09-05T14:33:52.077Z",
-  "revision": 167,
+  "updatedAt": "2026-09-05T14:33:52.245Z",
+  "revision": 169,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1779,12 +1779,15 @@
     {
       "id": "2e9ca350",
       "title": "Live updates over one stream",
-      "status": "in_progress",
+      "status": "done",
       "componentId": "surfaces",
       "featureId": "live-updates",
       "createdAt": "2026-09-05T14:33:51.998Z",
-      "updatedAt": "2026-09-05T14:33:51.998Z",
-      "order": 0
+      "updatedAt": "2026-09-05T14:33:52.245Z",
+      "order": 37,
+      "commits": [
+        "76bdcf59fa97f114cda99a0771c24598ae90cc70"
+      ]
     }
   ],
   "roadmap": {

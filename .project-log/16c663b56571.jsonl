@@ -98,3 +98,4 @@
 {"id":"16c663b56571:97","ts":1788618773795,"seq":97,"actor":"16c663b56571","prev":"012824734bbfcc79","kind":"task.deleted","data":{"taskId":"7d129255","title":"Created while the browser was open","status":"todo"}}
 {"id":"16c663b56571:98","ts":1788618832000,"seq":98,"actor":"16c663b56571","prev":"69070e3566565b17","componentId":"surfaces","kind":"task.created","data":{"taskId":"2e9ca350","title":"Live updates over one stream","status":"in_progress"}}
 {"id":"16c663b56571:99","ts":1788618832079,"seq":99,"actor":"16c663b56571","prev":"fa256c6ef7bc2455","componentId":"surfaces","kind":"task.moved","data":{"taskId":"1e53a9ff","from":"todo","to":"done"}}
+{"id":"16c663b56571:100","ts":1788618832246,"seq":100,"actor":"16c663b56571","prev":"15973be331639179","componentId":"surfaces","kind":"task.moved","data":{"taskId":"2e9ca350","from":"in_progress","to":"done"}}
