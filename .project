@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-09-05T14:26:10.378Z",
-  "revision": 159,
+  "updatedAt": "2026-09-05T14:28:20.819Z",
+  "revision": 161,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1758,11 +1758,14 @@
     {
       "id": "4db568ad",
       "title": "Surface flow on the overview",
-      "status": "review",
+      "status": "done",
       "componentId": "surfaces",
       "createdAt": "2026-09-05T14:26:10.143Z",
-      "updatedAt": "2026-09-05T14:26:10.378Z",
-      "order": 0
+      "updatedAt": "2026-09-05T14:28:20.819Z",
+      "order": 34,
+      "commits": [
+        "3018e5be2f10f26ff7ce890d4fc71d60f008e8ad"
+      ]
     },
     {
       "id": "1e53a9ff",

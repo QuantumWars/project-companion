@@ -92,3 +92,4 @@
 {"id":"16c663b56571:91","ts":1788618370227,"seq":91,"actor":"16c663b56571","prev":"39dfe980e3ccf8e4","componentId":"surfaces","kind":"task.created","data":{"taskId":"1e53a9ff","title":"Wire SSE so the app stops polling","status":"todo"}}
 {"id":"16c663b56571:92","ts":1788618370304,"seq":92,"actor":"16c663b56571","prev":"4f874e816b4aa423","componentId":"surfaces","kind":"task.moved","data":{"taskId":"4db568ad","from":"todo","to":"in_progress"}}
 {"id":"16c663b56571:93","ts":1788618370380,"seq":93,"actor":"16c663b56571","prev":"a17613432e036696","componentId":"surfaces","kind":"task.moved","data":{"taskId":"4db568ad","from":"in_progress","to":"review"}}
+{"id":"16c663b56571:94","ts":1788618500820,"seq":94,"actor":"16c663b56571","prev":"a60782d81f01afff","componentId":"surfaces","kind":"task.moved","data":{"taskId":"4db568ad","from":"review","to":"done"}}
