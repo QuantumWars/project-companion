@@ -140,6 +140,7 @@ const toFeature = (
   nodeIds: override?.nodeIds,
   diagramId: override?.diagramId,
   paths: parsed.paths,
+  verify: parsed.verify,
   acceptance: parsed.acceptance.map((c) => ({ id: c.id, text: c.text, done: c.done })),
   createdAt: timestamps.createdAt,
   updatedAt: timestamps.updatedAt,

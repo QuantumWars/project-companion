@@ -1248,6 +1248,31 @@ export const setAgentPolicy = (
   return policy;
 };
 
+/**
+ * Records that a feature's declared check was run, and what it said.
+ *
+ * The output is deliberately not kept -- a failing test run is thousands of
+ * lines, the log is committed and pushed, and nobody wants a stack trace in
+ * their git history. What is kept is the fact, the exit code and how long it
+ * took, which is what a "was this ever actually proven" question needs.
+ */
+export const recordVerification = (
+  root: string,
+  featureId: string,
+  result: { command: string; ok: boolean; code: number; ms: number },
+): void => {
+  logEvent(root, {
+    kind: "criterion.verified",
+    data: {
+      featureId,
+      command: result.command,
+      ok: result.ok,
+      code: result.code,
+      ms: result.ms,
+    },
+  });
+};
+
 export const readRuns = (root: string): AgentRun[] => runsFrom(readEvents(root));
 
 export const readRun = (root: string, id: string): AgentRun | null =>

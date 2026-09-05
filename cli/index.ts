@@ -39,6 +39,7 @@ import {
   deleteComponent,
   readRun,
   readRuns,
+  recordVerification,
   reportRun,
   resolvePolicy,
   runForSession,
@@ -61,6 +62,7 @@ import {
 import { readEvents } from "../lib/project/events";
 import { parseHook } from "../lib/project/ingest";
 import { mergeBundles } from "../lib/project/merge";
+import { runCheck } from "../lib/project/verify";
 import { RUN_STATES, type RunState } from "../lib/project/run";
 import {
   editPrd,
@@ -123,6 +125,7 @@ project-companion - architecture and task boards that live in your repo
   project-companion feature add <title> [--phase P] [--summary S]
   project-companion feature check <id> <criterion>   tick an acceptance criterion
   project-companion feature pin <id> <status>        override the derived status
+  project-companion verify [featureId]       run the PRD's Verify: commands
   project-companion phase list               phases, in document order
   project-companion phase add <name> [--goal G]
   project-companion phase set <id> [--status S] [--starts D] [--ends D]
@@ -1225,6 +1228,58 @@ const main = () => {
         `${f.id.padEnd(26)} ${fmtStatus(f.status).padEnd(12)} ${String(done).padStart(2)}/${f.acceptance.length}  ${f.title}\n`,
       );
     }
+    return;
+  }
+
+  if (command === "verify") {
+    const roadmap = readRoadmap(root);
+    if (!roadmap.present) die(`No PRD at ${roadmap.source}.`);
+
+    const targets = roadmap.features.filter(
+      (f) => f.verify && (!sub || f.id === sub),
+    );
+    if (!targets.length) {
+      process.stdout.write(
+        sub
+          ? `"${sub}" declares no Verify: command.\n`
+          : "No feature declares a Verify: command.\n\n" +
+            "Add one under a feature in the PRD:\n  Verify: npm test -- auth\n",
+      );
+      return;
+    }
+
+    void (async () => {
+      let failed = 0;
+      for (const feature of targets) {
+        const result = await runCheck(root, feature.id, feature.verify!);
+        process.stdout.write(
+          `${result.ok ? "ok  " : "FAIL"} ${feature.id.padEnd(26)} ${result.command}  (${Math.round(result.ms / 1000)}s)\n`,
+        );
+
+        if (!result.ok) {
+          failed++;
+          process.stdout.write(`${result.output.split("\n").map((l) => `       ${l}`).join("\n")}\n`);
+
+          // The consequence, and the whole point: a claim the repository just
+          // refused cannot stay standing.
+          const untick = feature.acceptance.filter((c) => c.done);
+          if (untick.length) {
+            editPrd(root, undefined, untick.map((c) => ({
+              op: "setCriterion" as const,
+              featureId: feature.id,
+              criterionId: c.id,
+              done: false,
+            })));
+            process.stdout.write(
+              `       unticked ${untick.length} criteri${untick.length === 1 ? "on" : "a"} -- the check does not pass\n`,
+            );
+          }
+        }
+        recordVerification(root, feature.id, result);
+      }
+      process.stdout.write(`\n${targets.length - failed}/${targets.length} verified\n`);
+      if (failed) process.exit(1);
+    })();
     return;
   }
 

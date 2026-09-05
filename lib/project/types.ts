@@ -262,6 +262,14 @@ export type Feature = {
    * guess, and a task is a specific claim.
    */
   paths?: string[];
+  /**
+   * A command that proves this feature works, from the PRD's `Verify:` line.
+   *
+   * What makes a ticked box mean something once agents are doing the ticking:
+   * a criterion whose check fails is unticked, so `done` is a state the
+   * repository agreed to rather than one somebody asserted.
+   */
+  verify?: string;
   acceptance: AcceptanceCriterion[];
   /**
    * The heading vanished from the PRD but tasks still point here. Never

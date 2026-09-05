@@ -133,6 +133,8 @@ paths are the join key everything else resolves through.
 
 Paths: lib/project/component.ts
 
+Verify: npm test -- component
+
 - [x] A component has an id that survives a rename, and orphans rather than deletes
 - [x] Path overlap resolves to the most specific claim, and an ambiguous one to nothing
 - [x] The catalog reports what is wrong with it: unowned, pathless, ambiguous, dangling
@@ -148,6 +150,8 @@ editing history after the fact is detectable.
 
 Paths: lib/project/events.ts
 
+Verify: npm test -- events
+
 - [x] Every state change is recorded with its actor, its component and its order
 - [x] Two actors' logs merge with no conflict, by construction
 - [x] Tampering with a record breaks the chain and the break is reported
@@ -160,6 +164,8 @@ The PRD had a compare-and-swap on its bytes but no mutual exclusion, so two writ
 both pass the hash check and the second rename erased the first.
 
 Paths: lib/project/roadmap.ts, lib/project/bundle.ts
+
+Verify: npm test -- sync
 
 - [x] The project lock is re-entrant, so a nested write does not deadlock against itself
 - [x] Editing the PRD holds that lock across the whole read-check-write
@@ -180,6 +186,8 @@ project lock that often would stall every other writer.
 
 Paths: lib/project/run.ts
 
+Verify: npm test -- agent-run
+
 - [x] A run's lifecycle refuses the transitions that make no sense
 - [x] A run inherits its budget and boundary from the component that owns the work
 - [x] Going over budget blocks the run rather than failing the agent's session
@@ -194,6 +202,8 @@ OpenTelemetry GenAI conventions so a harness other than Claude Code needs no ada
 
 Paths: lib/project/ingest.ts
 
+Verify: npm test -- agent-run
+
 - [x] A session start, tool use and session end each become the right event
 - [x] Only files the agent wrote are counted, not everything it read
 - [x] A payload this build does not understand is ignored, never an error
@@ -206,6 +216,8 @@ The fifth and second-strongest signal: a commit of files a run was watched writi
 inside the window it was open. This is what makes attribution work without the trailer.
 
 Paths: lib/project/git-link.ts
+
+Verify: npm test -- agent-run
 
 - [x] A commit matching a run's files and window attributes to that run's task
 - [x] A window without a file overlap is not a match, and neither is the reverse
@@ -221,7 +233,28 @@ makes it disappear, because it was never a real one.
 
 Paths: lib/project/merge.ts
 
+Verify: npm test -- merge
+
 - [x] Two people adding different things both keep them
 - [x] Both sides editing one entity takes the later one, not half of each
 - [x] A genuine collision fails rather than picking a winner
 - [x] Two clones that both edited the board merge through real git
+
+## Phase: Gates
+
+Goal: make "done" a state the repository agreed to rather than one somebody asserted.
+
+### Executable criteria
+<!-- id: executable-criteria -->
+
+A feature names the command that proves it works, beside the paths that say where it
+lives. A criterion whose check fails is unticked -- claimed is not the same as proven.
+
+Paths: lib/project/verify.ts
+
+Verify: npm test -- verify
+
+- [x] A Verify line parses, and is not mistaken for the summary or a code sample
+- [x] Setting, changing and clearing one leaves the rest of the document identical
+- [x] A failing check unticks what it refuses, and records that it did
+- [ ] The roadmap shows claimed-but-unverified as distinct from done
