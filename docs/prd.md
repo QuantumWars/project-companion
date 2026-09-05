@@ -184,7 +184,7 @@ Paths: lib/project/run.ts
 - [x] A run inherits its budget and boundary from the component that owns the work
 - [x] Going over budget blocks the run rather than failing the agent's session
 - [x] A write outside the boundary is refused and reported, never silently counted
-- [ ] Mission control shows what is in flight and what it is spending
+- [x] Mission control shows what is in flight and what it is spending
 
 ### Harness ingestion
 <!-- id: harness-ingestion -->

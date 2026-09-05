@@ -3,7 +3,8 @@ import { NextResponse } from "next/server";
 import { COMPONENT_LIFECYCLES } from "@/lib/project/component";
 import { componentContext } from "@/lib/project/component-context";
 import { resolveRequestRoot } from "@/lib/project/request-root";
-import { updateComponent, untrackNode } from "@/lib/project/store";
+import { setAgentPolicy, updateComponent, untrackNode } from "@/lib/project/store";
+import { AUTONOMY_LEVELS, type AgentPolicy } from "@/lib/project/bundle";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -46,7 +47,19 @@ export const PATCH = async (request: Request, { params }: Params) => {
     paths?: string[];
     parentId?: string;
     lifecycle?: string;
+    agentPolicy?: AgentPolicy | null;
   };
+
+  if (
+    body.agentPolicy?.autonomy &&
+    !(AUTONOMY_LEVELS as readonly string[]).includes(body.agentPolicy.autonomy)
+  ) {
+    return NextResponse.json(
+      { error: `Unknown autonomy "${body.agentPolicy.autonomy}"` },
+      { status: 400 },
+    );
+  }
+  if (body.agentPolicy !== undefined) setAgentPolicy(resolved.root, params.id, body.agentPolicy);
 
   if (body.lifecycle && !COMPONENT_LIFECYCLES.includes(body.lifecycle as never)) {
     return NextResponse.json(
@@ -55,7 +68,8 @@ export const PATCH = async (request: Request, { params }: Params) => {
     );
   }
 
-  const updated = updateComponent(resolved.root, params.id, body as never);
+  const { agentPolicy, ...patch } = body;
+  const updated = updateComponent(resolved.root, params.id, patch as never);
   if (!updated) return NextResponse.json({ error: `No component "${params.id}"` }, { status: 404 });
   return NextResponse.json(updated);
 };

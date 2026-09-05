@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-09-05T14:01:23.924Z",
-  "revision": 109,
+  "updatedAt": "2026-09-05T14:05:58.320Z",
+  "revision": 116,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1315,7 +1315,7 @@
       ],
       "lifecycle": "active",
       "createdAt": "2026-09-05T09:16:13.087Z",
-      "updatedAt": "2026-09-05T09:16:13.087Z"
+      "updatedAt": "2026-09-05T14:05:30.474Z"
     },
     "surfaces": {
       "id": "surfaces",
@@ -1656,12 +1656,12 @@
     {
       "id": "72323b78",
       "title": "Mission control: what is in flight and what it is spending",
-      "status": "todo",
+      "status": "done",
       "componentId": "surfaces",
       "featureId": "agent-runs",
       "createdAt": "2026-09-05T12:53:36.705Z",
-      "updatedAt": "2026-09-05T12:53:36.705Z",
-      "order": 2
+      "updatedAt": "2026-09-05T14:05:58.231Z",
+      "order": 28
     },
     {
       "id": "9c66c872",
@@ -1675,6 +1675,16 @@
       "commits": [
         "b41810e0d5c522931da686e896800e04915f6984"
       ]
+    },
+    {
+      "id": "8d779cea",
+      "title": "Mission control, and the autonomy dial",
+      "status": "in_progress",
+      "componentId": "surfaces",
+      "featureId": "agent-runs",
+      "createdAt": "2026-09-05T14:05:58.320Z",
+      "updatedAt": "2026-09-05T14:05:58.320Z",
+      "order": 0
     }
   ],
   "roadmap": {
@@ -1683,5 +1693,7 @@
     "orphans": []
   },
   "git": {},
-  "agents": {}
+  "agents": {
+    "byComponent": {}
+  }
 }

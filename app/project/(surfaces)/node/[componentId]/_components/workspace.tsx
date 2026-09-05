@@ -12,6 +12,7 @@ import {
   Segmented, StatusBadge, StatusDot,
 } from "@/components/ui/primitives";
 import type { ComponentContext } from "@/lib/project/component-context";
+import type { AutonomyLevel } from "@/lib/project/bundle";
 import type { TaskStatus } from "@/lib/project/types";
 
 type Tab = "board" | "spec" | "evidence" | "health";
@@ -347,11 +348,86 @@ const Evidence = ({ context }: { context: ComponentContext }) => {
 
 /* --------------------------------- health --------------------------------- */
 
+const AUTONOMY: { value: AutonomyLevel; label: string; hint: string }[] = [
+  { value: "observe", label: "Observe", hint: "Suggest only. Changes nothing." },
+  { value: "propose", label: "Propose", hint: "Writes a plan; a person runs it." },
+  { value: "confirm", label: "Confirm", hint: "Acts, asking before each step." },
+  { value: "autonomous", label: "Autonomous", hint: "Acts without asking." },
+];
+
+/**
+ * How much rope agents get in this part of the system.
+ *
+ * Per component because that is where blast radius differs -- a utility module
+ * can take autonomous edits and billing cannot. Progressive delegation is the
+ * point: this is meant to be raised once a component has earned it, not chosen
+ * once at setup.
+ */
+const AutonomyDial = ({
+  componentId,
+  current,
+  query,
+}: {
+  componentId: string;
+  current: AutonomyLevel;
+  query: string;
+}) => {
+  const [level, setLevel] = useState(current);
+  const [busy, setBusy] = useState(false);
+
+  const set = async (next: AutonomyLevel) => {
+    const previous = level;
+    setLevel(next);
+    setBusy(true);
+    try {
+      const response = await fetch(`/api/project/components/${componentId}${query}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ agentPolicy: { autonomy: next } }),
+      });
+      if (!response.ok) setLevel(previous);
+    } catch {
+      setLevel(previous);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section>
+      <SectionHeader
+        title="Agent autonomy"
+        hint={AUTONOMY.find((a) => a.value === level)?.hint}
+      />
+      <div className={cn("flex flex-wrap gap-x-1.5 gap-y-1.5", busy && "opacity-60")}>
+        {AUTONOMY.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            disabled={busy}
+            onClick={() => set(option.value)}
+            className={cn(
+              "rounded-md border px-2.5 py-1 text-xs font-medium transition-colors",
+              level === option.value
+                ? "border-brand bg-brand/10 text-brand"
+                : "border-line text-fg-muted hover:text-fg",
+            )}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+};
+
 const Health = ({ context, query }: { context: ComponentContext; query: string }) => {
   const component = context.component!;
 
   return (
     <div className="space-y-6">
+      <AutonomyDial componentId={component.id} current={context.policy.autonomy} query={query} />
+
       <section>
         <SectionHeader title="Declared" />
         <Panel className="divide-y divide-line/60">

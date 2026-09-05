@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
-  Boxes, GitBranch, LayoutGrid, Map, Network, Pencil, SquareKanban,
+  Bot, Boxes, GitBranch, LayoutGrid, Map, Network, Pencil, SquareKanban,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -38,6 +38,7 @@ const SURFACES = [
   { href: "/project", label: "Overview", icon: LayoutGrid, exact: true },
   { href: "/project/roadmap", label: "Roadmap", icon: Map },
   { href: "/project/tasks", label: "Board", icon: SquareKanban },
+  { href: "/project/agents", label: "Agents", icon: Bot },
   { href: "/project/git", label: "Git", icon: GitBranch },
 ];
 

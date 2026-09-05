@@ -1217,6 +1217,37 @@ export const resolvePolicy = (
   };
 };
 
+/**
+ * Sets how much rope agents get in one part of the system.
+ *
+ * Per component, because that is where blast radius differs. Passing an empty
+ * policy removes the entry rather than storing an empty object, so a component
+ * that has been returned to the default looks identical to one that never
+ * departed from it -- the same reason `setFeatureOverride` deletes a cleared
+ * override instead of leaving a husk.
+ */
+export const setAgentPolicy = (
+  root: string,
+  componentId: string,
+  policy: AgentPolicy | null,
+): AgentPolicy | null => {
+  requireComponentStore(root);
+
+  mutateBundle(root, (b) => {
+    const byComponent = { ...b.agents.byComponent };
+    if (!policy || !Object.keys(policy).length) delete byComponent[componentId];
+    else byComponent[componentId] = policy;
+    b.agents = { ...b.agents, byComponent };
+  });
+
+  logEvent(root, {
+    kind: "component.updated",
+    componentId,
+    data: { agentPolicy: policy?.autonomy ?? "default" },
+  });
+  return policy;
+};
+
 export const readRuns = (root: string): AgentRun[] => runsFrom(readEvents(root));
 
 export const readRun = (root: string, id: string): AgentRun | null =>
