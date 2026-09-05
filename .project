@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-08-29T17:17:15.383Z",
-  "revision": 22,
+  "updatedAt": "2026-09-05T10:11:38.864Z",
+  "revision": 50,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -599,7 +599,7 @@
       "id": "ticketing-schema",
       "title": "Ticketing schema",
       "type": "erd",
-      "updatedAt": "2026-08-29T17:17:15.383Z",
+      "updatedAt": "2026-09-05T08:06:30.706Z",
       "nodes": [
         {
           "id": "venues",
@@ -1118,9 +1118,9 @@
         }
       ],
       "viewport": {
-        "x": -7.848078534079946,
-        "y": -142.87795900683534,
-        "zoom": 0.8952953722662572
+        "x": 288,
+        "y": 30,
+        "zoom": 1
       }
     }
   },
@@ -1134,29 +1134,122 @@
       "layers": []
     }
   },
+  "components": {
+    "data-layer": {
+      "id": "data-layer",
+      "title": "Data layer",
+      "owner": "subhapattnaik@theboringpeople.in",
+      "paths": [
+        "lib/project/bundle.ts",
+        "lib/project/store.ts",
+        "lib/project/types.ts"
+      ],
+      "lifecycle": "active",
+      "createdAt": "2026-09-05T09:16:12.798Z",
+      "updatedAt": "2026-09-05T09:16:12.798Z"
+    },
+    "spec-engine": {
+      "id": "spec-engine",
+      "title": "Spec engine",
+      "owner": "subhapattnaik@theboringpeople.in",
+      "paths": [
+        "lib/project/prd.ts",
+        "lib/project/roadmap.ts"
+      ],
+      "lifecycle": "active",
+      "createdAt": "2026-09-05T09:16:12.871Z",
+      "updatedAt": "2026-09-05T09:16:12.871Z"
+    },
+    "evidence-engine": {
+      "id": "evidence-engine",
+      "title": "Evidence engine",
+      "owner": "subhapattnaik@theboringpeople.in",
+      "paths": [
+        "lib/project/git.ts",
+        "lib/project/git-link.ts",
+        "lib/project/git-view.ts",
+        "lib/project/git-write.ts",
+        "lib/project/commit-graph.ts"
+      ],
+      "lifecycle": "active",
+      "createdAt": "2026-09-05T09:16:12.944Z",
+      "updatedAt": "2026-09-05T09:16:12.944Z"
+    },
+    "component-model": {
+      "id": "component-model",
+      "title": "Component model",
+      "owner": "subhapattnaik@theboringpeople.in",
+      "paths": [
+        "lib/project/component.ts",
+        "lib/project/events.ts"
+      ],
+      "lifecycle": "active",
+      "createdAt": "2026-09-05T09:16:13.015Z",
+      "updatedAt": "2026-09-05T09:16:13.015Z"
+    },
+    "canvas": {
+      "id": "canvas",
+      "title": "Canvas",
+      "owner": "subhapattnaik@theboringpeople.in",
+      "paths": [
+        "lib/arch/**",
+        "types/arch.ts",
+        "app/arch/**",
+        "app/project/diagram/**"
+      ],
+      "lifecycle": "active",
+      "createdAt": "2026-09-05T09:16:13.087Z",
+      "updatedAt": "2026-09-05T09:16:13.087Z"
+    },
+    "surfaces": {
+      "id": "surfaces",
+      "title": "Surfaces",
+      "owner": "subhapattnaik@theboringpeople.in",
+      "paths": [
+        "app/project/(surfaces)/**",
+        "components/**"
+      ],
+      "lifecycle": "active",
+      "createdAt": "2026-09-05T09:16:13.161Z",
+      "updatedAt": "2026-09-05T09:16:13.161Z"
+    },
+    "agent-tooling": {
+      "id": "agent-tooling",
+      "title": "Agent tooling",
+      "owner": "subhapattnaik@theboringpeople.in",
+      "paths": [
+        "cli/**",
+        "mcp/**",
+        "lib/project/skill-template.ts"
+      ],
+      "lifecycle": "active",
+      "createdAt": "2026-09-05T09:16:13.234Z",
+      "updatedAt": "2026-09-05T09:16:13.234Z"
+    }
+  },
   "tasks": [
     {
       "id": "978ce4d6",
       "title": "Wire the whiteboard canvas to .arch/ as well",
-      "status": "in_progress",
+      "status": "done",
       "nodeIds": [
         "950905ed",
         "5b8c8a96"
       ],
       "createdAt": "2026-08-28T02:31:01.325Z",
-      "updatedAt": "2026-08-28T20:34:36.222Z",
-      "order": 1
+      "updatedAt": "2026-09-05T09:17:02.591Z",
+      "order": 7
     },
     {
       "id": "40874c61",
       "title": "Kanban UI: tasks are agent- and CLI-only today",
-      "status": "in_progress",
+      "status": "done",
       "nodeIds": [
         "1089c363"
       ],
       "createdAt": "2026-08-28T02:31:01.326Z",
-      "updatedAt": "2026-08-28T15:29:43.722Z",
-      "order": 0
+      "updatedAt": "2026-09-05T09:17:02.519Z",
+      "order": 6
     },
     {
       "id": "798960cd",
@@ -1263,6 +1356,97 @@
       "commits": [
         "d75b04a341d18a183df49e483b0c5697b6e000d1"
       ]
+    },
+    {
+      "id": "4b0ae9b8",
+      "title": "Stamp component ids onto canvas nodes, and orphan removed ones",
+      "status": "todo",
+      "componentId": "canvas",
+      "featureId": "component-catalog",
+      "createdAt": "2026-09-05T09:16:48.321Z",
+      "updatedAt": "2026-09-05T09:16:48.321Z",
+      "order": 4
+    },
+    {
+      "id": "efdcbd42",
+      "title": "Component workspace: board, spec and evidence on one surface",
+      "status": "todo",
+      "componentId": "surfaces",
+      "featureId": "component-catalog",
+      "createdAt": "2026-09-05T09:16:48.408Z",
+      "updatedAt": "2026-09-05T09:16:48.408Z",
+      "order": 5
+    },
+    {
+      "id": "302d624c",
+      "title": "Validate the bundle on read instead of degrading to defaults",
+      "status": "todo",
+      "componentId": "data-layer",
+      "createdAt": "2026-09-05T09:16:48.481Z",
+      "updatedAt": "2026-09-05T09:16:48.481Z",
+      "order": 6
+    },
+    {
+      "id": "a777c062",
+      "title": "Memoise the project root and cache the parsed bundle",
+      "status": "todo",
+      "componentId": "data-layer",
+      "createdAt": "2026-09-05T09:16:48.552Z",
+      "updatedAt": "2026-09-05T09:16:48.552Z",
+      "order": 7
+    },
+    {
+      "id": "690214e1",
+      "title": "MCP tools for components, and get_component_context",
+      "status": "todo",
+      "componentId": "agent-tooling",
+      "createdAt": "2026-09-05T09:16:48.625Z",
+      "updatedAt": "2026-09-05T09:16:48.625Z",
+      "order": 8
+    },
+    {
+      "id": "e5070b8a",
+      "title": "Teach the agent skill about components and the log",
+      "status": "todo",
+      "componentId": "agent-tooling",
+      "createdAt": "2026-09-05T09:16:48.697Z",
+      "updatedAt": "2026-09-05T09:16:48.697Z",
+      "order": 9
+    },
+    {
+      "id": "45d15ff1",
+      "title": "Fix the init crash and add a CLI suite",
+      "status": "done",
+      "createdAt": "2026-09-05T10:08:51.574Z",
+      "updatedAt": "2026-09-05T10:11:30.198Z",
+      "order": 8,
+      "commits": [
+        "ae2207a51bdf1713dcd2fd0bed3bde2b8daaaab8"
+      ]
+    },
+    {
+      "id": "417ec0e9",
+      "title": "Hold the project lock across a PRD edit",
+      "status": "done",
+      "featureId": "prd-lock",
+      "createdAt": "2026-09-05T10:09:57.796Z",
+      "updatedAt": "2026-09-05T10:11:38.785Z",
+      "order": 9,
+      "commits": [
+        "688d3f9cf7cb5b0dd5bc933a244ded8baf976145"
+      ]
+    },
+    {
+      "id": "aa6b6b4f",
+      "title": "Component model and the append-only event log",
+      "status": "done",
+      "featureId": "component-catalog",
+      "createdAt": "2026-09-05T10:09:57.889Z",
+      "updatedAt": "2026-09-05T10:11:38.864Z",
+      "order": 10,
+      "commits": [
+        "c12b8ad3503b264f2abb39a5ed466e4009970e2d"
+      ]
     }
   ],
   "roadmap": {
@@ -1270,5 +1454,6 @@
     "overrides": {},
     "orphans": []
   },
-  "git": {}
+  "git": {},
+  "agents": {}
 }

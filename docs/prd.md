@@ -117,3 +117,50 @@ Paths: app/arch/**
 - [ ] Nodes carry a drilldown diagram id
 - [ ] c4 and note nodes exist and are registered
 - [ ] UML class attributes and methods are editable
+
+## Phase: Component model
+
+Goal: make every node on the architecture canvas a unit of accountability, with its own
+board, its own owner and its own evidence -- so the diagram becomes the way you navigate
+the work rather than a picture beside it.
+
+### Component catalog
+<!-- id: component-catalog -->
+
+A component is an architecture node that owns work: a title, a directly responsible
+individual, a region of the source, and a place in the containment tree. Its declared
+paths are the join key everything else resolves through.
+
+Paths: lib/project/component.ts
+
+- [x] A component has an id that survives a rename, and orphans rather than deletes
+- [x] Path overlap resolves to the most specific claim, and an ambiguous one to nothing
+- [x] The catalog reports what is wrong with it: unowned, pathless, ambiguous, dangling
+- [ ] The canvas stamps component ids onto its nodes, and orphans what it removes
+- [ ] A component's board, spec and evidence are one surface in the app
+
+### The event log
+<!-- id: event-log -->
+
+An append-only record of what happened, sharded one file per actor so two writers never
+touch the same file and a merge has nothing to resolve. Each shard is hash-chained, so
+editing history after the fact is detectable.
+
+Paths: lib/project/events.ts
+
+- [x] Every state change is recorded with its actor, its component and its order
+- [x] Two actors' logs merge with no conflict, by construction
+- [x] Tampering with a record breaks the chain and the break is reported
+- [x] A log that cannot be written never fails the write it was recording
+
+### Concurrent PRD edits
+<!-- id: prd-lock -->
+
+The PRD had a compare-and-swap on its bytes but no mutual exclusion, so two writers could
+both pass the hash check and the second rename erased the first.
+
+Paths: lib/project/roadmap.ts, lib/project/bundle.ts
+
+- [x] The project lock is re-entrant, so a nested write does not deadlock against itself
+- [x] Editing the PRD holds that lock across the whole read-check-write
+- [x] Concurrent ticks from separate processes all land, and the prose is untouched
