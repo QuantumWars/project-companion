@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-09-05T14:19:42.343Z",
-  "revision": 148,
+  "updatedAt": "2026-09-05T14:19:42.516Z",
+  "revision": 150,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1732,12 +1732,15 @@
     {
       "id": "fe5e97d2",
       "title": "Review packets and grounded findings",
-      "status": "in_progress",
+      "status": "done",
       "componentId": "evidence-engine",
       "featureId": "review-packets",
       "createdAt": "2026-09-05T14:19:42.343Z",
-      "updatedAt": "2026-09-05T14:19:42.343Z",
-      "order": 0
+      "updatedAt": "2026-09-05T14:19:42.516Z",
+      "order": 32,
+      "commits": [
+        "9984b0ac031558ede5620b10083abfff25203774"
+      ]
     }
   ],
   "roadmap": {
