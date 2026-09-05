@@ -1,10 +1,11 @@
 import { execFile } from "node:child_process";
-import { mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
 
 import { readBundle } from "@/lib/project/bundle";
+import { editPrd, readRoadmap } from "@/lib/project/roadmap";
 import {
   createDiagram, createTask, initProject, readDiagram, readTasks, writeDiagram,
 } from "@/lib/project/store";
@@ -158,6 +159,109 @@ test("an externally edited file is picked up on the next read", () => {
     );
 
     eq(readBundle(dir)!.name, "Renamed outside", "no stale cache masks the change");
+  } finally { cleanup(); }
+});
+
+/* ------------------------------- the PRD too ------------------------------- */
+
+/**
+ * `docs/prd.md` is the other file two writers share.
+ *
+ * It has its own compare-and-swap -- a hash of the raw bytes -- but a hash check
+ * has exactly the race a revision check has: two writers read the same document,
+ * both find the hash matches, both splice their own edit into the text THEY
+ * read, and the second rename erases the first. So it takes the same lock.
+ */
+
+const CRITERIA = 12;
+
+const withPrd = () => {
+  const { dir, cleanup } = project();
+  const criteria = Array.from({ length: CRITERIA }, (_, i) => `- [ ] criterion ${i}`);
+  mkdirSync(join(dir, "docs"), { recursive: true });
+  writeFileSync(
+    join(dir, "docs", "prd.md"),
+    [
+      "# Concurrency PRD",
+      "",
+      "Prose that must survive every one of these writes.",
+      "",
+      "## Phase: One",
+      "",
+      "### Widget",
+      "<!-- id: widget -->",
+      "",
+      ...criteria,
+      "",
+    ].join("\n"),
+    "utf8",
+  );
+  return { dir, cleanup };
+};
+
+const ticked = (dir: string) =>
+  readRoadmap(dir).features[0].acceptance.filter((c) => c.done).length;
+
+/** Criterion ids, in document order. The CLI takes text; `editPrd` takes ids. */
+const criterionIds = (dir: string) =>
+  readRoadmap(dir).features[0].acceptance.map((c) => c.id);
+
+test("concurrent ticks from separate processes all land", async () => {
+  const { dir, cleanup } = withPrd();
+  try {
+    const cli = join(process.cwd(), "dist", "project-companion.mjs");
+
+    // Every process ticks a different box, all at once. Without the lock these
+    // read the same document and the last rename wins, losing most of them.
+    await Promise.all(
+      Array.from({ length: CRITERIA }, (_, i) =>
+        run(process.execPath, [cli, "feature", "check", "widget", `criterion ${i}`], { cwd: dir }),
+      ),
+    );
+
+    eq(ticked(dir), CRITERIA, `every tick landed (got ${ticked(dir)})`);
+  } finally { cleanup(); }
+});
+
+test("an in-process edit and a subprocess edit compose", async () => {
+  const { dir, cleanup } = withPrd();
+  try {
+    const cli = join(process.cwd(), "dist", "project-companion.mjs");
+
+    await Promise.all([
+      ...Array.from({ length: 6 }, (_, i) =>
+        Promise.resolve().then(() =>
+          editPrd(dir, undefined, [
+            { op: "setCriterion", featureId: "widget", criterionId: criterionIds(dir)[i], done: true },
+          ]),
+        ),
+      ),
+      ...Array.from({ length: 6 }, (_, i) =>
+        run(process.execPath, [cli, "feature", "check", "widget", `criterion ${i + 6}`], { cwd: dir }),
+      ),
+    ]);
+
+    eq(ticked(dir), CRITERIA, `both writers' edits survived (got ${ticked(dir)})`);
+  } finally { cleanup(); }
+});
+
+test("the prose is byte-identical after all that", async () => {
+  const { dir, cleanup } = withPrd();
+  try {
+    const cli = join(process.cwd(), "dist", "project-companion.mjs");
+    await Promise.all(
+      Array.from({ length: CRITERIA }, (_, i) =>
+        run(process.execPath, [cli, "feature", "check", "widget", `criterion ${i}`], { cwd: dir }),
+      ),
+    );
+
+    const text = readFileSync(join(dir, "docs", "prd.md"), "utf8");
+    ok(
+      text.includes("Prose that must survive every one of these writes."),
+      "the document around the checkboxes is untouched",
+    );
+    eq(text.match(/- \[x\]/g)?.length, CRITERIA);
+    eq(text.match(/- \[ \]/g) ?? null, null, "no box was left behind");
   } finally { cleanup(); }
 });
 

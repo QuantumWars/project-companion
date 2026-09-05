@@ -25,7 +25,7 @@ import {
   type ParsedPhase,
   type PrdOp,
 } from "./prd";
-import { mutateBundle, readBundle } from "./bundle";
+import { mutateBundle, readBundle, withProjectLock } from "./bundle";
 import { readJson, projectPaths, writeJson } from "./store";
 import {
   DEFAULT_PRD_PATH,
@@ -198,32 +198,42 @@ export const readRoadmap = (root: string): Roadmap => {
  * caller is handed the current state to re-apply against. There is deliberately
  * no `await` between the hash check and the rename.
  */
-export const editPrd = (root: string, baseHash: string | undefined, ops: PrdOp[]): Roadmap => {
-  const sidecar = readSidecar(root);
-  const source = sidecar.source || DEFAULT_PRD_PATH;
-  const text = readPrdText(root, source);
+export const editPrd = (root: string, baseHash: string | undefined, ops: PrdOp[]): Roadmap =>
+  // Inside the project lock, not just behind the hash check.
+  //
+  // The hash is a compare-and-swap, and on its own it has the same
+  // time-of-check/time-of-use race the bundle's revision counter had: two
+  // processes read the same bytes, both find the hash matches, both apply their
+  // ops to the text they read, and the second rename erases the first. An agent
+  // ticking a criterion while a human renames a feature is exactly that, and it
+  // loses the tick silently. The lock closes the window; the hash still guards
+  // against a caller writing against a document it read minutes ago.
+  withProjectLock(root, () => {
+    const sidecar = readSidecar(root);
+    const source = sidecar.source || DEFAULT_PRD_PATH;
+    const text = readPrdText(root, source);
 
-  if (text === null) {
-    throw new RoadmapConflictError(`No PRD at ${source}.`, "");
-  }
+    if (text === null) {
+      throw new RoadmapConflictError(`No PRD at ${source}.`, "");
+    }
 
-  const current = hashSource(text);
-  if (baseHash && baseHash !== current) {
-    throw new RoadmapConflictError(
-      "The PRD changed on disk since you last read it.",
-      current,
-    );
-  }
+    const current = hashSource(text);
+    if (baseHash && baseHash !== current) {
+      throw new RoadmapConflictError(
+        "The PRD changed on disk since you last read it.",
+        current,
+      );
+    }
 
-  const next = applyOps(text, ops);
-  if (next !== text) {
-    writeText(projectPaths(root).prd(source), next);
-  }
+    const next = applyOps(text, ops);
+    if (next !== text) {
+      writeText(projectPaths(root).prd(source), next);
+    }
 
-  const roadmap = readRoadmap(root);
-  writeSidecar(root, { ...sidecar, source, sourceHash: roadmap.sourceHash });
-  return roadmap;
-};
+    const roadmap = readRoadmap(root);
+    writeSidecar(root, { ...sidecar, source, sourceHash: roadmap.sourceHash });
+    return roadmap;
+  });
 
 /** Write-then-rename, matching how every other file in the store is written. */
 const writeText = (path: string, value: string) => {

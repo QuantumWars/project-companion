@@ -149,7 +149,18 @@ const STALE_LOCK_MS = 10_000;
 const LOCK_TIMEOUT_MS = 5_000;
 
 /**
- * An exclusive lock around the whole read-modify-write.
+ * How deep this process already is inside the lock, per project.
+ *
+ * The lock excludes other PROCESSES. Within one process, execution is
+ * single-threaded, so a nested acquisition is already exclusive -- and would
+ * otherwise deadlock against itself and time out after five seconds. That is not
+ * hypothetical: editing the PRD takes the lock and then writes the sidecar,
+ * which takes it again.
+ */
+const held = new Map<string, number>();
+
+/**
+ * An exclusive lock around a whole read-modify-write.
  *
  * A revision check alone is not enough across processes. Two writers can both
  * read revision N, both find it matches, and both write N+1 -- the second
@@ -159,10 +170,24 @@ const LOCK_TIMEOUT_MS = 5_000;
  * `openSync` with `wx` is atomic at the filesystem level: exactly one caller
  * creates the file and everyone else gets EEXIST. That is the primitive this
  * needs, and it works across processes, which an in-memory mutex would not.
+ *
+ * Exported because the bundle is not the only thing that needs it. `docs/prd.md`
+ * is edited by the same read-check-write shape, on the same project, and a hash
+ * check alone has the identical race.
  */
-const withLock = <T>(root: string, fn: () => T): T => {
+export const withProjectLock = <T>(root: string, fn: () => T): T => {
   const lock = `${bundlePath(root)}${LOCK_SUFFIX}`;
   const started = Date.now();
+
+  const depth = held.get(lock) ?? 0;
+  if (depth > 0) {
+    held.set(lock, depth + 1);
+    try {
+      return fn();
+    } finally {
+      held.set(lock, (held.get(lock) ?? 1) - 1);
+    }
+  }
 
   for (;;) {
     try {
@@ -200,9 +225,11 @@ const withLock = <T>(root: string, fn: () => T): T => {
     }
   }
 
+  held.set(lock, 1);
   try {
     return fn();
   } finally {
+    held.set(lock, 0);
     rmSync(lock, { force: true });
   }
 };
@@ -219,7 +246,7 @@ export const mutateBundle = (
   root: string,
   change: (bundle: ProjectBundle) => void,
 ): ProjectBundle | null =>
-  withLock(root, () => {
+  withProjectLock(root, () => {
     const bundle = readBundle(root);
     if (!bundle) return null;
 
