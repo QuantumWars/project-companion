@@ -8,22 +8,76 @@ import type { LinkedCommit } from "@/lib/project/git-link";
 import { TASK_STATUSES, type Task, type TaskStatus } from "@/lib/project/types";
 import { useRoadmap } from "@/lib/project/use-roadmap";
 import { cn } from "@/lib/utils";
+import { Panel, Row, StatusDot, STATUS_COLOR, STATUS_LABEL } from "@/components/ui/primitives";
 
-const STATUS_COLOR: Record<TaskStatus, string> = {
-  backlog: "bg-status-backlog",
-  todo: "bg-status-todo",
-  in_progress: "bg-status-progress",
-  review: "bg-status-review",
-  done: "bg-status-done",
+/**
+ * What to look at first, and where work is piling up.
+ *
+ * Above the roll-up rather than below it, because a landing page's job is to
+ * answer "what now" and a progress bar has never answered that. The ranking is
+ * computed on the server -- it needs the dependency graph for blast radius,
+ * which is a source walk the browser has no business doing.
+ */
+const WhatNext = ({ root }: { root?: string }) => {
+  const [flow, setFlow] = useState<FlowResponse | null>(null);
+  const query = root ? `?root=${encodeURIComponent(root)}` : "";
+
+  useEffect(() => {
+    fetch(`/api/project/flow${query}`)
+      .then((r) => r.json())
+      .then(setFlow)
+      .catch(() => {});
+  }, [query]);
+
+  if (!flow?.configured || !flow.attention.length) return null;
+
+  return (
+    <Panel className="p-4">
+      <div className="mb-3 flex items-baseline justify-between gap-x-4">
+        <h2 className="text-[13px] font-medium text-fg">Look at first</h2>
+        <span className="text-2xs text-fg-subtle">
+          {flow.summary.inFlight} in flight
+          {flow.summary.reworked ? ` · ${flow.summary.reworked} sent back` : ""}
+        </span>
+      </div>
+
+      <div className="divide-y divide-line/60">
+        {flow.attention.map((item) => (
+          <Row key={item.taskId} interactive={false} className="px-0">
+            <StatusDot status={item.status} />
+            <span className="min-w-0 flex-1 truncate text-[13px] text-fg">{item.title}</span>
+            {/* The reasons, not just the rank. A list nobody can argue with is
+                a list nobody trusts. */}
+            <span className="hidden truncate text-2xs text-fg-subtle sm:block sm:max-w-[46%]">
+              {item.why.join(" · ")}
+            </span>
+          </Row>
+        ))}
+      </div>
+
+      {flow.summary.queues.length ? (
+        <p className="mt-3 text-2xs text-fg-subtle">
+          {flow.summary.queues
+            .map((q) => `${STATUS_LABEL[q.status]}: ${q.count}, oldest ${days(q.oldestMs)}`)
+            .join(" · ")}
+        </p>
+      ) : null}
+    </Panel>
+  );
 };
 
-const STATUS_LABEL: Record<TaskStatus, string> = {
-  backlog: "Backlog",
-  todo: "To do",
-  in_progress: "In progress",
-  review: "Review",
-  done: "Done",
+type FlowResponse = {
+  configured: boolean;
+  summary: {
+    inFlight: number;
+    reworked: number;
+    queues: { status: TaskStatus; count: number; oldestMs: number }[];
+  };
+  attention: { taskId: string; title: string; status: TaskStatus; why: string[] }[];
 };
+
+const days = (ms: number) =>
+  ms < 3_600_000 ? `${Math.round(ms / 60_000)}m` : ms < 86_400_000 ? `${Math.round(ms / 3_600_000)}h` : `${Math.round(ms / 86_400_000)}d`;
 
 /**
  * The roll-up: where the project stands across all three surfaces at once.
@@ -62,6 +116,8 @@ export const Overview = ({
   return (
     <div className="space-y-6">
       <h1 className="text-[19px] font-semibold leading-tight text-fg">Overview</h1>
+
+      <WhatNext root={root} />
 
       <div className="grid gap-3 sm:grid-cols-3">
         <Stat

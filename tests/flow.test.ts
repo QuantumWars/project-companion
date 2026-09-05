@@ -228,4 +228,27 @@ test("every ranking comes with the reasons behind it", () => {
   ok(top.why.some((w) => w.includes("sent back")), "a ranking nobody can argue with is not trusted");
 });
 
+const freshVersusWaiting = (waitedHours: number) =>
+  attention(
+    taskFlow(
+      [
+        ev("task.created", { taskId: "waiting", status: "todo" }, 0),
+        ev("task.created", { taskId: "fresh", status: "todo" }, 0),
+        ev("task.moved", { taskId: "fresh", from: "todo", to: "review" }, waitedHours),
+      ],
+      [task("waiting"), task("fresh", { status: "review" })],
+      T0 + waitedHours * HOUR,
+    ),
+  );
+
+test("something handed to a person this minute still ranks, despite zero age", () => {
+  // Multiplicative weights alone would score it zero, putting it below every
+  // older item however much is blocked on it.
+  eq(freshVersusWaiting(2)[0].taskId, "fresh");
+});
+
+test("but real waiting eventually wins, which is the trade the floor makes", () => {
+  eq(freshVersusWaiting(24)[0].taskId, "waiting", "a day-old todo outranks a brand-new review");
+});
+
 runAll().then((failed) => process.exit(failed ? 1 : 0));

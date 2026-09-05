@@ -221,7 +221,19 @@ export const attention = (
     .map((flow) => {
       const why: string[] = [];
       const days = flow.ageMs / DAY;
-      let score = days;
+
+      // A floor under age, because the weights are multiplicative and age can
+      // be zero. Without it a task that entered review a minute ago scores
+      // nothing however much rests on it, and ranks below an old backlog item
+      // nobody is waiting on -- the opposite of the answer.
+      //
+      // The size of the floor is a product decision, not a neutral one. At a
+      // quarter of a day, the review multiplier is worth about six hours of
+      // waiting: something handed to a person this minute outranks a todo from
+      // this morning, and loses to one from yesterday. That is the intended
+      // trade, and it is written down because the constant alone does not say
+      // it.
+      let score = days + 0.25;
       why.push(`${days < 1 ? "under a day" : `${Math.round(days)} days`} in ${flow.status.replace("_", " ")}`);
 
       if (flow.status === "review") {

@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-09-05T14:24:46.021Z",
-  "revision": 155,
+  "updatedAt": "2026-09-05T14:26:10.378Z",
+  "revision": 159,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1754,6 +1754,24 @@
       "commits": [
         "4a215fafe46a14b1b59a7bfcc71e2f2c0dee6183"
       ]
+    },
+    {
+      "id": "4db568ad",
+      "title": "Surface flow on the overview",
+      "status": "review",
+      "componentId": "surfaces",
+      "createdAt": "2026-09-05T14:26:10.143Z",
+      "updatedAt": "2026-09-05T14:26:10.378Z",
+      "order": 0
+    },
+    {
+      "id": "1e53a9ff",
+      "title": "Wire SSE so the app stops polling",
+      "status": "todo",
+      "componentId": "surfaces",
+      "createdAt": "2026-09-05T14:26:10.225Z",
+      "updatedAt": "2026-09-05T14:26:10.225Z",
+      "order": 2
     }
   ],
   "roadmap": {
