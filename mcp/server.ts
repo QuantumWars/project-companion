@@ -25,15 +25,31 @@ import {
   findProjectRoot,
   listDiagrams,
   moveTask,
+  readComponent,
+  readComponents,
   readDiagram,
   readProject,
   readTasks,
   recordCommits,
   removeNode,
   tasksForFeature,
+  trackNode,
+  updateComponent,
   updateTask,
   writeDiagram,
 } from "../lib/project/store";
+import {
+  ancestorsOf,
+  catalogWarnings,
+  componentChurn,
+  componentTree,
+  resolveComponent,
+  withDescendants,
+  COMPONENT_LIFECYCLES,
+  type ComponentNode,
+} from "../lib/project/component";
+import { readEvents } from "../lib/project/events";
+import { readGitView } from "../lib/project/git-view";
 import { editPrd, readRoadmap } from "../lib/project/roadmap";
 import { gitRoot, readStatus } from "../lib/project/git";
 import { linkRepository } from "../lib/project/git-link";
@@ -55,7 +71,7 @@ const requireRoot = (): string => {
   const root = findProjectRoot();
   if (!root) {
     throw new Error(
-      "No .arch/ directory found. Run `npx project-companion init` at the project root first.",
+      "No project found. Run `npx project-companion init` at the project root first.",
     );
   }
   return root;
@@ -339,11 +355,214 @@ const build = () => {
         description: z.string().optional(),
         status: z.enum(TASK_STATUSES).optional().describe("Defaults to backlog"),
         nodeIds: z.array(z.string()).optional(),
+        componentId: z
+          .string()
+          .optional()
+          .describe("The component that owns this work; whose board it appears on."),
         diagramId: z.string().optional(),
         labels: z.array(z.string()).optional(),
       },
     },
     async (input) => text(createTask(requireRoot(), input)),
+  );
+
+  /* ------------------------------ components ------------------------------ */
+
+  server.registerTool(
+    "list_components",
+    {
+      title: "List components",
+      description:
+        "The architecture's components as a tree: what parts the system is made of, " +
+        "who owns each, and which source paths it covers. Call this first to orient " +
+        "yourself in an unfamiliar repository -- it is the cheapest map there is.",
+      inputSchema: {},
+    },
+    async () => {
+      const root = requireRoot();
+      const tasks = readTasks(root).tasks;
+
+      const flatten = (nodes: ComponentNode[], depth: number): unknown[] =>
+        nodes.flatMap((n) => [
+          {
+            id: n.id,
+            depth,
+            title: n.title,
+            owner: n.owner ?? null,
+            paths: n.paths ?? [],
+            open: tasks.filter(
+              (t) => t.componentId === n.id && t.status !== "done",
+            ).length,
+            ...(n.orphaned ? { orphaned: true } : {}),
+          },
+          ...flatten(n.children, depth + 1),
+        ]);
+
+      return text(flatten(componentTree(readComponents(root)), 0));
+    },
+  );
+
+  server.registerTool(
+    "get_component_context",
+    {
+      title: "Get everything about one component",
+      description:
+        "Everything you need to work inside one part of the system, in a single call: " +
+        "its owner and paths, the PRD features and acceptance criteria it is " +
+        "responsible for, its open tasks, the commits that have landed in it, and what " +
+        "has happened to it recently. Give a componentId, or a file path to look up " +
+        "whichever component owns it. Prefer this over several smaller calls -- the " +
+        "gathering happens here, where it costs you no context.",
+      inputSchema: {
+        componentId: z.string().optional(),
+        path: z
+          .string()
+          .optional()
+          .describe("A repo-relative file, resolved to whichever component owns it."),
+        includeEvidence: z
+          .boolean()
+          .optional()
+          .describe("Read the repository for commits and churn. Defaults to true."),
+      },
+    },
+    async ({ componentId, path, includeEvidence = true }) => {
+      const root = requireRoot();
+      const components = readComponents(root);
+
+      const id =
+        componentId ?? (path ? resolveComponent(path, components)?.componentId : undefined);
+      if (!id) {
+        return text({
+          found: false,
+          reason: path
+            ? `No component owns ${path}. Either nothing claims it, or two things claim ` +
+              `it equally well -- in which case neither is attributed, deliberately.`
+            : "Give a componentId or a path.",
+          components: components.map((c) => ({ id: c.id, paths: c.paths ?? [] })),
+        });
+      }
+
+      const component = readComponent(root, id);
+      if (!component) return text({ found: false, reason: `No component "${id}".` });
+
+      const family = withDescendants(id, components);
+      const roadmap = readRoadmap(root);
+
+      // The spec slice: features whose declared paths fall inside this
+      // component, plus any explicitly linked to its node.
+      const spec = roadmap.features
+        .filter(
+          (f) =>
+            (f.paths ?? []).some(
+              (g) => resolveComponent(g.replace(/\*+.*$/, ""), components)?.componentId === id,
+            ) || (f.nodeIds ?? []).includes(component.nodeId ?? "\u0000"),
+        )
+        .map((f) => ({
+          id: f.id,
+          title: f.title,
+          status: f.status,
+          criteria: f.acceptance.map((c) => ({ text: c.text, done: c.done })),
+        }));
+
+      const tasks = readTasks(root).tasks.filter((t) => family.includes(t.componentId ?? ""));
+
+      let evidence: unknown = { skipped: true };
+      if (includeEvidence) {
+        const view = await readGitView(root, roadmap.features, { limit: 120 });
+        const commits = view.attribution?.commits ?? [];
+        const mine = commits.filter((c) =>
+          componentChurn(c.files, components).some((x) => x.componentId === id),
+        );
+        evidence = {
+          commits: mine.slice(0, 12).map((c) => ({
+            sha: c.short,
+            subject: c.subject,
+            author: c.author,
+            signal: c.signal ?? null,
+          })),
+          total: mine.length,
+          contributors: Array.from(new Set(mine.map((c) => c.author))),
+        };
+      }
+
+      return text({
+        found: true,
+        component: {
+          id: component.id,
+          title: component.title,
+          owner: component.owner ?? null,
+          paths: component.paths ?? [],
+          lifecycle: component.lifecycle,
+          ...(component.orphaned ? { orphaned: true } : {}),
+          ancestors: ancestorsOf(id, components).map((c) => c.id),
+          children: components.filter((c) => c.parentId === id).map((c) => c.id),
+        },
+        spec,
+        tasks: tasks
+          .filter((t) => t.status !== "done")
+          .map((t) => ({ id: t.id, title: t.title, status: t.status })),
+        doneCount: tasks.filter((t) => t.status === "done").length,
+        evidence,
+        recent: readEvents(root)
+          .filter((e) => e.componentId === id)
+          .slice(-8)
+          .map((e) => ({ at: new Date(e.ts).toISOString(), kind: e.kind, ...e.data })),
+        warnings: catalogWarnings(components)
+          .filter((w) => w.componentId === id)
+          .map((w) => w.detail),
+      });
+    },
+  );
+
+  server.registerTool(
+    "track_node",
+    {
+      title: "Make a canvas node a component",
+      description:
+        "Declare that a node on a diagram is a part of the system somebody owns, giving " +
+        "it a board, an owner and a region of the source. Do this when a box on the " +
+        "architecture turns out to be real work; leave decorative boxes alone. The " +
+        "paths you give are how commits attribute themselves here, so make them accurate.",
+      inputSchema: {
+        diagramId: z.string(),
+        nodeId: z.string(),
+        title: z.string().optional().describe("Defaults to the node's label."),
+        owner: z.string().optional(),
+        paths: z
+          .array(z.string())
+          .optional()
+          .describe('Globs, e.g. ["lib/auth/**"]. `**` crosses directories, `*` does not.'),
+        parentId: z.string().optional(),
+      },
+    },
+    async ({ diagramId, nodeId, ...input }) => {
+      const tracked = trackNode(requireRoot(), diagramId, nodeId, input);
+      if (!tracked) throw new Error(`No node "${nodeId}" on diagram "${diagramId}".`);
+      return text(tracked);
+    },
+  );
+
+  server.registerTool(
+    "set_component",
+    {
+      title: "Update a component",
+      description:
+        "Change a component's owner, paths, parent or lifecycle. The id never changes -- " +
+        "tasks and commits point at it -- so renaming means setting the title.",
+      inputSchema: {
+        componentId: z.string(),
+        title: z.string().optional(),
+        owner: z.string().optional(),
+        paths: z.array(z.string()).optional(),
+        parentId: z.string().optional(),
+        lifecycle: z.enum(COMPONENT_LIFECYCLES).optional(),
+      },
+    },
+    async ({ componentId, ...patch }) => {
+      const updated = updateComponent(requireRoot(), componentId, patch);
+      if (!updated) throw new Error(`No component "${componentId}".`);
+      return text(updated);
+    },
   );
 
   server.registerTool(

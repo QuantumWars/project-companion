@@ -33,8 +33,12 @@ import {
 } from "./bundle";
 import {
   componentId,
+  isNoop,
+  reconcile,
+  type CanvasNode,
   type Component,
   type ComponentLifecycle,
+  type Reconciliation,
 } from "./component";
 import { appendEvent, type NewEvent } from "./events";
 import {
@@ -568,10 +572,107 @@ export const readDiagram = (root: string, id: string): DiagramFile | null =>
 export const writeDiagram = (root: string, diagram: DiagramFile): DiagramFile => {
   if (!usesBundle(root)) return legacyWriteDiagram(root, diagram);
   const next = { ...diagram, updatedAt: now() };
+
+  // The canvas and the catalog are reconciled in the same transaction as the
+  // save. Doing it afterwards would leave a window where a node has been
+  // deleted but its component still claims to be drawn, and the autosave that
+  // window sits inside fires every time somebody drags a box.
+  let changes: Reconciliation | undefined;
   mutateBundle(root, (b) => {
     b.diagrams[next.id] = next;
+    changes = applyReconciliation(b, next.id, next.nodes as unknown as CanvasNode[]);
   });
+
+  if (changes) logReconciliation(root, changes);
   return next;
+};
+
+/**
+ * Brings the catalog into line with what the diagram now contains.
+ *
+ * Runs inside the bundle lock, so it takes the bundle rather than a root and
+ * does no I/O of its own. The decision of what SHOULD change is `reconcile`,
+ * which is pure and tested on its own; this only applies it.
+ */
+const applyReconciliation = (
+  bundle: ProjectBundle,
+  diagramId: string,
+  nodes: readonly CanvasNode[],
+): Reconciliation => {
+  const changes = reconcile(diagramId, nodes, Object.values(bundle.components));
+  if (isNoop(changes)) return changes;
+
+  for (const made of changes.create) {
+    bundle.components[made.componentId] = {
+      id: made.componentId,
+      title: made.title,
+      nodeId: made.nodeId,
+      diagramId,
+      kind: made.kind,
+      lifecycle: "active",
+      createdAt: now(),
+      updatedAt: now(),
+    };
+  }
+
+  for (const back of changes.restore) {
+    const current = bundle.components[back.componentId];
+    if (!current) continue;
+    // `orphaned` is cleared rather than set false, so the field is absent on a
+    // healthy component and a JSON diff stays quiet.
+    const { orphaned, ...rest } = current;
+    bundle.components[back.componentId] = {
+      ...rest,
+      nodeId: back.nodeId,
+      diagramId,
+      title: back.title,
+      updatedAt: now(),
+    };
+  }
+
+  for (const moved of changes.update) {
+    const current = bundle.components[moved.componentId];
+    if (!current) continue;
+    bundle.components[moved.componentId] = {
+      ...current,
+      nodeId: moved.nodeId,
+      title: moved.title,
+      updatedAt: now(),
+    };
+  }
+
+  for (const gone of changes.orphan) {
+    const current = bundle.components[gone];
+    if (!current) continue;
+    bundle.components[gone] = {
+      ...current,
+      orphaned: true,
+      nodeId: undefined,
+      updatedAt: now(),
+    };
+  }
+
+  return changes;
+};
+
+const logReconciliation = (root: string, changes: Reconciliation): void => {
+  for (const made of changes.create) {
+    logEvent(root, {
+      kind: "component.created",
+      componentId: made.componentId,
+      data: { title: made.title, via: "canvas" },
+    });
+  }
+  for (const back of changes.restore) {
+    logEvent(root, {
+      kind: "component.updated",
+      componentId: back.componentId,
+      data: { restored: true, via: "canvas" },
+    });
+  }
+  for (const gone of changes.orphan) {
+    logEvent(root, { kind: "component.orphaned", componentId: gone, data: { via: "canvas" } });
+  }
 };
 
 export const createDiagram = (
@@ -881,6 +982,110 @@ export const updateComponent = (
     });
   }
   return updated;
+};
+
+/**
+ * Makes a canvas node a component: stamps the node, creates the record.
+ *
+ * The opt-in half of the model. Reconciliation heals a catalog that has drifted,
+ * but it never decides on its own that a box on a diagram is something a team
+ * owns -- that is a claim somebody makes, and this is where they make it.
+ *
+ * Both halves happen in one transaction. Stamping the node and writing the
+ * component separately would leave a save in between where the node points at a
+ * component that does not exist yet, and reconciliation running in that window
+ * would create a second one.
+ */
+export const trackNode = (
+  root: string,
+  diagramId: string,
+  nodeId: string,
+  input: { title?: string; owner?: string; paths?: string[]; parentId?: string } = {},
+): Component | null => {
+  requireComponentStore(root);
+
+  let tracked: Component | null = null;
+  let created = false;
+
+  mutateBundle(root, (b) => {
+    const diagram = b.diagrams[diagramId];
+    const node = diagram?.nodes.find((n) => n.id === nodeId);
+    if (!node) return;
+
+    const data = node.data as { componentId?: string; label?: string; kind?: string };
+
+    // Already tracked: return what is there rather than making a second one.
+    const existing = data.componentId ? b.components[data.componentId] : undefined;
+    if (existing) {
+      tracked = existing;
+      return;
+    }
+
+    const id = componentId(
+      input.title ?? data.label ?? nodeId,
+      Object.keys(b.components),
+    );
+    const component: Component = {
+      id,
+      title: input.title ?? data.label?.trim() ?? id,
+      nodeId,
+      diagramId,
+      kind: data.kind,
+      owner: input.owner,
+      paths: input.paths,
+      parentId: input.parentId,
+      lifecycle: "active",
+      createdAt: now(),
+      updatedAt: now(),
+    };
+
+    b.components[id] = component;
+    data.componentId = id;
+    diagram.updatedAt = now();
+    tracked = component;
+    created = true;
+  });
+
+  if (tracked && created) {
+    logEvent(root, {
+      kind: "component.created",
+      componentId: (tracked as Component).id,
+      data: { title: (tracked as Component).title, nodeId, diagramId, via: "track" },
+    });
+  }
+  return tracked;
+};
+
+/**
+ * Stops treating a node as a component, without discarding what it owns.
+ *
+ * The stamp comes off the node and the component is orphaned rather than
+ * deleted, so tasks and commits attributed to it still resolve. Deleting is a
+ * separate, explicit act -- see `deleteComponent`.
+ */
+export const untrackNode = (root: string, id: string): Component | null => {
+  requireComponentStore(root);
+
+  let untracked: Component | null = null;
+  mutateBundle(root, (b) => {
+    const component = b.components[id];
+    if (!component) return;
+
+    const diagram = component.diagramId ? b.diagrams[component.diagramId] : undefined;
+    const node = diagram?.nodes.find((n) => n.id === component.nodeId);
+    if (node && diagram) {
+      delete (node.data as { componentId?: string }).componentId;
+      diagram.updatedAt = now();
+    }
+
+    b.components[id] = { ...component, orphaned: true, nodeId: undefined, updatedAt: now() };
+    untracked = b.components[id];
+  });
+
+  if (untracked) {
+    logEvent(root, { kind: "component.orphaned", componentId: id, data: { via: "untrack" } });
+  }
+  return untracked;
 };
 
 /**

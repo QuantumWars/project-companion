@@ -6,9 +6,9 @@ import { join } from "node:path";
 import { BUNDLE_FILE } from "@/lib/project/bundle";
 import { readEvents } from "@/lib/project/events";
 import {
-  createComponent, createTask, deleteComponent, deleteTask, initProject,
-  moveTask, orphanComponent, readComponent, readComponents, updateComponent,
-  updateTask,
+  createComponent, createDiagram, createTask, deleteComponent, deleteTask,
+  initProject, moveTask, orphanComponent, readComponent, readComponents,
+  readDiagram, trackNode, untrackNode, updateComponent, updateTask, writeDiagram,
 } from "@/lib/project/store";
 import { eq, ok, runAll, test, throws } from "./harness";
 
@@ -231,6 +231,175 @@ test("the log never fails the write it is recording", () => {
     execFileSync("sh", ["-c", `chmod 700 ${join(dir, ".project-log")} 2>/dev/null || true`]);
     cleanup();
   }
+});
+
+/* --------------------------- the canvas drives it -------------------------- */
+
+const serviceNode = (id: string, label: string) =>
+  ({ id, type: "service", position: { x: 0, y: 0 }, data: { kind: "service", label } }) as never;
+
+const withCanvas = (dir: string, ...labels: string[]) => {
+  const diagram = createDiagram(dir, "Architecture", "architecture");
+  return writeDiagram(dir, {
+    ...diagram,
+    nodes: labels.map((l, i) => serviceNode(`n${i + 1}`, l)),
+  });
+};
+
+test("a node is decorative until somebody says it is a component", () => {
+  const { dir, cleanup } = project();
+  try {
+    withCanvas(dir, "API", "Database", "Cache");
+    eq(readComponents(dir).length, 0, "three boxes, no components");
+  } finally { cleanup(); }
+});
+
+test("tracking a node stamps it and creates the component at once", () => {
+  const { dir, cleanup } = project();
+  try {
+    const diagram = withCanvas(dir, "Auth Service");
+    const tracked = trackNode(dir, diagram.id, "n1", { owner: "grace", paths: ["lib/auth/**"] });
+
+    eq(tracked?.id, "auth-service");
+    eq(tracked?.nodeId, "n1");
+    eq(tracked?.owner, "grace");
+
+    const node = readDiagram(dir, diagram.id)!.nodes[0];
+    eq((node.data as { componentId?: string }).componentId, "auth-service",
+      "the node carries the id, so a later save reconciles instead of duplicating");
+  } finally { cleanup(); }
+});
+
+test("tracking the same node twice returns what is there", () => {
+  const { dir, cleanup } = project();
+  try {
+    const diagram = withCanvas(dir, "Auth");
+    const first = trackNode(dir, diagram.id, "n1");
+    const second = trackNode(dir, diagram.id, "n1", { owner: "someone else" });
+
+    eq(first?.id, second?.id);
+    eq(readComponents(dir).length, 1, "no second component");
+  } finally { cleanup(); }
+});
+
+test("tracking a node that is not there reports nothing", () => {
+  const { dir, cleanup } = project();
+  try {
+    const diagram = withCanvas(dir, "Auth");
+    eq(trackNode(dir, diagram.id, "nope"), null);
+    eq(readComponents(dir).length, 0);
+  } finally { cleanup(); }
+});
+
+test("deleting the node on the canvas orphans the component, keeping its work", () => {
+  const { dir, cleanup } = project();
+  try {
+    const diagram = withCanvas(dir, "Auth", "Billing");
+    trackNode(dir, diagram.id, "n1", { paths: ["lib/auth/**"] });
+    createTask(dir, { title: "Rotate keys", status: "todo", componentId: "auth" });
+
+    // The canvas saves without that node -- somebody deleted the box.
+    const current = readDiagram(dir, diagram.id)!;
+    writeDiagram(dir, { ...current, nodes: current.nodes.filter((n) => n.id !== "n1") });
+
+    const auth = readComponent(dir, "auth")!;
+    eq(auth.orphaned, true);
+    eq(auth.nodeId, undefined);
+    eq(auth.paths, ["lib/auth/**"], "it still attributes commits");
+
+    const events = readEvents(dir).filter((e) => e.kind === "component.orphaned");
+    eq(events[0].data.via, "canvas");
+  } finally { cleanup(); }
+});
+
+test("undoing that deletion restores the component rather than making a new one", () => {
+  const { dir, cleanup } = project();
+  try {
+    const diagram = withCanvas(dir, "Auth");
+    trackNode(dir, diagram.id, "n1", { paths: ["lib/auth/**"], owner: "grace" });
+
+    const saved = readDiagram(dir, diagram.id)!;
+    writeDiagram(dir, { ...saved, nodes: [] });
+    eq(readComponent(dir, "auth")?.orphaned, true);
+
+    writeDiagram(dir, saved);
+    const back = readComponent(dir, "auth")!;
+    eq(back.orphaned, undefined, "the flag is cleared, not set false");
+    eq(back.nodeId, "n1");
+    eq(back.owner, "grace", "and everything it owned came back with it");
+    eq(readComponents(dir).length, 1);
+  } finally { cleanup(); }
+});
+
+test("renaming the box on the canvas renames the component", () => {
+  const { dir, cleanup } = project();
+  try {
+    const diagram = withCanvas(dir, "Auth");
+    trackNode(dir, diagram.id, "n1");
+
+    const current = readDiagram(dir, diagram.id)!;
+    const renamed = current.nodes.map((n) => ({ ...n, data: { ...n.data, label: "Identity" } }));
+    writeDiagram(dir, { ...current, nodes: renamed as never });
+
+    eq(readComponent(dir, "auth")?.title, "Identity");
+    eq(readComponent(dir, "auth")?.id, "auth", "but the id never moves");
+  } finally { cleanup(); }
+});
+
+test("a diagram copied in from elsewhere heals its catalog", () => {
+  const { dir, cleanup } = project();
+  try {
+    const diagram = createDiagram(dir, "Imported", "architecture");
+    // Nodes already stamped, but this project has never seen the components.
+    writeDiagram(dir, {
+      ...diagram,
+      nodes: [
+        { id: "a", type: "service", position: { x: 0, y: 0 },
+          data: { kind: "service", label: "Gateway", componentId: "gateway" } },
+      ] as never,
+    });
+
+    const healed = readComponent(dir, "gateway")!;
+    eq(healed.title, "Gateway");
+    eq(healed.nodeId, "a");
+    eq(readEvents(dir).find((e) => e.kind === "component.created")?.data.via, "canvas");
+  } finally { cleanup(); }
+});
+
+test("untracking removes the stamp but keeps the work resolvable", () => {
+  const { dir, cleanup } = project();
+  try {
+    const diagram = withCanvas(dir, "Auth");
+    trackNode(dir, diagram.id, "n1", { paths: ["lib/auth/**"] });
+    createTask(dir, { title: "Rotate keys", status: "todo", componentId: "auth" });
+
+    untrackNode(dir, "auth");
+
+    const node = readDiagram(dir, diagram.id)!.nodes[0];
+    eq((node.data as { componentId?: string }).componentId, undefined, "the stamp is gone");
+    eq(readComponent(dir, "auth")?.orphaned, true, "but the component survives");
+    eq(readComponent(dir, "auth")?.paths, ["lib/auth/**"]);
+  } finally { cleanup(); }
+});
+
+test("an ordinary autosave logs nothing, because it happens constantly", () => {
+  const { dir, cleanup } = project();
+  try {
+    const diagram = withCanvas(dir, "Auth");
+    trackNode(dir, diagram.id, "n1");
+    const before = readEvents(dir).length;
+
+    // Three saves that move a box without changing what exists.
+    const saved = readDiagram(dir, diagram.id)!;
+    for (let i = 0; i < 3; i++) {
+      writeDiagram(dir, {
+        ...saved,
+        nodes: saved.nodes.map((n) => ({ ...n, position: { x: i * 10, y: 0 } })),
+      });
+    }
+
+    eq(readEvents(dir).length, before, "dragging a box is not a catalog event");
+  } finally { cleanup(); }
 });
 
 runAll().then((failed) => process.exit(failed ? 1 : 0));

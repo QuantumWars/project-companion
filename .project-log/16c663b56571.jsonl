@@ -23,3 +23,7 @@
 {"id":"16c663b56571:22","ts":1788603090203,"seq":22,"actor":"16c663b56571","prev":"aeb4b7c60a44906f","kind":"task.updated","data":{"taskId":"aa6b6b4f","changed":["commits"]}}
 {"id":"16c663b56571:23","ts":1788603098787,"seq":23,"actor":"16c663b56571","prev":"1ba0a9e63683e5d0","kind":"task.moved","data":{"taskId":"417ec0e9","from":"todo","to":"done"}}
 {"id":"16c663b56571:24","ts":1788603098866,"seq":24,"actor":"16c663b56571","prev":"084d16d09f87bd0d","kind":"task.moved","data":{"taskId":"aa6b6b4f","from":"todo","to":"done"}}
+{"id":"16c663b56571:25","ts":1788608331397,"seq":25,"actor":"16c663b56571","prev":"104df312fd9ec43b","componentId":"canvas","kind":"task.moved","data":{"taskId":"4b0ae9b8","from":"todo","to":"done"}}
+{"id":"16c663b56571:26","ts":1788608331473,"seq":26,"actor":"16c663b56571","prev":"521c7da9e2eb37ba","componentId":"agent-tooling","kind":"task.moved","data":{"taskId":"690214e1","from":"todo","to":"done"}}
+{"id":"16c663b56571:27","ts":1788608331542,"seq":27,"actor":"16c663b56571","prev":"7a1e3103b9bfc926","componentId":"agent-tooling","kind":"task.moved","data":{"taskId":"e5070b8a","from":"todo","to":"done"}}
+{"id":"16c663b56571:28","ts":1788608352399,"seq":28,"actor":"16c663b56571","prev":"7987713d83f76117","componentId":"component-model","kind":"task.created","data":{"taskId":"ed0d5554","title":"Wire the canvas to the catalog, and give agents reach","status":"in_progress"}}

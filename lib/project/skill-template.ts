@@ -39,10 +39,54 @@ weaker and sometimes wrong.
 ## Orient yourself
 
 \`\`\`bash
+npx project-companion component list      # what the system is made of, and who owns it
 npx project-companion status              # diagrams and task counts
 npx project-companion phase list          # phases, with progress
 npx project-companion feature list        # the PRD's feature list
 npx project-companion git status          # branch, ahead/behind, uncommitted files
+\`\`\`
+
+## Components: where work belongs
+
+The architecture is not decoration. Every node on it can be a **component** -- a
+part of the system somebody owns, with its own board, its own slice of the PRD
+and its own history. A component declares the source it covers, and that
+declaration is how everything else finds it.
+
+Before you edit a file you have not touched before, ask who owns it:
+
+\`\`\`bash
+npx project-companion whose lib/auth/token.ts
+# auth-service  grace@example.com
+#   matched lib/auth/**
+\`\`\`
+
+Then read everything about it in one go:
+
+\`\`\`bash
+npx project-companion component show auth-service
+\`\`\`
+
+If you have the MCP tools, \`get_component_context\` is better: it answers the
+same question and also hands you that component's acceptance criteria, open
+tasks, recent commits and contributors in a single call. Prefer it to several
+smaller ones -- the gathering happens on the server, where it costs you nothing.
+
+If \`whose\` says a file belongs to nobody, that is worth knowing rather than
+worth ignoring. Either nothing claims it, or two components claim it equally
+well -- and in that case the tool deliberately attributes it to neither, because
+a coin-flip presented as evidence is worse than no evidence.
+\`\`\`bash
+npx project-companion component doctor    # what is wrong with the catalog
+\`\`\`
+
+Components are opt-in. A box on a diagram is decorative until somebody says it
+is real, so do not track every node you see -- track one when it turns out to
+own work, and give it accurate paths:
+
+\`\`\`bash
+npx project-companion component add "Auth service" \\
+  --owner grace@example.com --paths "lib/auth/**,app/login/**"
 \`\`\`
 
 ## The loop
@@ -53,8 +97,12 @@ npx project-companion git status          # branch, ahead/behind, uncommitted fi
 2. **Break it into tasks.**
 
    \`\`\`bash
-   npx project-companion task add "Add refund endpoint" --feature refunds --status todo
+   npx project-companion task add "Add refund endpoint" \\
+     --feature refunds --component billing --status todo
    \`\`\`
+
+   \`--component\` puts the card on that part of the system's board. Use
+   \`whose <path>\` if you are not sure which one you are working in.
 
 3. **Start.** This moves the task to in progress and tells you the branch name:
 
@@ -136,6 +184,21 @@ If your commits show up under \`git unlinked\`, the trailer is missing. Fix it
 with \`project-companion task done <id> --commit <sha>\`, which records the sha
 directly.
 
+## What happened here
+
+Every change to the board is recorded in an append-only log at
+\`.project-log/\`, one file per person or agent, so it merges without conflicts
+and nobody's history overwrites anybody else's.
+
+\`\`\`bash
+npx project-companion log                          # what has happened, in order
+npx project-companion log --component auth-service # ...to one part of the system
+\`\`\`
+
+Read it when you pick up work somebody else -- or some earlier session -- left
+half done. It is the only place a deleted card leaves a trace, and it is what
+answers "why is this in review".
+
 ## Rules
 
 - Do not hand-edit the JSON in the store. Use the CLI or the MCP tools so the
@@ -146,4 +209,10 @@ directly.
   edit is refused rather than applied.
 - Never rewrite git history, and do not create branches or worktrees on your own
   initiative. Ask.
+- Keep \`--paths\` accurate when you add or change a component. They are how
+  commits attribute themselves, and a wrong glob quietly credits your work to
+  somebody else's part of the system.
+- Do not track every node on a diagram. A component is a claim that something is
+  owned; making one for every box produces a catalog that looks like coverage
+  without being it.
 `;

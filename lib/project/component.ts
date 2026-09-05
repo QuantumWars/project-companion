@@ -199,6 +199,98 @@ export const componentChurn = (
   return Array.from(totals.values()).sort((a, b) => b.files - a.files);
 };
 
+/* ------------------------------ reconciliation ----------------------------- */
+
+/** The little a canvas node has to expose for reconciliation to work. */
+export type CanvasNode = {
+  id: string;
+  data: { componentId?: string; label?: string; kind?: string };
+};
+
+export type Reconciliation = {
+  /** Stamped nodes with no component record yet. */
+  create: { componentId: string; nodeId: string; title: string; kind?: string }[];
+  /** Components on this diagram whose node has gone. */
+  orphan: string[];
+  /** Orphans whose node has come back -- an undo, or a branch switch. */
+  restore: { componentId: string; nodeId: string; title: string }[];
+  /** Components whose node was renamed or re-created under a new node id. */
+  update: { componentId: string; nodeId: string; title: string }[];
+};
+
+const EMPTY: Reconciliation = { create: [], orphan: [], restore: [], update: [] };
+
+/**
+ * What the catalog should look like after a diagram was saved.
+ *
+ * Pure, and separate from the store on purpose: this is the rule about what a
+ * canvas edit means for the catalog, and it is worth being able to state it
+ * without a filesystem -- the same split `git-link.ts` and `git-view.ts` have.
+ *
+ * Three things it is careful about:
+ *
+ *   - Only components belonging to THIS diagram are candidates for orphaning.
+ *     A node vanishing from one board says nothing about a component drawn on
+ *     another, and orphaning on that basis would empty the catalog every time
+ *     somebody opened a second canvas.
+ *
+ *   - A stamped node whose component is missing is CREATED, not ignored. That
+ *     is how a diagram copied out of another project, or one restored from an
+ *     older commit, heals itself instead of quietly losing its links.
+ *
+ *   - An orphan whose node reappears is restored rather than duplicated, so an
+ *     undo puts the work back where it was.
+ */
+export const reconcile = (
+  diagramId: string,
+  nodes: readonly CanvasNode[],
+  components: readonly Component[],
+): Reconciliation => {
+  const result: Reconciliation = { create: [], orphan: [], restore: [], update: [] };
+  const byId = new Map(components.map((c) => [c.id, c]));
+  const stamped = nodes.filter((n) => n.data.componentId);
+  const claimed = new Set<string>();
+
+  for (const node of stamped) {
+    const id = node.data.componentId!;
+    // Two nodes stamped with one id is a copy-paste; the first wins and the
+    // second is left decorative rather than fighting over the component.
+    if (claimed.has(id)) continue;
+    claimed.add(id);
+
+    const title = node.data.label?.trim() || id;
+    const existing = byId.get(id);
+
+    if (!existing) {
+      result.create.push({ componentId: id, nodeId: node.id, title, kind: node.data.kind });
+      continue;
+    }
+    if (existing.orphaned) {
+      result.restore.push({ componentId: id, nodeId: node.id, title });
+      continue;
+    }
+    if (existing.nodeId !== node.id || existing.title !== title) {
+      result.update.push({ componentId: id, nodeId: node.id, title });
+    }
+  }
+
+  for (const component of components) {
+    if (component.diagramId !== diagramId || component.orphaned) continue;
+    if (!claimed.has(component.id)) result.orphan.push(component.id);
+  }
+
+  return result;
+};
+
+/** True when reconciling would change nothing -- the common case on autosave. */
+export const isNoop = (r: Reconciliation): boolean =>
+  r.create.length === 0 &&
+  r.orphan.length === 0 &&
+  r.restore.length === 0 &&
+  r.update.length === 0;
+
+export const NO_CHANGES: Reconciliation = EMPTY;
+
 /* ---------------------------------- tree ---------------------------------- */
 
 export type ComponentNode = Component & { children: ComponentNode[] };

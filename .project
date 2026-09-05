@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-09-05T10:11:38.864Z",
-  "revision": 50,
+  "updatedAt": "2026-09-05T11:39:12.398Z",
+  "revision": 55,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1360,12 +1360,12 @@
     {
       "id": "4b0ae9b8",
       "title": "Stamp component ids onto canvas nodes, and orphan removed ones",
-      "status": "todo",
+      "status": "done",
       "componentId": "canvas",
       "featureId": "component-catalog",
       "createdAt": "2026-09-05T09:16:48.321Z",
-      "updatedAt": "2026-09-05T09:16:48.321Z",
-      "order": 4
+      "updatedAt": "2026-09-05T11:38:51.395Z",
+      "order": 11
     },
     {
       "id": "efdcbd42",
@@ -1398,20 +1398,20 @@
     {
       "id": "690214e1",
       "title": "MCP tools for components, and get_component_context",
-      "status": "todo",
+      "status": "done",
       "componentId": "agent-tooling",
       "createdAt": "2026-09-05T09:16:48.625Z",
-      "updatedAt": "2026-09-05T09:16:48.625Z",
-      "order": 8
+      "updatedAt": "2026-09-05T11:38:51.471Z",
+      "order": 12
     },
     {
       "id": "e5070b8a",
       "title": "Teach the agent skill about components and the log",
-      "status": "todo",
+      "status": "done",
       "componentId": "agent-tooling",
       "createdAt": "2026-09-05T09:16:48.697Z",
-      "updatedAt": "2026-09-05T09:16:48.697Z",
-      "order": 9
+      "updatedAt": "2026-09-05T11:38:51.540Z",
+      "order": 13
     },
     {
       "id": "45d15ff1",
@@ -1447,6 +1447,16 @@
       "commits": [
         "c12b8ad3503b264f2abb39a5ed466e4009970e2d"
       ]
+    },
+    {
+      "id": "ed0d5554",
+      "title": "Wire the canvas to the catalog, and give agents reach",
+      "status": "in_progress",
+      "componentId": "component-model",
+      "featureId": "component-catalog",
+      "createdAt": "2026-09-05T11:39:12.398Z",
+      "updatedAt": "2026-09-05T11:39:12.398Z",
+      "order": 0
     }
   ],
   "roadmap": {

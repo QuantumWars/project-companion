@@ -1,6 +1,7 @@
 import {
   ancestorsOf, catalogWarnings, componentChurn, componentId, componentTree,
-  resolveComponent, specificity, withDescendants, type Component,
+  isNoop, reconcile, resolveComponent, specificity, withDescendants,
+  type CanvasNode, type Component,
 } from "@/lib/project/component";
 import { eq, ok, runAll, test } from "./harness";
 
@@ -197,6 +198,85 @@ test("a dangling parent is a catalog problem, and says so", () => {
   ]);
   eq(warnings.map((w) => w.kind), ["dangling-parent"]);
   ok(warnings[0].detail.includes("missing"));
+});
+
+/* ------------------------------ reconciliation ----------------------------- */
+
+const node = (id: string, componentId?: string, label = id): CanvasNode => ({
+  id,
+  data: { componentId, label, kind: "service" },
+});
+
+test("an unstamped node is decorative and changes nothing", () => {
+  const changes = reconcile("arch", [node("n1"), node("n2")], []);
+  ok(isNoop(changes), "two hundred boxes do not become two hundred empty boards");
+});
+
+test("a stamped node with no record heals itself into one", () => {
+  const changes = reconcile("arch", [node("n1", "auth", "Auth Service")], []);
+  eq(changes.create, [{ componentId: "auth", nodeId: "n1", title: "Auth Service", kind: "service" }]);
+});
+
+test("a node vanishing from its diagram orphans the component", () => {
+  const components = [component({ id: "auth", nodeId: "n1", diagramId: "arch" })];
+  eq(reconcile("arch", [], components).orphan, ["auth"]);
+});
+
+test("a node vanishing from ANOTHER diagram orphans nothing", () => {
+  const components = [component({ id: "auth", nodeId: "n1", diagramId: "arch" })];
+  // Opening a second canvas must not empty the catalog.
+  eq(reconcile("flows", [], components).orphan, []);
+});
+
+test("an orphan whose node comes back is restored, not duplicated", () => {
+  const components = [
+    component({ id: "auth", diagramId: "arch", orphaned: true, title: "Auth" }),
+  ];
+  const changes = reconcile("arch", [node("n9", "auth", "Auth")], components);
+  eq(changes.create, [], "no second component is made");
+  eq(changes.restore, [{ componentId: "auth", nodeId: "n9", title: "Auth" }]);
+});
+
+test("renaming the node retitles the component", () => {
+  const components = [
+    component({ id: "auth", nodeId: "n1", diagramId: "arch", title: "Auth" }),
+  ];
+  const changes = reconcile("arch", [node("n1", "auth", "Identity")], components);
+  eq(changes.update, [{ componentId: "auth", nodeId: "n1", title: "Identity" }]);
+});
+
+test("a node recreated under a new id keeps its component", () => {
+  const components = [
+    component({ id: "auth", nodeId: "old", diagramId: "arch", title: "Auth" }),
+  ];
+  // Delete-and-recreate: the React Flow id changed, the component id did not.
+  const changes = reconcile("arch", [node("new", "auth", "Auth")], components);
+  eq(changes.orphan, [], "it is not treated as gone");
+  eq(changes.update, [{ componentId: "auth", nodeId: "new", title: "Auth" }]);
+});
+
+test("a copy-pasted node does not fight over the component", () => {
+  const components = [
+    component({ id: "auth", nodeId: "n1", diagramId: "arch", title: "Auth" }),
+  ];
+  const changes = reconcile(
+    "arch",
+    [node("n1", "auth", "Auth"), node("n2", "auth", "Auth")],
+    components,
+  );
+  ok(isNoop(changes), "the first node keeps it and the duplicate stays decorative");
+});
+
+test("an untitled node falls back to its id rather than an empty title", () => {
+  const changes = reconcile("arch", [{ id: "n1", data: { componentId: "auth", label: "   " } }], []);
+  eq(changes.create[0].title, "auth");
+});
+
+test("a steady canvas reconciles to nothing, because autosave fires constantly", () => {
+  const components = [
+    component({ id: "auth", nodeId: "n1", diagramId: "arch", title: "Auth" }),
+  ];
+  ok(isNoop(reconcile("arch", [node("n1", "auth", "Auth")], components)));
 });
 
 runAll().then((failed) => process.exit(failed ? 1 : 0));
