@@ -407,6 +407,59 @@ export type CatalogWarning = {
   detail: string;
 };
 
+export type Coverage = {
+  owned: number;
+  total: number;
+  /** Directories with the most unclaimed files, worst first. */
+  gaps: { directory: string; files: number; examples: string[] }[];
+};
+
+/**
+ * How much of the source any component claims.
+ *
+ * The check the catalog was missing, and the one that matters most: every other
+ * warning is about an entry that exists, so a catalog with three tidy
+ * components covering a tenth of the codebase reported nothing wrong. Absence
+ * of a complaint was being read as coverage.
+ *
+ * Reported by directory rather than by file. A hundred unowned files is not a
+ * hundred problems -- it is usually two or three directories nobody has claimed
+ * yet, and naming those is actionable where a file list is not.
+ */
+export const coverage = (
+  files: readonly string[],
+  components: readonly Component[],
+): Coverage => {
+  const gaps = new Map<string, string[]>();
+  let owned = 0;
+
+  for (const file of files) {
+    if (resolveComponent(file, components)) {
+      owned += 1;
+      continue;
+    }
+    // Two levels is the useful grain: `lib/project` says something, `lib` does
+    // not, and the full path is just the file again.
+    const parts = file.split("/");
+    const directory = parts.slice(0, Math.min(2, parts.length - 1)).join("/") || ".";
+    const list = gaps.get(directory) ?? [];
+    list.push(file);
+    gaps.set(directory, list);
+  }
+
+  return {
+    owned,
+    total: files.length,
+    gaps: Array.from(gaps.entries())
+      .map(([directory, list]) => ({
+        directory,
+        files: list.length,
+        examples: list.slice(0, 3),
+      }))
+      .sort((a, b) => b.files - a.files),
+  };
+};
+
 /**
  * What is wrong with the catalog.
  *

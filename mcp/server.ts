@@ -35,6 +35,7 @@ import {
   tasksForFeature,
   readRun,
   readRuns,
+  recordFindings,
   reportRun,
   setRunState,
   startRun,
@@ -45,6 +46,7 @@ import {
 } from "../lib/project/store";
 import {
   componentTree,
+  resolveComponent,
   COMPONENT_LIFECYCLES,
   type ComponentNode,
 } from "../lib/project/component";
@@ -833,6 +835,12 @@ const build = () => {
       // The one step that needs no model: a finding on code this change did not
       // touch is not a finding about this change.
       const result = ground(findings as Finding[], hunks);
+
+      // Only what survived is recorded. A dropped finding never existed as far
+      // as the project is concerned, which is what makes this a floor rather
+      // than a filter somebody can turn off.
+      const components = readComponents(root);
+      recordFindings(root, sha, result.kept, (file) => resolveComponent(file, components)?.componentId);
 
       return text({
         kept: result.kept,

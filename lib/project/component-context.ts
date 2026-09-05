@@ -15,9 +15,10 @@
 
 import { catalogWarnings, componentChurn, ancestorsOf, resolveComponent, withDescendants, type Component } from "./component";
 import { readEvents, type ProjectEvent } from "./events";
+import type { StoredFinding } from "./review";
 import { readGitView } from "./git-view";
 import { readRoadmap } from "./roadmap";
-import { readComponents, readTasks, resolvePolicy } from "./store";
+import { readComponents, readFindings, readTasks, resolvePolicy } from "./store";
 import type { AcceptanceCriterion, Task } from "./types";
 
 export type ComponentSpec = {
@@ -44,6 +45,8 @@ export type ComponentContext = {
   evidence: ComponentEvidence | null;
   /** What agents may do here, after the project default and this component's own. */
   policy: ReturnType<typeof resolvePolicy>;
+  /** Open review findings against this component, worst first. */
+  findings: StoredFinding[];
   recent: ProjectEvent[];
   warnings: string[];
 };
@@ -55,6 +58,7 @@ const NOT_FOUND = (reason: string): ComponentContext => ({
   tasks: [],
   evidence: null,
   policy: { autonomy: "confirm" },
+  findings: [],
   recent: [],
   warnings: [],
 });
@@ -155,6 +159,7 @@ export const componentContext = async (
     },
     spec: specFor(component, components, roadmap.features),
     policy: resolvePolicy(root, id),
+    findings: readFindings(root).filter((f) => f.componentId === id),
     tasks,
     evidence,
     recent: readEvents(root)

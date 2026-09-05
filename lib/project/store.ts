@@ -35,6 +35,7 @@ import {
 import {
   componentId,
   isNoop,
+  resolveComponent,
   reconcile,
   type CanvasNode,
   type Component,
@@ -43,6 +44,7 @@ import {
 } from "./component";
 import { appendEvent, readEvents, type NewEvent } from "./events";
 import { checkWip, taskFlow, type WipVerdict } from "./flow";
+import { findingId, findingsFrom, type Finding, type StoredFinding } from "./review";
 import {
   canTransition,
   checkBudget,
@@ -1328,6 +1330,58 @@ export const setWipLimit = (root: string, status: TaskStatus, limit: number | nu
     else wip[status] = limit;
     b.wip = wip;
   });
+};
+
+/**
+ * Records findings that survived grounding.
+ *
+ * Only the grounded ones reach here. A finding the judge dropped never existed
+ * as far as the project is concerned, which is the difference between a floor
+ * under false positives and a filter somebody can turn off.
+ */
+export const recordFindings = (
+  root: string,
+  sha: string,
+  findings: readonly Finding[],
+  componentOf: (file: string) => string | undefined,
+): number => {
+  for (const finding of findings) {
+    logEvent(root, {
+      kind: "review.finding",
+      componentId: componentOf(finding.file),
+      data: {
+        findingId: findingId(sha, finding),
+        sha,
+        file: finding.file,
+        line: finding.line,
+        severity: finding.severity,
+        title: finding.title,
+        detail: finding.detail,
+      },
+    });
+  }
+  return findings.length;
+};
+
+export const resolveFinding = (root: string, id: string): void => {
+  logEvent(root, { kind: "review.resolved", data: { findingId: id } });
+};
+
+/**
+ * Open findings, with ownership resolved now rather than when they were filed.
+ *
+ * A finding is about a FILE, and who owns that file is a current question. The
+ * event records which component it belonged to at the time, which is right for
+ * the log and wrong for the page: extend a component's paths and every finding
+ * already filed against that code should appear on it, not stay orphaned
+ * because the catalog was thinner the day it was written.
+ */
+export const readFindings = (root: string): StoredFinding[] => {
+  const components = readComponents(root);
+  return findingsFrom(readEvents(root)).map((finding) => ({
+    ...finding,
+    componentId: resolveComponent(finding.file, components)?.componentId ?? finding.componentId,
+  }));
 };
 
 export const readRuns = (root: string): AgentRun[] => runsFrom(readEvents(root));

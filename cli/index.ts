@@ -57,6 +57,7 @@ import {
   ancestorsOf,
   catalogWarnings,
   componentTree,
+  coverage,
   resolveComponent,
   withDescendants,
   COMPONENT_LIFECYCLES,
@@ -68,7 +69,7 @@ import { componentContext } from "../lib/project/component-context";
 import { parseHook } from "../lib/project/ingest";
 import { mergeBundles } from "../lib/project/merge";
 import { runCheck } from "../lib/project/verify";
-import { dependencyGraph, drift } from "../lib/project/deps";
+import { dependencyGraph, drift, sourceFiles } from "../lib/project/deps";
 import { packet, route, type PacketInput } from "../lib/project/review";
 import { attention, checkWip, summarise as summariseFlow, taskFlow } from "../lib/project/flow";
 import { RUN_STATES, type RunState } from "../lib/project/run";
@@ -825,21 +826,40 @@ const main = () => {
 
     if (sub === "doctor") {
       const warnings = catalogWarnings(components);
-      if (!warnings.length) {
-        process.stdout.write(
-          components.length
-            ? `${components.length} components, nothing wrong.\n`
-            : "No components yet. `project-companion component add <title>`\n",
-        );
-        return;
-      }
       for (const w of warnings) {
         process.stdout.write(`${w.componentId.padEnd(24)} ${w.kind.padEnd(17)} ${w.detail}\n`);
       }
+      if (warnings.length) {
+        process.stdout.write(
+          `\n${warnings.length} problems. A component with no paths attributes nothing, ` +
+            `and two claiming the same paths attribute nothing either.\n\n`,
+        );
+      }
+
+      // Coverage, which is the check every other one assumes. A catalog of
+      // three tidy components over a tenth of the codebase used to report
+      // nothing wrong at all.
+      const files = sourceFiles(root);
+      const cover = coverage(files, components);
+      const percent = cover.total ? Math.round((cover.owned / cover.total) * 100) : 100;
       process.stdout.write(
-        `\n${warnings.length} problems. A component with no paths attributes nothing, ` +
-          `and two claiming the same paths attribute nothing either.\n`,
+        `${cover.owned}/${cover.total} source files owned (${percent}%)\n`,
       );
+
+      if (cover.gaps.length) {
+        process.stdout.write(`\nUnclaimed, worst first:\n`);
+        for (const gap of cover.gaps.slice(0, 8)) {
+          process.stdout.write(
+            `  ${gap.directory.padEnd(28)} ${String(gap.files).padStart(4)} files   ${gap.examples[0]}\n`,
+          );
+        }
+        process.stdout.write(
+          `\nA file no component claims attributes nothing, and a finding against it ` +
+            `has no page to appear on.\n`,
+        );
+      } else if (!warnings.length) {
+        process.stdout.write("\nNothing wrong, and nothing unclaimed.\n");
+      }
       return;
     }
 

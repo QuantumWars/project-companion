@@ -141,3 +141,15 @@
 {"id":"16c663b56571:140","ts":1788619023680,"seq":140,"actor":"16c663b56571","prev":"df03968850616783","kind":"criterion.verified","data":{"featureId":"flow-metrics","command":"npm test -- flow","ok":true,"code":0,"ms":219}}
 {"id":"16c663b56571:141","ts":1788619023887,"seq":141,"actor":"16c663b56571","prev":"a20153020ef229d8","kind":"criterion.verified","data":{"featureId":"wip-limits","command":"npm test -- flow","ok":true,"code":0,"ms":207}}
 {"id":"16c663b56571:142","ts":1788619024087,"seq":142,"actor":"16c663b56571","prev":"876c8161d2c11654","kind":"criterion.verified","data":{"featureId":"attention-router","command":"npm test -- flow","ok":true,"code":0,"ms":200}}
+{"id":"16c663b56571:143","ts":1788619174585,"seq":143,"actor":"16c663b56571","prev":"39e03030c9e5831c","kind":"review.finding","data":{"findingId":"76bdcf5:lib/project/use-roadmap.ts:5:Consider naming this constant","sha":"76bdcf5","file":"lib/project/use-roadmap.ts","line":5,"severity":"medium","title":"Consider naming this constant","detail":"The literal here is used twice; a named constant would say what it means."}}
+{"id":"16c663b56571:144","ts":1788619248938,"seq":144,"actor":"16c663b56571","prev":"abd1928e95530115","componentId":"data-layer","kind":"component.updated","data":{"changed":["paths"]}}
+{"id":"16c663b56571:145","ts":1788619249007,"seq":145,"actor":"16c663b56571","prev":"dafc4bdec9adaa58","componentId":"component-model","kind":"component.updated","data":{"changed":["paths"]}}
+{"id":"16c663b56571:146","ts":1788619249077,"seq":146,"actor":"16c663b56571","prev":"e700a0a072313144","componentId":"agent-plane","kind":"component.updated","data":{"changed":["paths"]}}
+{"id":"16c663b56571:147","ts":1788619249145,"seq":147,"actor":"16c663b56571","prev":"1823352b5ebb71d1","componentId":"evidence-engine","kind":"component.updated","data":{"changed":["paths"]}}
+{"id":"16c663b56571:148","ts":1788619249214,"seq":148,"actor":"16c663b56571","prev":"a473545af4f0ba94","componentId":"spec-engine","kind":"component.updated","data":{"changed":["paths"]}}
+{"id":"16c663b56571:149","ts":1788619249285,"seq":149,"actor":"16c663b56571","prev":"3b67bc9892186ae3","componentId":"canvas","kind":"component.updated","data":{"changed":["paths"]}}
+{"id":"16c663b56571:150","ts":1788619249353,"seq":150,"actor":"16c663b56571","prev":"4d94838be4da2711","componentId":"surfaces","kind":"component.updated","data":{"changed":["paths"]}}
+{"id":"16c663b56571:151","ts":1788619249423,"seq":151,"actor":"16c663b56571","prev":"e6ba3a9236e93617","componentId":"agent-tooling","kind":"component.updated","data":{"changed":["paths"]}}
+{"id":"16c663b56571:152","ts":1788619261309,"seq":152,"actor":"16c663b56571","prev":"e22c078a36ced7bd","componentId":"agent-plane","kind":"component.updated","data":{"changed":["paths"]}}
+{"id":"16c663b56571:153","ts":1788619261380,"seq":153,"actor":"16c663b56571","prev":"569a2e524a65894a","componentId":"canvas","kind":"component.updated","data":{"changed":["paths"]}}
+{"id":"16c663b56571:154","ts":1788619261454,"seq":154,"actor":"16c663b56571","prev":"16f674d7923a5988","componentId":"surfaces","kind":"component.updated","data":{"changed":["paths"]}}

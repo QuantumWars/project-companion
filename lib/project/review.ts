@@ -253,3 +253,61 @@ export const packet = (input: PacketInput): string => {
 
   return lines.join("\n");
 };
+
+/* ------------------------------ what was found ---------------------------- */
+
+export type StoredFinding = Finding & {
+  id: string;
+  sha: string;
+  componentId?: string;
+  at: number;
+  resolved?: boolean;
+};
+
+/**
+ * Findings that survived grounding, folded out of the log.
+ *
+ * Recorded rather than returned and forgotten, because a review whose output
+ * has nowhere to go is half a loop: the reviewer is told, and the next person
+ * to open that component is not. Keyed by sha, file and line, so re-running a
+ * review does not produce a second copy of a finding nobody has acted on.
+ *
+ * A resolved finding stays in the log -- the log is append-only and that is the
+ * point -- but stops being returned. What it was is recoverable; what it is is
+ * closed.
+ */
+export const findingsFrom = (
+  events: readonly { kind: string; ts: number; componentId?: string; data: Record<string, unknown> }[],
+): StoredFinding[] => {
+  const open = new Map<string, StoredFinding>();
+
+  for (const event of events) {
+    const id = typeof event.data.findingId === "string" ? event.data.findingId : undefined;
+    if (!id) continue;
+
+    if (event.kind === "review.finding") {
+      open.set(id, {
+        id,
+        sha: String(event.data.sha ?? ""),
+        file: String(event.data.file ?? ""),
+        line: Number(event.data.line ?? 0),
+        severity: (event.data.severity as Finding["severity"]) ?? "medium",
+        title: String(event.data.title ?? ""),
+        detail: String(event.data.detail ?? ""),
+        componentId: event.componentId,
+        at: event.ts,
+      });
+      continue;
+    }
+    if (event.kind === "review.resolved") open.delete(id);
+  }
+
+  const order = { high: 0, medium: 1, low: 2 };
+  return Array.from(open.values()).sort(
+    (a, b) => order[a.severity] - order[b.severity] || b.at - a.at,
+  );
+};
+
+/** Stable across re-reviews, so the same finding is not recorded twice. */
+export const findingId = (sha: string, finding: Finding): string =>
+  `${sha}:${finding.file}:${finding.line}:${finding.title.slice(0, 40)}`;

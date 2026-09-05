@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-09-05T14:33:52.245Z",
-  "revision": 169,
+  "updatedAt": "2026-09-05T14:41:01.452Z",
+  "revision": 180,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1259,11 +1259,20 @@
         "lib/project/bundle.ts",
         "lib/project/store.ts",
         "lib/project/types.ts",
-        "lib/project/merge.ts"
+        "lib/project/merge.ts",
+        "lib/project/registry.ts",
+        "lib/project/request-root.ts",
+        "lib/project/summary.ts",
+        "lib/project/flow.ts",
+        "tests/bundle.test.ts",
+        "tests/sync.test.ts",
+        "tests/delete.test.ts",
+        "tests/merge.test.ts",
+        "tests/flow.test.ts"
       ],
       "lifecycle": "active",
       "createdAt": "2026-09-05T09:16:12.798Z",
-      "updatedAt": "2026-09-05T14:17:01.016Z"
+      "updatedAt": "2026-09-05T14:40:48.936Z"
     },
     "spec-engine": {
       "id": "spec-engine",
@@ -1272,11 +1281,15 @@
       "paths": [
         "lib/project/prd.ts",
         "lib/project/roadmap.ts",
-        "lib/project/verify.ts"
+        "lib/project/verify.ts",
+        "tests/prd.test.ts",
+        "tests/prd-edit.test.ts",
+        "tests/roadmap.test.ts",
+        "tests/verify.test.ts"
       ],
       "lifecycle": "active",
       "createdAt": "2026-09-05T09:16:12.871Z",
-      "updatedAt": "2026-09-05T14:17:00.948Z"
+      "updatedAt": "2026-09-05T14:40:49.212Z"
     },
     "evidence-engine": {
       "id": "evidence-engine",
@@ -1289,11 +1302,14 @@
         "lib/project/git-write.ts",
         "lib/project/commit-graph.ts",
         "lib/project/deps.ts",
-        "lib/project/review.ts"
+        "lib/project/review.ts",
+        "tests/git.test.ts",
+        "tests/deps.test.ts",
+        "tests/review.test.ts"
       ],
       "lifecycle": "active",
       "createdAt": "2026-09-05T09:16:12.944Z",
-      "updatedAt": "2026-09-05T14:17:00.881Z"
+      "updatedAt": "2026-09-05T14:40:49.144Z"
     },
     "component-model": {
       "id": "component-model",
@@ -1301,11 +1317,15 @@
       "owner": "subhapattnaik@theboringpeople.in",
       "paths": [
         "lib/project/component.ts",
-        "lib/project/events.ts"
+        "lib/project/events.ts",
+        "lib/project/component-context.ts",
+        "tests/component.test.ts",
+        "tests/events.test.ts",
+        "tests/catalog.test.ts"
       ],
       "lifecycle": "active",
       "createdAt": "2026-09-05T09:16:13.015Z",
-      "updatedAt": "2026-09-05T09:16:13.015Z"
+      "updatedAt": "2026-09-05T14:40:49.005Z"
     },
     "canvas": {
       "id": "canvas",
@@ -1314,24 +1334,44 @@
       "paths": [
         "lib/arch/**",
         "types/arch.ts",
+        "types/canvas.ts",
         "app/arch/**",
-        "app/project/diagram/**"
+        "app/project/diagram/**",
+        "app/project/board/**",
+        "app/board/**",
+        "lib/board/**",
+        "lib/local-boards.ts",
+        "lib/project/drilldown.ts",
+        "hooks/**",
+        "liveblocks.config.tsx",
+        "tests/drilldown.test.ts"
       ],
       "lifecycle": "active",
       "createdAt": "2026-09-05T09:16:13.087Z",
-      "updatedAt": "2026-09-05T14:05:30.474Z"
+      "updatedAt": "2026-09-05T14:41:01.378Z"
     },
     "surfaces": {
       "id": "surfaces",
       "title": "Surfaces",
       "owner": "subhapattnaik@theboringpeople.in",
       "paths": [
-        "app/project/(surfaces)/**",
-        "components/**"
+        "app/project/**",
+        "components/**",
+        "app/api/**",
+        "app/_components/**",
+        "app/page.tsx",
+        "app/layout.tsx",
+        "providers/**",
+        "store/**",
+        "lib/utils.ts",
+        "lib/project/use-roadmap.ts",
+        "lib/project/use-tasks.ts",
+        "lib/project/use-stream.ts",
+        "lib/project/task-context.tsx"
       ],
       "lifecycle": "active",
       "createdAt": "2026-09-05T09:16:13.161Z",
-      "updatedAt": "2026-09-05T09:16:13.161Z"
+      "updatedAt": "2026-09-05T14:41:01.452Z"
     },
     "agent-tooling": {
       "id": "agent-tooling",
@@ -1340,11 +1380,14 @@
       "paths": [
         "cli/**",
         "mcp/**",
-        "lib/project/skill-template.ts"
+        "lib/project/skill-template.ts",
+        "scripts/**",
+        "tests/cli.test.ts",
+        "tests/harness.ts"
       ],
       "lifecycle": "active",
       "createdAt": "2026-09-05T09:16:13.234Z",
-      "updatedAt": "2026-09-05T09:16:13.234Z"
+      "updatedAt": "2026-09-05T14:40:49.422Z"
     },
     "agent-plane": {
       "id": "agent-plane",
@@ -1352,12 +1395,14 @@
       "owner": "subhapattnaik@theboringpeople.in",
       "paths": [
         "lib/project/run.ts",
-        "lib/project/ingest.ts"
+        "lib/project/ingest.ts",
+        "tests/agent-run.test.ts",
+        "tests/run.test.ts"
       ],
       "parentId": "component-model",
       "lifecycle": "active",
       "createdAt": "2026-09-05T12:53:36.519Z",
-      "updatedAt": "2026-09-05T12:53:36.519Z"
+      "updatedAt": "2026-09-05T14:41:01.308Z"
     }
   },
   "tasks": [

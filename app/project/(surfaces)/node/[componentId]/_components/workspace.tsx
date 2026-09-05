@@ -15,12 +15,15 @@ import type { ComponentContext } from "@/lib/project/component-context";
 import type { AutonomyLevel } from "@/lib/project/bundle";
 import type { TaskStatus } from "@/lib/project/types";
 
-type Tab = "board" | "spec" | "evidence" | "health";
+type Tab = "board" | "spec" | "evidence" | "findings" | "health";
 
-const TABS: { value: Tab; label: string }[] = [
+type TabDef = { value: Tab; label: string };
+
+const TABS: TabDef[] = [
   { value: "board", label: "Board" },
   { value: "spec", label: "Spec" },
   { value: "evidence", label: "Evidence" },
+  { value: "findings", label: "Findings" },
   { value: "health", label: "Health" },
 ];
 
@@ -133,12 +136,21 @@ export const ComponentWorkspace = ({
       ) : null}
 
       <div className="mb-4">
-        <Segmented options={TABS} value={tab} onChange={select} />
+        {/* Findings only appears when there are some. An always-empty tab is a
+            place people stop looking. */}
+        <Segmented
+          options={TABS.filter((t) => t.value !== "findings" || context.findings.length).map((t) =>
+            t.value === "findings" ? { ...t, label: `Findings ${context.findings.length}` } : t,
+          )}
+          value={tab}
+          onChange={select}
+        />
       </div>
 
       {tab === "board" ? <Board context={context} /> : null}
       {tab === "spec" ? <Spec context={context} query={query} /> : null}
       {tab === "evidence" ? <Evidence context={context} /> : null}
+      {tab === "findings" ? <Findings context={context} /> : null}
       {tab === "health" ? <Health context={context} query={query} /> : null}
     </div>
   );
@@ -343,6 +355,44 @@ const Evidence = ({ context }: { context: ComponentContext }) => {
         ))}
       </Panel>
     </>
+  );
+};
+
+/* -------------------------------- findings -------------------------------- */
+
+const SEVERITY: Record<string, "danger" | "warning" | "neutral"> = {
+  high: "danger",
+  medium: "warning",
+  low: "neutral",
+};
+
+/**
+ * What review found here and nobody has dealt with.
+ *
+ * Every one of these survived grounding, so each anchors to a line the change
+ * actually touched. That is the whole reason they are worth a tab: a list of
+ * findings you have to double-check is a list you stop opening.
+ */
+const Findings = ({ context }: { context: ComponentContext }) => {
+  if (!context.findings.length) {
+    return <EmptyState title="Nothing outstanding" />;
+  }
+
+  return (
+    <Panel className="divide-y divide-line/60">
+      {context.findings.map((finding) => (
+        <Row key={finding.id} interactive={false} className="items-start">
+          <Badge tone={SEVERITY[finding.severity] ?? "neutral"}>{finding.severity}</Badge>
+          <div className="min-w-0 flex-1">
+            <p className="text-[13px] text-fg">{finding.title}</p>
+            <p className="mt-0.5 text-2xs leading-relaxed text-fg-muted">{finding.detail}</p>
+          </div>
+          <code className="shrink-0 text-2xs text-fg-subtle">
+            {finding.file.split("/").pop()}:{finding.line}
+          </code>
+        </Row>
+      ))}
+    </Panel>
   );
 };
 

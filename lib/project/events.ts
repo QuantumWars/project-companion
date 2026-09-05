@@ -76,6 +76,8 @@ export type EventKind =
   | "criterion.checked"
   | "criterion.unchecked"
   | "criterion.verified"
+  | "review.finding"
+  | "review.resolved"
   // Agent runs. A run is not stored anywhere else: these events ARE the run,
   // and its current state is a fold over them. See `run.ts`.
   | "run.started"

@@ -1,6 +1,6 @@
 import {
   ancestorsOf, catalogWarnings, componentChurn, componentId, componentTree,
-  isNoop, reconcile, resolveComponent, specificity, withDescendants,
+  coverage, isNoop, reconcile, resolveComponent, specificity, withDescendants,
   type CanvasNode, type Component,
 } from "@/lib/project/component";
 import { eq, ok, runAll, test } from "./harness";
@@ -277,6 +277,39 @@ test("a steady canvas reconciles to nothing, because autosave fires constantly",
     component({ id: "auth", nodeId: "n1", diagramId: "arch", title: "Auth" }),
   ];
   ok(isNoop(reconcile("arch", [node("n1", "auth", "Auth")], components)));
+});
+
+/* -------------------------------- coverage -------------------------------- */
+
+test("coverage is the check every other warning assumed", () => {
+  const components = [component({ id: "core", paths: ["lib/**"] })];
+  const result = coverage(["lib/a.ts", "lib/b.ts", "app/c.tsx", "scripts/d.mjs"], components);
+  eq(result.owned, 2);
+  eq(result.total, 4);
+});
+
+test("gaps are reported by directory, because a file list is not actionable", () => {
+  const result = coverage(
+    ["app/a.tsx", "app/b.tsx", "app/c.tsx", "scripts/d.mjs"],
+    [component({ id: "core", paths: ["lib/**"] })],
+  );
+  eq(result.gaps.map((g) => `${g.directory}:${g.files}`), ["app:3", "scripts:1"], "worst first");
+  eq(result.gaps[0].examples.length, 3, "with enough examples to go and look");
+});
+
+test("a nested directory is named at a useful grain", () => {
+  const result = coverage(["lib/project/a.ts", "lib/project/b.ts"], []);
+  eq(result.gaps[0].directory, "lib/project", "`lib` alone would say nothing");
+});
+
+test("a file at the root is not lost", () => {
+  eq(coverage(["config.ts"], []).gaps[0].directory, ".");
+});
+
+test("a fully claimed tree reports no gaps", () => {
+  const result = coverage(["lib/a.ts"], [component({ id: "core", paths: ["lib/**"] })]);
+  eq(result.gaps, []);
+  eq(result.owned, result.total);
 });
 
 runAll().then((failed) => process.exit(failed ? 1 : 0));
