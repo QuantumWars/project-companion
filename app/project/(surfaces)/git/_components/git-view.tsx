@@ -363,23 +363,133 @@ export const GitSurface = ({ root }: { root?: string }) => {
       </section>
 
       {view.attribution?.unattributed.length ? (
-        <section className="rounded-xl bg-panel shadow-xs ring-1 ring-inset ring-line/60 p-4">
-          <h2 className="flex items-center gap-x-1.5 text-xs font-semibold uppercase tracking-wide text-fg-muted">
-            <Link2 className="h-3 w-3" />
-            {view.attribution.unattributed.length} unlinked
-          </h2>
-          <p className="mt-1 text-xs text-fg-muted">
-            Commit with a{" "}
-            <code className="rounded bg-bg-subtle px-1 font-mono">project-companion: &lt;taskId&gt;</code>{" "}
-            trailer, or work on a branch whose name carries the id, and they link themselves.
-            To attach one after the fact:{" "}
-            <code className="rounded bg-bg-subtle px-1 font-mono">
-              project-companion task done &lt;id&gt; --commit &lt;sha&gt;
-            </code>
-          </p>
-        </section>
+        <Unlinked
+          commits={view.attribution.unattributed}
+          tasks={tasks}
+          query={query}
+          onLinked={() => void load(true)}
+        />
       ) : null}
     </div>
+  );
+};
+
+/**
+ * Commits the board cannot account for, and one click to fix each.
+ *
+ * The panel here used to explain the trailer convention and stop. That is fine
+ * advice for the next commit and useless for the thirty already in the tree,
+ * which is exactly the state every repository is in when it adopts this -- and
+ * it was the state this repository was in for its entire history.
+ *
+ * Recording a sha is the strongest of the four attribution signals, and the
+ * only one that is a claim rather than an inference. So this is deliberately
+ * not a guess-and-confirm: nothing is preselected, and a commit stays unlinked
+ * until somebody says which task it belongs to.
+ */
+const Unlinked = ({
+  commits,
+  tasks,
+  query,
+  onLinked,
+}: {
+  commits: LinkedCommit[];
+  tasks: Task[];
+  query: string;
+  onLinked: () => void;
+}) => {
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
+
+  // Recent first, and unfinished work first within that: the task a stray
+  // commit belongs to is nearly always one somebody is still working on.
+  const options = useMemo(
+    () =>
+      [...tasks].sort(
+        (a, b) =>
+          Number(a.status === "done") - Number(b.status === "done") ||
+          b.updatedAt.localeCompare(a.updatedAt),
+      ),
+    [tasks],
+  );
+
+  const link = async (sha: string, taskId: string) => {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+
+    setBusy(sha);
+    setError(null);
+    try {
+      // The whole array, because a PATCH assigns the field rather than
+      // appending to it -- sending just this sha would drop the rest.
+      const response = await fetch(`/api/project/tasks/${taskId}${query}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ commits: [...(task.commits ?? []), sha] }),
+      });
+      if (!response.ok) throw new Error(`Could not link (${response.status})`);
+      onLinked();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const shown = expanded ? commits : commits.slice(0, 8);
+
+  return (
+    <section className="rounded-xl bg-panel p-4 shadow-xs ring-1 ring-inset ring-line/60">
+      <h2 className="flex items-center gap-x-1.5 text-xs font-semibold uppercase tracking-wide text-fg-muted">
+        <Link2 className="h-3 w-3" />
+        {commits.length} unlinked
+      </h2>
+      <p className="mt-1 text-xs text-fg-muted">
+        Commit with a{" "}
+        <code className="rounded bg-bg-subtle px-1 font-mono">project-companion: &lt;taskId&gt;</code>{" "}
+        trailer, or work on a branch carrying the id, and they link themselves. Attach
+        one after the fact here.
+      </p>
+      {error ? <p className="mt-2 text-xs text-status-danger">{error}</p> : null}
+
+      <ul className="mt-3 divide-y divide-line/60">
+        {shown.map((commit) => (
+          <li key={commit.sha} className="flex items-center gap-x-3 py-1.5">
+            <code className="shrink-0 font-mono text-[11px] text-fg-subtle">{commit.short}</code>
+            <span className="min-w-0 flex-1 truncate text-xs text-fg" title={commit.subject}>
+              {commit.subject}
+            </span>
+            <span className="hidden shrink-0 text-[11px] text-fg-subtle sm:block">
+              {commit.author}
+            </span>
+            <select
+              disabled={busy === commit.sha}
+              defaultValue=""
+              onChange={(e) => e.target.value && void link(commit.sha, e.target.value)}
+              className="h-7 w-[190px] shrink-0 rounded-md border border-line bg-bg px-1.5 text-xs text-fg disabled:opacity-50"
+            >
+              <option value="">Link to a task…</option>
+              {options.map((task) => (
+                <option key={task.id} value={task.id}>
+                  {task.status === "done" ? "✓ " : ""}
+                  {task.title.slice(0, 40)}
+                </option>
+              ))}
+            </select>
+          </li>
+        ))}
+      </ul>
+
+      {commits.length > shown.length ? (
+        <button
+          onClick={() => setExpanded(true)}
+          className="mt-2 text-xs text-fg-muted hover:text-fg"
+        >
+          Show {commits.length - shown.length} more
+        </button>
+      ) : null}
+    </section>
   );
 };
 

@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-09-05T12:28:53.410Z",
-  "revision": 92,
+  "updatedAt": "2026-09-05T12:43:08.258Z",
+  "revision": 97,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1456,10 +1456,10 @@
     {
       "id": "bcef9484",
       "title": "One-click linking for unattributed commits",
-      "status": "todo",
+      "status": "done",
       "createdAt": "2026-08-28T21:23:36.153Z",
-      "updatedAt": "2026-08-28T21:23:36.153Z",
-      "order": 3,
+      "updatedAt": "2026-09-05T12:42:28.359Z",
+      "order": 22,
       "featureId": "commit-attribution"
     },
     {
@@ -1508,8 +1508,9 @@
       "status": "todo",
       "componentId": "data-layer",
       "createdAt": "2026-09-05T09:16:48.552Z",
-      "updatedAt": "2026-09-05T09:16:48.552Z",
-      "order": 7
+      "updatedAt": "2026-09-05T12:42:20.922Z",
+      "order": 7,
+      "commits": []
     },
     {
       "id": "690214e1",
@@ -1612,6 +1613,16 @@
       "commits": [
         "c97d03ee4bfecca2fbbba20e21e42dcff9a962a5"
       ]
+    },
+    {
+      "id": "ab35cf79",
+      "title": "One-click linking, and the whole PRD to done",
+      "status": "in_progress",
+      "componentId": "surfaces",
+      "featureId": "commit-attribution",
+      "createdAt": "2026-09-05T12:43:08.258Z",
+      "updatedAt": "2026-09-05T12:43:08.258Z",
+      "order": 0
     }
   ],
   "roadmap": {

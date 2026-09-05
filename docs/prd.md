@@ -77,7 +77,7 @@ Paths: lib/project/git-link.ts, lib/project/git-view.ts
 - [x] All four signals resolve, strongest first
 - [x] Path overlap attributes to a feature and never to a task
 - [x] An ambiguous path match is no match
-- [ ] The git surface lists unattributed commits for one-click linking
+- [x] The git surface lists unattributed commits for one-click linking
 
 ### Branch creation
 <!-- id: branch-creation -->

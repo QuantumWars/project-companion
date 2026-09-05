@@ -40,3 +40,7 @@
 {"id":"16c663b56571:39","ts":1788611278444,"seq":39,"actor":"16c663b56571","prev":"0f5edb7ba44e6229","componentId":"surfaces","kind":"task.moved","data":{"taskId":"efdcbd42","from":"todo","to":"done"}}
 {"id":"16c663b56571:40","ts":1788611333187,"seq":40,"actor":"16c663b56571","prev":"917e87d96a44b762","componentId":"surfaces","kind":"task.created","data":{"taskId":"16a744ff","title":"Component workspace: board, spec, evidence and health","status":"in_progress"}}
 {"id":"16c663b56571:41","ts":1788611333415,"seq":41,"actor":"16c663b56571","prev":"6d65cabf54af6969","componentId":"surfaces","kind":"task.moved","data":{"taskId":"16a744ff","from":"in_progress","to":"done"}}
+{"id":"16c663b56571:42","ts":1788612128521,"seq":42,"actor":"16c663b56571","prev":"0ec16ae97c1b58ba","componentId":"data-layer","kind":"task.updated","data":{"taskId":"a777c062","changed":["commits"]}}
+{"id":"16c663b56571:43","ts":1788612140923,"seq":43,"actor":"16c663b56571","prev":"3305e7173120a78d","componentId":"data-layer","kind":"task.updated","data":{"taskId":"a777c062","changed":["commits"]}}
+{"id":"16c663b56571:44","ts":1788612148361,"seq":44,"actor":"16c663b56571","prev":"d24f0b2a51c4701c","kind":"task.moved","data":{"taskId":"bcef9484","from":"todo","to":"done"}}
+{"id":"16c663b56571:45","ts":1788612188259,"seq":45,"actor":"16c663b56571","prev":"176170fbf380df55","componentId":"surfaces","kind":"task.created","data":{"taskId":"ab35cf79","title":"One-click linking, and the whole PRD to done","status":"in_progress"}}
