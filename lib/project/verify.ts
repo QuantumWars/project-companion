@@ -86,3 +86,61 @@ export const runCheck = async (
 /** The last few lines, which is where a failing runner says why. */
 const tail = (text: string, lines = 12): string =>
   text.trim().split("\n").slice(-lines).join("\n");
+
+/* ------------------------------- what is proven --------------------------- */
+
+export type Verification = { ok: boolean; at: number; command: string };
+
+/**
+ * The last thing each declared check said.
+ *
+ * Folded from the log rather than stored, so it cannot disagree with the run
+ * that produced it. Only the latest matters: a check that failed on Tuesday and
+ * passes now is passing, and keeping the history here would invite somebody to
+ * average it.
+ *
+ * This is what makes a third status possible. A feature whose boxes are all
+ * ticked is `done`; a feature whose boxes are all ticked and whose check has
+ * never been run is CLAIMED, and those are different things that every board
+ * before this one has drawn identically.
+ */
+export const verifications = (
+  events: readonly { kind: string; ts: number; data: Record<string, unknown> }[],
+): Record<string, Verification> => {
+  const latest: Record<string, Verification> = {};
+
+  for (const event of events) {
+    if (event.kind !== "criterion.verified") continue;
+    const featureId = event.data.featureId;
+    if (typeof featureId !== "string") continue;
+
+    const previous = latest[featureId];
+    if (previous && previous.at > event.ts) continue;
+    latest[featureId] = {
+      ok: event.data.ok === true,
+      at: event.ts,
+      command: String(event.data.command ?? ""),
+    };
+  }
+
+  return latest;
+};
+
+export type ProofState = "proven" | "failing" | "claimed" | "unclaimed";
+
+/**
+ * How much a feature's "done" is worth.
+ *
+ * `claimed` is the interesting one and the reason this exists: every box
+ * ticked, a command declared, and nobody has ever run it. That is the state
+ * most boards are permanently in and none of them can express.
+ */
+export const proofState = (
+  feature: { status: string; verify?: string },
+  verification: Verification | undefined,
+): ProofState => {
+  if (feature.status !== "done") return "unclaimed";
+  if (!feature.verify) return "claimed";
+  if (!verification) return "claimed";
+  return verification.ok ? "proven" : "failing";
+};

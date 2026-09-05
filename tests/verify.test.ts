@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { parsePrd, applyOps } from "@/lib/project/prd";
 import { readRoadmap, editPrd } from "@/lib/project/roadmap";
 import { initProject } from "@/lib/project/store";
-import { runCheck } from "@/lib/project/verify";
+import { proofState, runCheck, verifications } from "@/lib/project/verify";
 import { eq, ok, runAll, test } from "./harness";
 
 const PRD = `# Gated
@@ -139,6 +139,43 @@ test("a criterion the check refuses cannot stay ticked", () => {
       "the command itself is untouched",
     );
   } finally { cleanup(); }
+});
+
+/* ----------------------------- what is proven ----------------------------- */
+
+const verified = (featureId: string, ok: boolean, ts: number) => ({
+  kind: "criterion.verified",
+  ts,
+  data: { featureId, ok, command: "npm test" },
+});
+
+test("only the latest result counts", () => {
+  const state = verifications([
+    verified("auth", false, 100),
+    verified("auth", true, 200),
+  ]);
+  eq(state.auth.ok, true, "a check that failed on Tuesday and passes now is passing");
+});
+
+test("results arriving out of order do not overwrite a newer one", () => {
+  const state = verifications([verified("auth", true, 200), verified("auth", false, 100)]);
+  eq(state.auth.ok, true, "the log merges across actors, so order is not guaranteed");
+});
+
+test("other events are not verifications", () => {
+  eq(verifications([{ kind: "task.moved", ts: 1, data: { featureId: "auth" } }]), {});
+});
+
+test("claimed and proven are different states, and drawn differently", () => {
+  const done = { status: "done", verify: "npm test" };
+  eq(proofState(done, { ok: true, at: 1, command: "npm test" }), "proven");
+  eq(proofState(done, { ok: false, at: 1, command: "npm test" }), "failing");
+  eq(proofState(done, undefined), "claimed", "every box ticked, and nobody has run the check");
+  eq(proofState({ status: "done" }, undefined), "claimed", "no command means nothing checks it");
+});
+
+test("work that is not claiming to be done is not failing verification", () => {
+  eq(proofState({ status: "in_progress", verify: "npm test" }, undefined), "unclaimed");
 });
 
 runAll().then((failed) => process.exit(failed ? 1 : 0));

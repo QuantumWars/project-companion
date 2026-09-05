@@ -257,7 +257,7 @@ Verify: npm test -- verify
 - [x] A Verify line parses, and is not mistaken for the summary or a code sample
 - [x] Setting, changing and clearing one leaves the rest of the document identical
 - [x] A failing check unticks what it refuses, and records that it did
-- [ ] The roadmap shows claimed-but-unverified as distinct from done
+- [x] The roadmap shows claimed-but-unverified as distinct from done
 
 ### Architecture drift
 <!-- id: architecture-drift -->
