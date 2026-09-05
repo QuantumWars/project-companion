@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-09-05T14:05:58.320Z",
-  "revision": 116,
+  "updatedAt": "2026-09-05T14:05:58.497Z",
+  "revision": 118,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1679,12 +1679,15 @@
     {
       "id": "8d779cea",
       "title": "Mission control, and the autonomy dial",
-      "status": "in_progress",
+      "status": "done",
       "componentId": "surfaces",
       "featureId": "agent-runs",
       "createdAt": "2026-09-05T14:05:58.320Z",
-      "updatedAt": "2026-09-05T14:05:58.320Z",
-      "order": 0
+      "updatedAt": "2026-09-05T14:05:58.497Z",
+      "order": 29,
+      "commits": [
+        "656824f5a56c618349fa25a39f56def241a65521"
+      ]
     }
   ],
   "roadmap": {

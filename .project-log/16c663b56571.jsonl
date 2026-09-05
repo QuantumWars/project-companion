@@ -68,3 +68,4 @@
 {"id":"16c663b56571:67","ts":1788617158048,"seq":67,"actor":"16c663b56571","prev":"a4b3e3f51e84612a","componentId":"component-model","kind":"run.state","data":{"runId":"624a0a13","state":"abandoned","reason":"demo fixture"}}
 {"id":"16c663b56571:68","ts":1788617158232,"seq":68,"actor":"16c663b56571","prev":"7a9c8c33521d12e6","componentId":"surfaces","kind":"task.moved","data":{"taskId":"72323b78","from":"todo","to":"done"}}
 {"id":"16c663b56571:69","ts":1788617158321,"seq":69,"actor":"16c663b56571","prev":"5903e05d1038326e","componentId":"surfaces","kind":"task.created","data":{"taskId":"8d779cea","title":"Mission control, and the autonomy dial","status":"in_progress"}}
+{"id":"16c663b56571:70","ts":1788617158498,"seq":70,"actor":"16c663b56571","prev":"1c67102487cbccd0","componentId":"surfaces","kind":"task.moved","data":{"taskId":"8d779cea","from":"in_progress","to":"done"}}
