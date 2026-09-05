@@ -34,6 +34,7 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 
+import type { Component } from "./component";
 import type {
   DiagramFile, DiagramRef, Feature, FeatureOverride, Phase, Task, WhiteboardFile,
 } from "./types";
@@ -54,6 +55,14 @@ export type ProjectBundle = {
 
   diagrams: Record<string, DiagramFile>;
   boards: Record<string, WhiteboardFile>;
+  /**
+   * The architecture nodes that own work, keyed by component id.
+   *
+   * Separate from the nodes inside `diagrams` on purpose: a node is how a
+   * component is drawn, and a component outlives any particular drawing of it.
+   * Deleting the node orphans the entry rather than the work attached to it.
+   */
+  components: Record<string, Component>;
   tasks: Task[];
   roadmap: {
     phases: Phase[];
@@ -61,6 +70,39 @@ export type ProjectBundle = {
     orphans: Feature[];
   };
   git: { allowBranchCreate?: boolean };
+  /**
+   * How much an agent may do without being asked, and what it may touch.
+   *
+   * Per component rather than per project, because the right answer differs by
+   * blast radius: a utility module can take autonomous edits, billing cannot.
+   * `default` applies where a component says nothing.
+   */
+  agents: {
+    default?: AgentPolicy;
+    byComponent?: Record<string, AgentPolicy>;
+  };
+};
+
+export const AUTONOMY_LEVELS = [
+  "observe",
+  "propose",
+  "confirm",
+  "autonomous",
+] as const;
+
+/** How much rope an agent gets, weakest first. */
+export type AutonomyLevel = (typeof AUTONOMY_LEVELS)[number];
+
+export type AgentPolicy = {
+  autonomy?: AutonomyLevel;
+  /** Hard ceilings on one run. Exhausting any of them stops it. */
+  budget?: { tokens?: number; wallClockMs?: number; toolCalls?: number };
+  /**
+   * Globs a run may write. Left unset, a run inherits its component's declared
+   * paths -- the boundary is the same declaration that drives attribution, so
+   * there is only ever one place to state where a component lives.
+   */
+  writeGlobs?: string[];
 };
 
 export const bundlePath = (root: string): string => join(root, BUNDLE_FILE);
@@ -74,9 +116,11 @@ export const emptyBundle = (name: string): ProjectBundle => ({
   prdSource: "docs/prd.md",
   diagrams: {},
   boards: {},
+  components: {},
   tasks: [],
   roadmap: { phases: [], overrides: {}, orphans: [] },
   git: {},
+  agents: {},
 });
 
 export class BundleConflictError extends Error {}
@@ -96,7 +140,9 @@ export const readBundle = (root: string): ProjectBundle | null => {
         overrides: parsed.roadmap?.overrides ?? {},
         orphans: parsed.roadmap?.orphans ?? [],
       },
+      components: parsed.components ?? {},
       git: parsed.git ?? {},
+      agents: parsed.agents ?? {},
     };
   } catch {
     return null;
@@ -233,6 +279,7 @@ export const withProjectLock = <T>(root: string, fn: () => T): T => {
     rmSync(lock, { force: true });
   }
 };
+
 
 /**
  * Read, change, write, once and exclusively.

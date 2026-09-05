@@ -7,20 +7,23 @@
  * review like any other source change. localStorage cannot serve that purpose:
  * an agent runs on the filesystem and cannot see a browser's storage.
  *
- * Layout, rooted at the agent's project directory:
+ * Layout, rooted at the repository:
  *
- *   .claude/project-companion/project.json        name, version, board index
- *   .claude/project-companion/diagrams/<id>.json  one diagram each
- *   .claude/project-companion/boards/<id>.json    one whiteboard each
- *   .claude/project-companion/tasks.json          the Kanban board
- *   .claude/project-companion/roadmap.json        phases + feature overrides
- *   .claude/project-companion/cache/              derived data; gitignored
+ *   .project          diagrams, whiteboards, components, tasks, phases,
+ *                     overrides and agent policy -- see `bundle.ts`
+ *   .project-log/     the append-only event log, one shard per actor
+ *   docs/prd.md       the feature list
+ *   .project-cache/   derived data; gitignored, safe to delete
  *
- * One file deliberately lives outside the store: the PRD itself, at
- * `docs/prd.md` by default. It is the source of truth for the feature list,
- * because a product document belongs in the repository where humans review it
- * -- not inside a tool's data directory. `roadmap.json` holds only what
- * markdown cannot express.
+ * Two things deliberately live outside `.project`. The PRD, because a product
+ * document belongs in the repository where humans review it rather than inside
+ * a JSON blob -- the bundle records only what markdown cannot express. And the
+ * cache, because it is regenerable and larger than everything else put together.
+ *
+ * Some types below still describe the split layout this project used before the
+ * single-file format (`.claude/project-companion/*.json`). They are kept because
+ * `store.ts` still reads such a project, so somebody who never ran `migrate`
+ * keeps working.
  */
 
 import type { ArchEdge, ArchNode, DiagramType, Viewport } from "@/types/arch";
@@ -144,6 +147,15 @@ export type Task = {
    * find its tasks, and a node on the canvas can show its work in flight.
    */
   nodeIds?: string[];
+  /**
+   * The architecture component this task belongs to.
+   *
+   * Distinct from `nodeIds`, which lists every node the work touches. This is
+   * the one component that OWNS it -- whose board it appears on, whose review
+   * gate it passes, and whose owner is accountable for it. A task touching
+   * three services still belongs to one team.
+   */
+  componentId?: string;
   diagramId?: string;
   assignee?: string;
   /** Free-form labels; `agent` marks work an agent picked up. */
@@ -173,17 +185,18 @@ export type TasksFile = {
 /* --------------------------------- roadmap -------------------------------- */
 
 /**
- * The roadmap is split across two files on purpose.
+ * The roadmap is split in two on purpose.
  *
  * `docs/prd.md` owns the feature list: titles, prose, and acceptance criteria.
  * It is the document people read and review, and an agent edits it with
  * ordinary file tools.
  *
- * `roadmap.json` owns only what markdown cannot express -- phase dates, the
- * links from a feature to architecture nodes, and status overrides. Status is
- * otherwise DERIVED from the PRD's checkboxes, so an agent that ticks a box has
- * moved the board without touching a second file, and moving a card never
- * rewrites a document humans review.
+ * The sidecar -- `roadmap` inside `.project`, or `roadmap.json` in a pre-bundle
+ * project -- owns only what markdown cannot express: phase dates, the links from
+ * a feature to architecture nodes, and status overrides. Status is otherwise
+ * DERIVED from the PRD's checkboxes, so an agent that ticks a box has moved the
+ * board without touching a second file, and moving a card never rewrites a
+ * document humans review.
  */
 
 export const PHASE_STATUSES = ["planned", "active", "done"] as const;

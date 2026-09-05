@@ -58,5 +58,11 @@ next-env.d.ts
 # derived git attribution; safe to delete at any time
 /.project-cache/
 
+# NOT ignored, deliberately: /.project-log/
+#
+# The event log is the audit trail, and it is sharded one file per actor so two
+# people's logs merge without conflicting. It has to be committed and pushed --
+# ignoring it would leave every clone with only its own history.
+
 # transient write lock
 /.project.lock

@@ -34,7 +34,23 @@ import {
   tasksForFeature,
   updateTask,
   writeDiagram,
+  createComponent,
+  deleteComponent,
+  readComponent,
+  readComponents,
+  updateComponent,
 } from "../lib/project/store";
+import {
+  ancestorsOf,
+  catalogWarnings,
+  componentTree,
+  resolveComponent,
+  withDescendants,
+  COMPONENT_LIFECYCLES,
+  type ComponentLifecycle,
+  type ComponentNode,
+} from "../lib/project/component";
+import { readEvents } from "../lib/project/events";
 import {
   editPrd,
   readRoadmap,
@@ -68,6 +84,16 @@ project-companion - architecture and task boards that live in your repo
   project-companion init [name]              create a .project file here
   project-companion status                   summarise the project
 
+  project-companion component list           the architecture's components
+  project-companion component show <id>      owner, paths, tasks, children
+  project-companion component add <title> [--paths "a/**,b/**"] [--owner WHO]
+                                             [--parent ID] [--node ID] [--diagram ID]
+  project-companion component set <id> [--paths P] [--owner W] [--parent ID]
+                                             [--lifecycle proposed|active|deprecated]
+  project-companion component rm <id>        delete it; children are promoted
+  project-companion component doctor         what is wrong with the catalog
+  project-companion whose <path>             which component owns a file
+
   project-companion diagram list             list diagrams
   project-companion diagram show <id>        print a diagram as text
   project-companion diagram json <id>        print a diagram as JSON
@@ -90,13 +116,17 @@ project-companion - architecture and task boards that live in your repo
   project-companion phase add <name> [--goal G]
   project-companion phase set <id> [--status S] [--starts D] [--ends D]
 
-  project-companion task list [--status S] [--feature F]
+  project-companion task list [--status S] [--feature F] [--component C]
   project-companion task add <title> [--status S] [--node ID] [--feature F]
+                                             [--component C]
   project-companion task move <id> <status>  ${TASK_STATUSES.join(" | ")}
   project-companion task start <id> [--branch] [--worktree]
                                      open a branch for a task
   project-companion task done <id> [--commit SHA]
   project-companion task rm <id>
+
+  project-companion log [--limit N] [--component ID]
+                                             the event log: what happened, in order
 
   project-companion git status               branch, ahead/behind, working tree
   project-companion git log [--limit N]      recent commits and what they are linked to
@@ -168,6 +198,18 @@ const AGENT_DIRS = [".claude", ".codex", ".cursor", ".gemini"] as const;
 
 const agentDirFor = (root: string): string =>
   AGENT_DIRS.find((dir) => existsSync(join(root, dir))) ?? AGENT_DIRS[0];
+
+/** `--paths "a/**,b/**"` -- comma or whitespace separated, both are natural to type. */
+const splitList = (value: string | undefined): string[] | undefined =>
+  value === undefined ? undefined : value.split(/[,\s]+/).filter(Boolean);
+
+/** One line of an event's payload, for `log`. */
+const summarise = (data: Record<string, unknown>): string =>
+  Object.entries(data)
+    .filter(([, v]) => v !== undefined && v !== null)
+    .map(([k, v]) => `${k}=${Array.isArray(v) ? v.join("|") : String(v)}`)
+    .join(" ")
+    .slice(0, 90);
 
 const PRD_TEMPLATE = `# Product requirements
 
@@ -489,6 +531,197 @@ const main = () => {
     return die(HELP);
   }
 
+  /* ------------------------------- components ------------------------------- */
+
+  if (command === "component") {
+    const components = readComponents(root);
+
+    if (sub === "add") {
+      const title = rest[0] ?? die("Usage: project-companion component add <title>");
+      const lifecycle = flag("lifecycle");
+      if (lifecycle && !COMPONENT_LIFECYCLES.includes(lifecycle as never)) {
+        die(`Unknown lifecycle "${lifecycle}" (${COMPONENT_LIFECYCLES.join(" | ")})`);
+      }
+      const parent = flag("parent");
+      if (parent && !components.some((c) => c.id === parent)) {
+        // Same rule as `task add --feature`: refuse a dangling link rather than
+        // storing one that puts the component nowhere in the tree.
+        die(`No component "${parent}". Run \`project-companion component list\`.`);
+      }
+
+      const component = createComponent(root, {
+        title,
+        owner: flag("owner"),
+        paths: splitList(flag("paths")),
+        parentId: parent,
+        nodeId: flag("node"),
+        diagramId: flag("diagram"),
+        drilldownDiagramId: flag("drilldown"),
+        lifecycle: lifecycle as ComponentLifecycle | undefined,
+      });
+      process.stdout.write(`Created ${component.id}  ${component.title}\n`);
+      if (!component.paths?.length) {
+        process.stdout.write(
+          `\nNo paths yet, so nothing will attribute here. Add them:\n` +
+            `  project-companion component set ${component.id} --paths "lib/${component.id}/**"\n`,
+        );
+      }
+      return;
+    }
+
+    if (sub === "set") {
+      const id = rest[0] ?? die("Usage: project-companion component set <id> [--owner W] [--paths P]");
+      const lifecycle = flag("lifecycle");
+      if (lifecycle && !COMPONENT_LIFECYCLES.includes(lifecycle as never)) {
+        die(`Unknown lifecycle "${lifecycle}" (${COMPONENT_LIFECYCLES.join(" | ")})`);
+      }
+      const paths = splitList(flag("paths"));
+      const updated =
+        updateComponent(root, id, {
+          ...(flag("owner") ? { owner: flag("owner") } : {}),
+          ...(paths ? { paths } : {}),
+          ...(flag("parent") ? { parentId: flag("parent") } : {}),
+          ...(flag("drilldown") ? { drilldownDiagramId: flag("drilldown") } : {}),
+          ...(lifecycle ? { lifecycle: lifecycle as ComponentLifecycle } : {}),
+        }) ?? die(`No component "${id}"`);
+      process.stdout.write(
+        `${updated.id}  ${updated.lifecycle}  ${updated.owner ?? "(unowned)"}  ${(updated.paths ?? []).join(", ")}\n`,
+      );
+      return;
+    }
+
+    if (sub === "rm" || sub === "delete") {
+      const id = rest[0] ?? die("Usage: project-companion component rm <id>");
+      if (!deleteComponent(root, id)) die(`No component "${id}"`);
+      process.stdout.write(`Deleted ${id}  (children were promoted, not deleted)\n`);
+      return;
+    }
+
+    if (sub === "show") {
+      const id = rest[0] ?? die("Usage: project-companion component show <id>");
+      const component = readComponent(root, id) ?? die(`No component "${id}"`);
+      const family = withDescendants(id, components);
+      const tasks = readTasks(root).tasks.filter((t) => family.includes(t.componentId ?? ""));
+      const trail = ancestorsOf(id, components).map((c) => c.id);
+
+      const lines = [
+        `${component.title}  [${component.lifecycle}]  id=${component.id}`,
+        trail.length ? `path:  ${[...trail, component.id].join(" / ")}` : "",
+        `owner: ${component.owner ?? "(unowned)"}`,
+        `paths: ${(component.paths ?? []).join(", ") || "(none declared)"}`,
+        component.orphaned ? "orphaned: the canvas node is gone" : "",
+        "",
+      ].filter((l) => l !== "");
+
+      const children = components.filter((c) => c.parentId === id);
+      if (children.length) {
+        lines.push("children:");
+        for (const c of children) lines.push(`  ${c.id.padEnd(24)} ${c.title}`);
+        lines.push("");
+      }
+
+      if (tasks.length) {
+        lines.push(`tasks (${tasks.length}, including children):`);
+        for (const t of tasks) {
+          lines.push(`  ${t.id}  ${fmtStatus(t.status).padEnd(12)} ${t.title}`);
+        }
+      } else {
+        lines.push("No tasks on this component yet.");
+      }
+
+      process.stdout.write(`${lines.join("\n")}\n`);
+      return;
+    }
+
+    if (sub === "doctor") {
+      const warnings = catalogWarnings(components);
+      if (!warnings.length) {
+        process.stdout.write(
+          components.length
+            ? `${components.length} components, nothing wrong.\n`
+            : "No components yet. `project-companion component add <title>`\n",
+        );
+        return;
+      }
+      for (const w of warnings) {
+        process.stdout.write(`${w.componentId.padEnd(24)} ${w.kind.padEnd(17)} ${w.detail}\n`);
+      }
+      process.stdout.write(
+        `\n${warnings.length} problems. A component with no paths attributes nothing, ` +
+          `and two claiming the same paths attribute nothing either.\n`,
+      );
+      return;
+    }
+
+    if (!components.length) {
+      process.stdout.write("No components yet. `project-companion component add <title>`\n");
+      return;
+    }
+
+    // Listed as the tree, because containment is how the architecture reads.
+    const render = (nodes: ComponentNode[], depth: number) => {
+      for (const node of nodes) {
+        const indent = "  ".repeat(depth);
+        const owner = node.owner ?? "(unowned)";
+        process.stdout.write(
+          `${(indent + node.id).padEnd(30)} ${owner.padEnd(22)} ${(node.paths ?? []).join(", ")}\n`,
+        );
+        render(node.children, depth + 1);
+      }
+    };
+    render(componentTree(components), 0);
+    return;
+  }
+
+  if (command === "whose") {
+    const path = sub ?? die("Usage: project-companion whose <path>");
+    const owner = resolveComponent(path, readComponents(root));
+    if (!owner) {
+      process.stdout.write(
+        `${path} belongs to no component.\n` +
+          `Either nothing claims it, or two things claim it equally -- ` +
+          `\`project-companion component doctor\` says which.\n`,
+      );
+      return;
+    }
+    const component = readComponent(root, owner.componentId)!;
+    process.stdout.write(
+      `${owner.componentId}  ${component.owner ?? "(unowned)"}\n  matched ${owner.glob}\n`,
+    );
+    return;
+  }
+
+  if (command === "log") {
+    const limit = Number(flag("limit")) || 40;
+    const component = flag("component");
+    const events = readEvents(root)
+      .filter((e) => e.kind !== "actor.identified")
+      .filter((e) => !component || e.componentId === component)
+      .slice(-limit);
+
+    if (!events.length) {
+      process.stdout.write("Nothing logged yet.\n");
+      return;
+    }
+
+    // Actor ids are hashes; the log states each one's identity in its own first
+    // event, so resolve them back to something a person recognises.
+    const names = new Map<string, string>();
+    for (const e of readEvents(root)) {
+      if (e.kind === "actor.identified") names.set(e.actor, String(e.data.name ?? e.actor));
+    }
+
+    for (const e of events) {
+      const when = new Date(e.ts).toISOString().replace("T", " ").slice(0, 19);
+      const who = (names.get(e.actor) ?? e.actor).slice(0, 14);
+      const scope = e.componentId ? `[${e.componentId}] ` : "";
+      process.stdout.write(
+        `${when}  ${who.padEnd(14)} ${e.kind.padEnd(20)} ${scope}${summarise(e.data)}\n`,
+      );
+    }
+    return;
+  }
+
   if (command === "task") {
     if (sub === "list") {
       const status = flag("status");
@@ -496,8 +729,16 @@ const main = () => {
         die(`Unknown status "${status}" (${TASK_STATUSES.join(" | ")})`);
       }
       const feature = flag("feature");
+      // A component's board includes its children's, because that is what
+      // "everything happening inside this part of the system" means.
+      const scope = flag("component")
+        ? withDescendants(flag("component")!, readComponents(root))
+        : undefined;
       const tasks = readTasks(root).tasks.filter(
-        (t) => (!status || t.status === status) && (!feature || t.featureId === feature),
+        (t) =>
+          (!status || t.status === status) &&
+          (!feature || t.featureId === feature) &&
+          (!scope || scope.includes(t.componentId ?? "")),
       );
       if (!tasks.length) {
         process.stdout.write("No tasks.\n");
@@ -506,8 +747,9 @@ const main = () => {
       for (const t of tasks) {
         const nodes = t.nodeIds?.length ? `  -> ${t.nodeIds.join(",")}` : "";
         const linked = t.featureId ? `  [${t.featureId}]` : "";
+        const owner = t.componentId ? `  @${t.componentId}` : "";
         process.stdout.write(
-          `${t.id}  ${t.status.padEnd(12)} ${t.title}${linked}${nodes}\n`,
+          `${t.id}  ${t.status.padEnd(12)} ${t.title}${owner}${linked}${nodes}\n`,
         );
       }
       return;
@@ -521,6 +763,10 @@ const main = () => {
       }
       const status: TaskStatus | undefined = raw;
       const node = flag("node");
+      const component = flag("component");
+      if (component && !readComponent(root, component)) {
+        die(`No component "${component}". Run \`project-companion component list\`.`);
+      }
       const feature = flag("feature");
       if (feature && !readRoadmap(root).features.some((f) => f.id === feature)) {
         // Fail rather than silently storing a dangling id: an unresolvable
@@ -533,6 +779,7 @@ const main = () => {
         status,
         description: flag("description"),
         nodeIds: node ? [node] : undefined,
+        componentId: component,
         diagramId: flag("diagram"),
         featureId: feature,
         phaseId: flag("phase"),

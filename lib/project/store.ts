@@ -32,6 +32,12 @@ import {
   type ProjectBundle,
 } from "./bundle";
 import {
+  componentId,
+  type Component,
+  type ComponentLifecycle,
+} from "./component";
+import { appendEvent, type NewEvent } from "./events";
+import {
   DEFAULT_STORE_DIR,
   DEFAULT_PRD_PATH,
   emptyProject,
@@ -153,6 +159,24 @@ export const writeJson = (path: string, value: unknown) => {
 };
 
 const now = () => new Date().toISOString();
+
+/**
+ * Records what just happened, without ever failing the thing that happened.
+ *
+ * The log is an audit trail beside the state, not the state itself: `.project`
+ * is still the source of truth for what a project currently is. So a log that
+ * cannot be written -- a read-only checkout, a permissions problem, a full disk
+ * -- must not turn a successful task edit into an error the user has to
+ * understand. It is appended after the write succeeds, so nothing is ever
+ * recorded that did not actually land.
+ */
+const logEvent = (root: string, event: NewEvent): void => {
+  try {
+    appendEvent(root, event);
+  } catch {
+    // Deliberately silent; see above.
+  }
+};
 
 /** Ids are readable so they are pleasant to type in a CLI and read in a diff. */
 const slugId = (title: string): string => {
@@ -630,6 +654,10 @@ export const deleteWhiteboard = (root: string, id: string): boolean => {
   mutateBundle(root, (b) => {
     removed = Boolean(b.boards[id]);
     delete b.boards[id];
+    // Same as `deleteDiagram`: both kinds of board share one id space and one
+    // `task.diagramId` field, so a whiteboard deletion left exactly the same
+    // dangling pointer -- it was simply never cleaned up on this path.
+    for (const task of b.tasks) if (task.diagramId === id) task.diagramId = undefined;
   });
   return removed;
 };
@@ -755,6 +783,149 @@ export const removeNode = (
   return writeDiagram(root, diagram);
 };
 
+/* ------------------------------- components ------------------------------- */
+
+/**
+ * Components live only in the bundle.
+ *
+ * They postdate the split store entirely, so rather than growing a `legacy*`
+ * twin that could never have data in it, a pre-bundle project reports none and
+ * refuses to create one. `project-companion migrate` is a single command, and
+ * saying so is better than half-supporting a format on its way out.
+ */
+const requireComponentStore = (root: string): void => {
+  if (!usesBundle(root)) {
+    throw new Error(
+      "Components need the single-file format. Run `project-companion migrate` first.",
+    );
+  }
+};
+
+export const readComponents = (root: string): Component[] =>
+  usesBundle(root) ? Object.values(requireBundle(root).components) : [];
+
+export const readComponent = (root: string, id: string): Component | null =>
+  (usesBundle(root) ? requireBundle(root).components[id] : undefined) ?? null;
+
+export type ComponentInput = {
+  title: string;
+  nodeId?: string;
+  diagramId?: string;
+  kind?: string;
+  owner?: string;
+  paths?: string[];
+  parentId?: string;
+  drilldownDiagramId?: string;
+  lifecycle?: ComponentLifecycle;
+};
+
+export const createComponent = (root: string, input: ComponentInput): Component => {
+  requireComponentStore(root);
+
+  let created: Component | undefined;
+  mutateBundle(root, (b) => {
+    const component: Component = {
+      id: componentId(input.title, Object.keys(b.components)),
+      title: input.title,
+      nodeId: input.nodeId,
+      diagramId: input.diagramId,
+      kind: input.kind,
+      owner: input.owner,
+      paths: input.paths,
+      parentId: input.parentId,
+      drilldownDiagramId: input.drilldownDiagramId,
+      lifecycle: input.lifecycle ?? "active",
+      createdAt: now(),
+      updatedAt: now(),
+    };
+    b.components[component.id] = component;
+    created = component;
+  });
+
+  if (!created) throw new Error("No project here.");
+  logEvent(root, {
+    kind: "component.created",
+    componentId: created.id,
+    data: { title: created.title, owner: created.owner, paths: created.paths },
+  });
+  return created;
+};
+
+/**
+ * Patches a component.
+ *
+ * `id` is deliberately not patchable. It is what every task, commit and run
+ * points at, and the whole reason it exists is that it never changes -- a
+ * rename is a title change, not a new identity.
+ */
+export const updateComponent = (
+  root: string,
+  id: string,
+  patch: Partial<Omit<Component, "id" | "createdAt">>,
+): Component | null => {
+  requireComponentStore(root);
+
+  let updated: Component | null = null;
+  mutateBundle(root, (b) => {
+    const current = b.components[id];
+    if (!current) return;
+    b.components[id] = { ...current, ...patch, id, updatedAt: now() };
+    updated = b.components[id];
+  });
+
+  if (updated) {
+    logEvent(root, {
+      kind: "component.updated",
+      componentId: id,
+      data: { changed: Object.keys(patch) },
+    });
+  }
+  return updated;
+};
+
+/**
+ * Marks a component as having lost its node, without losing the work.
+ *
+ * The deletion path a canvas edit should take. Tasks, commits and runs still
+ * resolve; the component simply reports that nothing draws it any more, and
+ * `catalogWarnings` asks somebody to re-attach it.
+ */
+export const orphanComponent = (root: string, id: string): Component | null => {
+  const orphaned = updateComponent(root, id, { orphaned: true, nodeId: undefined });
+  if (orphaned) {
+    logEvent(root, { kind: "component.orphaned", componentId: id, data: {} });
+  }
+  return orphaned;
+};
+
+/**
+ * Removes a component outright.
+ *
+ * Only ever from an explicit "delete this component" -- never from a canvas
+ * edit, which orphans instead. Children are promoted to the deleted component's
+ * parent rather than being deleted with it, because a cascade here would take
+ * out an entire subtree of somebody's work on one click.
+ */
+export const deleteComponent = (root: string, id: string): boolean => {
+  requireComponentStore(root);
+
+  let removed = false;
+  mutateBundle(root, (b) => {
+    const current = b.components[id];
+    if (!current) return;
+
+    for (const child of Object.values(b.components)) {
+      if (child.parentId === id) {
+        b.components[child.id] = { ...child, parentId: current.parentId, updatedAt: now() };
+      }
+    }
+    delete b.components[id];
+    removed = true;
+  });
+
+  return removed;
+};
+
 /* --------------------------------- tasks ---------------------------------- */
 
 const legacyReadTasks = (root: string): TasksFile =>
@@ -771,6 +942,8 @@ export type TaskInput = {
   description?: string;
   status?: TaskStatus;
   nodeIds?: string[];
+  /** The component that owns this work; whose board it appears on. */
+  componentId?: string;
   diagramId?: string;
   labels?: string[];
   assignee?: string;
@@ -804,6 +977,7 @@ export const createTask = (root: string, input: TaskInput): Task => {
       description: input.description,
       status,
       nodeIds: input.nodeIds,
+      componentId: input.componentId,
       diagramId: input.diagramId,
       labels: input.labels,
       assignee: input.assignee,
@@ -818,6 +992,11 @@ export const createTask = (root: string, input: TaskInput): Task => {
   });
 
   if (!created) throw new Error("No project store found");
+  logEvent(root, {
+    kind: "task.created",
+    componentId: created.componentId,
+    data: { taskId: created.id, title: created.title, status: created.status },
+  });
   return created;
 };
 export const reorderTask = (
@@ -870,33 +1049,80 @@ export const updateTask = (
   root: string,
   id: string,
   patch: Partial<Omit<Task, "id" | "createdAt">>,
-): Task | null =>
-  mutateTasks(root, (tasks) => {
-    const task = tasks.find((t) => t.id === id);
-    if (!task) return null;
-    Object.assign(task, patch, { updatedAt: now() });
-    return task;
-  }) ?? null;
+): Task | null => {
+  const updated =
+    mutateTasks(root, (tasks) => {
+      const task = tasks.find((t) => t.id === id);
+      if (!task) return null;
+      Object.assign(task, patch, { updatedAt: now() });
+      return task;
+    }) ?? null;
+
+  if (updated) {
+    logEvent(root, {
+      kind: "task.updated",
+      componentId: updated.componentId,
+      // Which fields moved, not their contents: a description is somebody's
+      // prose, and the log is committed and pushed.
+      data: { taskId: id, changed: Object.keys(patch) },
+    });
+  }
+  return updated;
+};
 export const moveTask = (
   root: string,
   id: string,
   status: TaskStatus,
-): Task | null =>
-  mutateTasks(root, (tasks) => {
-    const task = tasks.find((t) => t.id === id);
-    if (!task) return null;
+): Task | null => {
+  let from: TaskStatus | undefined;
 
-    if (task.status !== status) {
-      task.order = tasks.filter((t) => t.status === status).length;
-      task.status = status;
-    }
-    task.updatedAt = now();
-    return task;
-  }) ?? null;
-export const deleteTask = (root: string, id: string): boolean =>
-  mutateTasks(root, (tasks) => {
-    const at = tasks.findIndex((t) => t.id === id);
-    if (at === -1) return false;
-    tasks.splice(at, 1);
-    return true;
-  }) ?? false;
+  const moved =
+    mutateTasks(root, (tasks) => {
+      const task = tasks.find((t) => t.id === id);
+      if (!task) return null;
+
+      from = task.status;
+      if (task.status !== status) {
+        task.order = tasks.filter((t) => t.status === status).length;
+        task.status = status;
+      }
+      task.updatedAt = now();
+      return task;
+    }) ?? null;
+
+  // Only a real transition is an event. A drag that lands a card back in the
+  // column it came from is not something that happened to the work, and every
+  // cycle-time measurement downstream would be wrong if it counted.
+  if (moved && from !== status) {
+    logEvent(root, {
+      kind: "task.moved",
+      componentId: moved.componentId,
+      data: { taskId: id, from, to: status },
+    });
+  }
+  return moved;
+};
+export const deleteTask = (root: string, id: string): boolean => {
+  let removed: Task | undefined;
+
+  const ok =
+    mutateTasks(root, (tasks) => {
+      const at = tasks.findIndex((t) => t.id === id);
+      if (at === -1) return false;
+      removed = tasks[at];
+      tasks.splice(at, 1);
+      return true;
+    }) ?? false;
+
+  // The card is gone from the board, but the fact that it existed is not: the
+  // log is the only place a deleted task leaves a trace, and "what happened to
+  // that ticket" is a question somebody always asks.
+  if (ok && removed) {
+    logEvent(root, {
+      kind: "task.deleted",
+      componentId: removed.componentId,
+      data: { taskId: id, title: removed.title, status: removed.status },
+    });
+  }
+  return ok;
+};

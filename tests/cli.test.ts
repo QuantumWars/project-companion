@@ -89,6 +89,103 @@ test("init twice leaves the project and its contents alone", async () => {
   } finally { cleanup(); }
 });
 
+/* -------------------------------- components ------------------------------- */
+
+test("a component round-trips through the CLI", async () => {
+  const { dir, cleanup } = repo();
+  try {
+    await pc(dir, "init", "Demo");
+    const created = await pc(dir, "component", "add", "Auth Service",
+      "--owner", "grace@example.com", "--paths", "lib/auth/**,app/login/**");
+    ok(created.includes("auth-service"), created);
+
+    const shown = await pc(dir, "component", "show", "auth-service");
+    ok(shown.includes("grace@example.com"), shown);
+    ok(shown.includes("lib/auth/**, app/login/**"), "both globs survive the round trip");
+  } finally { cleanup(); }
+});
+
+test("a component with no paths says so, rather than looking finished", async () => {
+  const { dir, cleanup } = repo();
+  try {
+    await pc(dir, "init", "Demo");
+    const out = await pc(dir, "component", "add", "Vague");
+    ok(out.includes("No paths yet"), "the CLI says why that is a problem");
+    ok(out.includes("component set vague --paths"), "and exactly how to fix it");
+  } finally { cleanup(); }
+});
+
+test("`whose` explains which glob matched", async () => {
+  const { dir, cleanup } = repo();
+  try {
+    await pc(dir, "init", "Demo");
+    await pc(dir, "component", "add", "Platform", "--paths", "lib/**", "--owner", "grace");
+    await pc(dir, "component", "add", "Auth", "--paths", "lib/auth/**", "--owner", "sam");
+
+    const nested = await pc(dir, "whose", "lib/auth/token.ts");
+    ok(nested.includes("auth"), nested);
+    ok(nested.includes("matched lib/auth/**"), "the attribution is explained, not asserted");
+
+    const outside = await pc(dir, "whose", "README.md");
+    ok(outside.includes("belongs to no component"), outside);
+  } finally { cleanup(); }
+});
+
+test("doctor reports an unowned component and a pathless one", async () => {
+  const { dir, cleanup } = repo();
+  try {
+    await pc(dir, "init", "Demo");
+    await pc(dir, "component", "add", "Ghost");
+
+    const out = await pc(dir, "component", "doctor");
+    ok(out.includes("unowned"), out);
+    ok(out.includes("no-paths"), out);
+  } finally { cleanup(); }
+});
+
+test("a dangling --parent is refused rather than stored", async () => {
+  const { dir, cleanup } = repo();
+  try {
+    await pc(dir, "init", "Demo");
+    let failed = false;
+    try {
+      await pc(dir, "component", "add", "Orphan", "--parent", "nope");
+    } catch (error) {
+      failed = true;
+      ok(String((error as { stderr?: string }).stderr).includes("No component"), "it says which");
+    }
+    ok(failed, "the command exits non-zero rather than storing a broken link");
+  } finally { cleanup(); }
+});
+
+/* ----------------------------------- log ----------------------------------- */
+
+test("the log shows what happened, by whom, in order", async () => {
+  const { dir, cleanup } = repo();
+  try {
+    await pc(dir, "init", "Demo");
+    const created = await pc(dir, "task", "add", "Rotate keys", "--status", "todo");
+    const id = created.split(/\s+/)[1];
+    await pc(dir, "task", "move", id, "in_progress");
+    await pc(dir, "task", "move", id, "done");
+
+    const log = await pc(dir, "log");
+    const lines = log.trim().split("\n");
+    eq(lines.length, 3, log);
+    ok(lines.every((l) => l.includes("Grace H")), "the actor hash resolves to a name");
+    ok(lines[1].includes("from=todo to=in_progress"), lines[1]);
+    ok(lines[2].includes("from=in_progress to=done"), lines[2]);
+  } finally { cleanup(); }
+});
+
+test("an empty log says so instead of printing nothing", async () => {
+  const { dir, cleanup } = repo();
+  try {
+    await pc(dir, "init", "Demo");
+    ok((await pc(dir, "log")).includes("Nothing logged yet"));
+  } finally { cleanup(); }
+});
+
 /* ---------------------------------- help ----------------------------------- */
 
 test("help does not promise a directory the tool stopped creating", async () => {
