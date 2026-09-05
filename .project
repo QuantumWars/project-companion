@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-09-05T12:53:36.705Z",
-  "revision": 102,
+  "updatedAt": "2026-09-05T12:53:36.911Z",
+  "revision": 104,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1643,12 +1643,15 @@
     {
       "id": "0914c01f",
       "title": "The agent plane: runs, budgets, boundaries and ingestion",
-      "status": "in_progress",
+      "status": "done",
       "componentId": "agent-plane",
       "featureId": "agent-runs",
       "createdAt": "2026-09-05T12:53:36.610Z",
-      "updatedAt": "2026-09-05T12:53:36.610Z",
-      "order": 0
+      "updatedAt": "2026-09-05T12:53:36.911Z",
+      "order": 24,
+      "commits": [
+        "5f239b907575d8697114947345ad122c732254f8"
+      ]
     },
     {
       "id": "72323b78",
