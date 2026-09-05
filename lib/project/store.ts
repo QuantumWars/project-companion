@@ -1273,6 +1273,36 @@ export const recordVerification = (
   });
 };
 
+/**
+ * The relations the architecture claims, as component pairs.
+ *
+ * Read off every diagram rather than one, because a system's parts are drawn
+ * across several -- a context diagram and the container diagram inside it both
+ * assert things, and only counting one would report the other's relations as
+ * undeclared.
+ */
+export const declaredEdges = (root: string): { from: string; to: string }[] => {
+  if (!usesBundle(root)) return [];
+  const bundle = requireBundle(root);
+  const pairs: { from: string; to: string }[] = [];
+
+  for (const diagram of Object.values(bundle.diagrams)) {
+    const owner = new Map<string, string>();
+    for (const node of diagram.nodes) {
+      const id = (node.data as { componentId?: string }).componentId;
+      if (id) owner.set(node.id, id);
+    }
+    for (const edge of diagram.edges) {
+      const from = owner.get(edge.source);
+      const to = owner.get(edge.target);
+      // An edge between boxes nobody owns says nothing about the architecture
+      // of the code, so it is not a claim this can check.
+      if (from && to && from !== to) pairs.push({ from, to });
+    }
+  }
+  return pairs;
+};
+
 export const readRuns = (root: string): AgentRun[] => runsFrom(readEvents(root));
 
 export const readRun = (root: string, id: string): AgentRun | null =>

@@ -45,6 +45,7 @@ import {
   runForSession,
   setRunState,
   startRun,
+  declaredEdges,
   readComponent,
   readComponents,
   updateComponent,
@@ -63,6 +64,7 @@ import { readEvents } from "../lib/project/events";
 import { parseHook } from "../lib/project/ingest";
 import { mergeBundles } from "../lib/project/merge";
 import { runCheck } from "../lib/project/verify";
+import { dependencyGraph, drift } from "../lib/project/deps";
 import { RUN_STATES, type RunState } from "../lib/project/run";
 import {
   editPrd,
@@ -106,6 +108,7 @@ project-companion - architecture and task boards that live in your repo
   project-companion component rm <id>        delete it; children are promoted
   project-companion component doctor         what is wrong with the catalog
   project-companion whose <path>             which component owns a file
+  project-companion drift                    the canvas, against what the code does
 
   project-companion diagram list             list diagrams
   project-companion diagram show <id>        print a diagram as text
@@ -1226,6 +1229,39 @@ const main = () => {
       const done = f.acceptance.filter((c) => c.done).length;
       process.stdout.write(
         `${f.id.padEnd(26)} ${fmtStatus(f.status).padEnd(12)} ${String(done).padStart(2)}/${f.acceptance.length}  ${f.title}\n`,
+      );
+    }
+    return;
+  }
+
+  if (command === "drift") {
+    const components = readComponents(root);
+    if (components.length < 2) {
+      process.stdout.write("Drift needs at least two components with paths.\n");
+      return;
+    }
+
+    const actual = dependencyGraph(root, components);
+    const result = drift(declaredEdges(root), actual);
+
+    if (result.undeclared.length) {
+      process.stdout.write(`${result.undeclared.length} undeclared dependencies:\n\n`);
+      for (const edge of result.undeclared) {
+        process.stdout.write(`  ${edge.from} -> ${edge.to}  (${edge.count} imports)\n`);
+        for (const example of edge.examples) {
+          process.stdout.write(`      ${example.from} imports ${example.to}\n`);
+        }
+      }
+      process.stdout.write("\nEither the canvas is missing an edge, or the code should not cross there.\n");
+    } else {
+      process.stdout.write("No undeclared dependencies. The canvas covers what the code does.\n");
+    }
+
+    if (result.unverifiable.length) {
+      process.stdout.write(
+        `\n${result.unverifiable.length} declared relations no import backs:\n` +
+          result.unverifiable.map((e) => `  ${e.from} -> ${e.to}`).join("\n") +
+          `\n\nNot necessarily wrong -- an import graph cannot see an HTTP call or a queue.\n`,
       );
     }
     return;

@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-09-05T14:10:14.533Z",
-  "revision": 122,
+  "updatedAt": "2026-09-05T14:14:07.650Z",
+  "revision": 123,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1710,6 +1710,16 @@
       "featureId": "executable-criteria",
       "createdAt": "2026-09-05T14:10:14.358Z",
       "updatedAt": "2026-09-05T14:10:14.358Z",
+      "order": 0
+    },
+    {
+      "id": "68bce6b7",
+      "title": "Dependency graph and architecture drift",
+      "status": "in_progress",
+      "componentId": "evidence-engine",
+      "featureId": "architecture-drift",
+      "createdAt": "2026-09-05T14:14:07.649Z",
+      "updatedAt": "2026-09-05T14:14:07.649Z",
       "order": 0
     }
   ],

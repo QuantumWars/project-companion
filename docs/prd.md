@@ -258,3 +258,19 @@ Verify: npm test -- verify
 - [x] Setting, changing and clearing one leaves the rest of the document identical
 - [x] A failing check unticks what it refuses, and records that it did
 - [ ] The roadmap shows claimed-but-unverified as distinct from done
+
+### Architecture drift
+<!-- id: architecture-drift -->
+
+The canvas is a claim about how the system should be structured; the import graph is what
+it is. The value is the difference between them, which no diagram tool can see because it
+does not read the code, and no linter can see because it does not read the diagram.
+
+Paths: lib/project/deps.ts
+
+Verify: npm test -- deps
+
+- [x] Every import form is found, including the multi-line ones
+- [x] An import inside one component is not a boundary crossing
+- [x] Coupling the canvas does not draw is reported, with the files that prove it
+- [x] A declared relation no import backs is reported apart, not as a violation
