@@ -8,7 +8,7 @@
  * there is one source of truth and no second implementation to drift.
  */
 
-import { basename, dirname, join, resolve } from "node:path";
+import { basename, dirname, join, relative, resolve } from "node:path";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 import {
@@ -65,7 +65,7 @@ import type { DiagramType } from "../types/arch";
 const HELP = `
 project-companion - architecture and task boards that live in your repo
 
-  project-companion init [name]              create .arch/ in this directory
+  project-companion init [name]              create a .project file here
   project-companion status                   summarise the project
 
   project-companion diagram list             list diagrams
@@ -109,7 +109,7 @@ project-companion - architecture and task boards that live in your repo
   project-companion projects                 every project on this machine
   project-companion projects forget <path>   drop one from the global index
 
-Run inside a repo containing .arch/, or any directory below it.
+Run inside a repo containing a .project file, or any directory below it.
 `;
 
 /* -------------------------------- helpers --------------------------------- */
@@ -156,6 +156,18 @@ const die = (message: string): never => {
 };
 
 const fmtStatus = (value: string) => value.replace("_", " ");
+
+/**
+ * Which agent directory the skill belongs in.
+ *
+ * An existing one wins, so a Codex or Cursor user is not handed a `.claude/`
+ * they never asked for. Otherwise `.claude/`, which is the common case and the
+ * one the README documents.
+ */
+const AGENT_DIRS = [".claude", ".codex", ".cursor", ".gemini"] as const;
+
+const agentDirFor = (root: string): string =>
+  AGENT_DIRS.find((dir) => existsSync(join(root, dir))) ?? AGENT_DIRS[0];
 
 const PRD_TEMPLATE = `# Product requirements
 
@@ -269,7 +281,7 @@ const runTaskGit = async (root: string, sub: string, id: string) => {
 
 const requireRoot = (): string =>
   findProjectRoot() ??
-  die("No .arch/ found. Run `project-companion init` at your project root.");
+  die("No project here. Run `project-companion init` at your project root.");
 
 const describeDiagram = (diagram: DiagramFile): string => {
   const lines: string[] = [
@@ -355,20 +367,23 @@ const main = () => {
     const project = initProject(root, name);
     registerProject(root);
 
-    // Write the skill next to the store so the agent picks the tool up from
-    // the repository, with no MCP setup required.
-    const storeDir = findProject(root)?.storeDir ?? "";
-    const agentDir = storeDir.split("/")[0];
-    if (agentDir && agentDir !== ".arch") {
-      const skill = join(root, agentDir, "skills", "project-companion", "SKILL.md");
-      if (!existsSync(skill)) {
-        mkdirSync(dirname(skill), { recursive: true });
-        writeFileSync(skill, SKILL_MD, "utf8");
-      }
+    // Write the skill into the agent's own directory so the tool is picked up
+    // from the repository, with no MCP setup required.
+    //
+    // This used to derive the directory from the store path, which worked while
+    // the store WAS an agent directory (`.claude/project-companion/`). Since the
+    // single-file format it is `.project` -- a file -- so that derivation asked
+    // for `mkdir .project/skills/...` and `init` died with ENOTDIR on every new
+    // project. The agent directory is a separate question from where the data
+    // lives, and is now asked separately.
+    const skill = join(root, agentDirFor(root), "skills", "project-companion", "SKILL.md");
+    if (!existsSync(skill)) {
+      mkdirSync(dirname(skill), { recursive: true });
+      writeFileSync(skill, SKILL_MD, "utf8");
     }
     process.stdout.write(
       `Initialised "${project.name}" in ${root}/${findProject(root)?.storeDir}\n` +
-        `Wrote the project-companion skill so your agent can use it directly.\n` +
+        `Wrote ${relative(root, skill)} so your agent can use it directly.\n` +
         `Next: project-companion diagram new "System architecture"\n`,
     );
     return;
