@@ -114,9 +114,9 @@ Any node can link to the diagram that details it, with a breadcrumb back.
 
 Paths: app/arch/**
 
-- [ ] Nodes carry a drilldown diagram id
-- [ ] c4 and note nodes exist and are registered
-- [ ] UML class attributes and methods are editable
+- [x] Nodes carry a drilldown diagram id
+- [x] c4 and note nodes exist and are registered
+- [x] UML class attributes and methods are editable
 
 ## Phase: Component model
 

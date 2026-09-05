@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-09-05T11:39:12.398Z",
-  "revision": 55,
+  "updatedAt": "2026-09-05T11:46:40.951Z",
+  "revision": 71,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1122,6 +1122,109 @@
         "y": 30,
         "zoom": 1
       }
+    },
+    "containers": {
+      "version": 1,
+      "id": "containers",
+      "title": "Containers",
+      "type": "architecture",
+      "updatedAt": "2026-09-05T11:45:28.337Z",
+      "nodes": [
+        {
+          "id": "5ffc391a",
+          "type": "c4",
+          "position": {
+            "x": 40,
+            "y": 40
+          },
+          "data": {
+            "kind": "c4",
+            "label": "Next.js app",
+            "element": "container",
+            "technology": "Next 14"
+          }
+        },
+        {
+          "id": "524dea9d",
+          "type": "c4",
+          "position": {
+            "x": 320,
+            "y": 40
+          },
+          "data": {
+            "kind": "c4",
+            "label": "CLI and MCP",
+            "element": "container",
+            "technology": "Node"
+          }
+        }
+      ],
+      "edges": []
+    },
+    "system-context": {
+      "version": 1,
+      "id": "system-context",
+      "title": "System context",
+      "type": "architecture",
+      "updatedAt": "2026-09-05T11:45:28.028Z",
+      "nodes": [
+        {
+          "id": "48735e3e",
+          "type": "c4",
+          "position": {
+            "x": 40,
+            "y": 40
+          },
+          "data": {
+            "kind": "c4",
+            "label": "Developer",
+            "element": "person",
+            "description": "Writes code with a coding agent."
+          }
+        },
+        {
+          "id": "4bae0d58",
+          "type": "c4",
+          "position": {
+            "x": 40,
+            "y": 220
+          },
+          "data": {
+            "kind": "c4",
+            "label": "Project Companion",
+            "element": "system",
+            "description": "Tracks work against the repository that proves it.",
+            "drilldownDiagramId": "containers"
+          }
+        },
+        {
+          "id": "50f84431",
+          "type": "c4",
+          "position": {
+            "x": 330,
+            "y": 220
+          },
+          "data": {
+            "kind": "c4",
+            "label": "Git repository",
+            "element": "external",
+            "technology": "git"
+          }
+        },
+        {
+          "id": "79dc0633",
+          "type": "note",
+          "position": {
+            "x": 330,
+            "y": 40
+          },
+          "data": {
+            "kind": "note",
+            "label": "Status is derived, never reported."
+          }
+        }
+      ],
+      "edges": []
     }
   },
   "boards": {
@@ -1313,28 +1416,28 @@
     {
       "id": "d5a69221",
       "title": "Build and register the c4 and note node components",
-      "status": "todo",
+      "status": "done",
       "createdAt": "2026-08-28T21:23:35.941Z",
-      "updatedAt": "2026-08-29T16:01:47.476Z",
-      "order": 0,
+      "updatedAt": "2026-09-05T11:46:34.038Z",
+      "order": 14,
       "featureId": "drill-down"
     },
     {
       "id": "cfe8ce06",
       "title": "Drilldown navigation with a breadcrumb back",
-      "status": "todo",
+      "status": "done",
       "createdAt": "2026-08-28T21:23:36.012Z",
-      "updatedAt": "2026-08-28T21:23:36.012Z",
-      "order": 1,
+      "updatedAt": "2026-09-05T11:46:34.109Z",
+      "order": 15,
       "featureId": "drill-down"
     },
     {
       "id": "a50534b2",
       "title": "UML class inspector for attributes and methods",
-      "status": "todo",
+      "status": "done",
       "createdAt": "2026-08-28T21:23:36.080Z",
-      "updatedAt": "2026-08-28T21:23:36.080Z",
-      "order": 2,
+      "updatedAt": "2026-09-05T11:46:34.180Z",
+      "order": 16,
       "featureId": "drill-down"
     },
     {
@@ -1451,11 +1554,21 @@
     {
       "id": "ed0d5554",
       "title": "Wire the canvas to the catalog, and give agents reach",
-      "status": "in_progress",
+      "status": "done",
       "componentId": "component-model",
       "featureId": "component-catalog",
       "createdAt": "2026-09-05T11:39:12.398Z",
-      "updatedAt": "2026-09-05T11:39:12.398Z",
+      "updatedAt": "2026-09-05T11:46:40.864Z",
+      "order": 17
+    },
+    {
+      "id": "265d45d9",
+      "title": "Drill-down: c4 and note nodes, a breadcrumb, and a class inspector",
+      "status": "in_progress",
+      "componentId": "canvas",
+      "featureId": "drill-down",
+      "createdAt": "2026-09-05T11:46:40.950Z",
+      "updatedAt": "2026-09-05T11:46:40.950Z",
       "order": 0
     }
   ],

@@ -56,6 +56,8 @@ import { TableNode } from "./nodes/table-node";
 import { UmlClassNode } from "./nodes/uml-class-node";
 import { RelationEdge } from "./edges/relation-edge";
 import { ServiceNode } from "./nodes/service-node";
+import { C4Node } from "./nodes/c4-node";
+import { NoteNode } from "./nodes/note-node";
 
 // These must be module-level constants. A fresh object literal on each render
 // makes React Flow tear down and remount every node.
@@ -63,6 +65,8 @@ const nodeTypes: NodeTypes = {
   service: ServiceNode,
   group: GroupNode,
   table: TableNode,
+  c4: C4Node,
+  note: NoteNode,
   shape: ShapeNode,
   umlclass: UmlClassNode,
 };

@@ -27,3 +27,8 @@
 {"id":"16c663b56571:26","ts":1788608331473,"seq":26,"actor":"16c663b56571","prev":"521c7da9e2eb37ba","componentId":"agent-tooling","kind":"task.moved","data":{"taskId":"690214e1","from":"todo","to":"done"}}
 {"id":"16c663b56571:27","ts":1788608331542,"seq":27,"actor":"16c663b56571","prev":"7a1e3103b9bfc926","componentId":"agent-tooling","kind":"task.moved","data":{"taskId":"e5070b8a","from":"todo","to":"done"}}
 {"id":"16c663b56571:28","ts":1788608352399,"seq":28,"actor":"16c663b56571","prev":"7987713d83f76117","componentId":"component-model","kind":"task.created","data":{"taskId":"ed0d5554","title":"Wire the canvas to the catalog, and give agents reach","status":"in_progress"}}
+{"id":"16c663b56571:29","ts":1788608794039,"seq":29,"actor":"16c663b56571","prev":"705e50f261f6ea47","kind":"task.moved","data":{"taskId":"d5a69221","from":"todo","to":"done"}}
+{"id":"16c663b56571:30","ts":1788608794111,"seq":30,"actor":"16c663b56571","prev":"a7a1ce8feb5fe496","kind":"task.moved","data":{"taskId":"cfe8ce06","from":"todo","to":"done"}}
+{"id":"16c663b56571:31","ts":1788608794181,"seq":31,"actor":"16c663b56571","prev":"0647e13e3b9203aa","kind":"task.moved","data":{"taskId":"a50534b2","from":"todo","to":"done"}}
+{"id":"16c663b56571:32","ts":1788608800866,"seq":32,"actor":"16c663b56571","prev":"bbb91fa6edb241ca","componentId":"component-model","kind":"task.moved","data":{"taskId":"ed0d5554","from":"in_progress","to":"done"}}
+{"id":"16c663b56571:33","ts":1788608800952,"seq":33,"actor":"16c663b56571","prev":"50a2d1413ff9bf7a","componentId":"canvas","kind":"task.created","data":{"taskId":"265d45d9","title":"Drill-down: c4 and note nodes, a breadcrumb, and a class inspector","status":"in_progress"}}

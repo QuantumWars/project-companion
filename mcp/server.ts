@@ -59,7 +59,10 @@ import { parsePrismaSchema } from "../lib/arch/import/prisma";
 import { parseSqlDdl } from "../lib/arch/import/sql-ddl";
 import { getTech } from "../lib/arch/tech-catalog";
 import { GEOMETRY_BY_ID, type GeometryId } from "../lib/arch/shapes";
-import type { ArchEdge, ArchNode, DiagramType } from "../types/arch";
+import type { ArchEdge, ArchNode, C4Element, DiagramType } from "../types/arch";
+
+/** Kept in step with `C4Element`; zod needs the values, not just the type. */
+const C4_ELEMENTS = ["person", "system", "container", "component", "external"] as const;
 
 const DIAGRAM_TYPES = [
   "architecture", "flowchart", "erd", "bpmn", "dfd", "uml",
@@ -96,10 +99,40 @@ const makeNode = (input: {
   label: string;
   tech?: string;
   shape?: string;
+  c4?: C4Element;
+  note?: boolean;
+  technology?: string;
+  description?: string;
+  drilldownDiagramId?: string;
   x?: number;
   y?: number;
 }): ArchNode => {
   const position = { x: input.x ?? 0, y: input.y ?? 0 };
+
+  if (input.note) {
+    return {
+      id: randomUUID().slice(0, 8),
+      type: "note",
+      position,
+      data: { kind: "note", label: input.label },
+    };
+  }
+
+  if (input.c4) {
+    return {
+      id: randomUUID().slice(0, 8),
+      type: "c4",
+      position,
+      data: {
+        kind: "c4",
+        label: input.label,
+        element: input.c4,
+        technology: input.technology,
+        description: input.description,
+        drilldownDiagramId: input.drilldownDiagramId,
+      },
+    };
+  }
 
   if (input.shape && GEOMETRY_BY_ID.has(input.shape as GeometryId)) {
     const geometry = GEOMETRY_BY_ID.get(input.shape as GeometryId)!;
@@ -128,6 +161,7 @@ const makeNode = (input: {
       // An unknown tech id is dropped rather than stored, so the node still
       // renders with a generic glyph instead of a broken icon reference.
       tech: input.tech && getTech(input.tech) ? input.tech : undefined,
+      drilldownDiagramId: input.drilldownDiagramId,
     },
   };
 };
@@ -212,7 +246,11 @@ const build = () => {
     {
       title: "Add a node",
       description:
-        "Add a node to a diagram. Pass `tech` for a technology node (e.g. postgresql, redis, nextjs) or `shape` for a diagram shape (e.g. rectangle, diamond, cylinder). Returns the created node id.",
+        "Add a node to a diagram. Pass `tech` for a technology node (e.g. postgresql, " +
+        "redis, nextjs), `shape` for a diagram shape (e.g. rectangle, diamond, cylinder), " +
+        "`c4` for a C4 element, or `note` for an annotation. Set `drilldownDiagramId` to " +
+        "make the node open another diagram, which is how a context diagram becomes a " +
+        "level rather than a picture. Returns the created node id.",
       inputSchema: {
         diagramId: z.string(),
         label: z.string(),
@@ -220,12 +258,20 @@ const build = () => {
           .describe("Technology id, e.g. postgresql, redis, kafka, nextjs"),
         shape: z.string().optional()
           .describe("Geometry id, e.g. rectangle, rounded, diamond, cylinder, stadium"),
+        c4: z.enum(C4_ELEMENTS).optional()
+          .describe("Makes this a C4 element at the given level."),
+        note: z.boolean().optional().describe("Makes this a plain annotation."),
+        technology: z.string().optional()
+          .describe("C4 only: the [Container: Go] line under the name."),
+        description: z.string().optional().describe("C4 only: one line of body text."),
+        drilldownDiagramId: z.string().optional()
+          .describe("The diagram this node opens into."),
         x: z.number().optional(),
         y: z.number().optional(),
       },
     },
-    async ({ diagramId, label, tech, shape, x, y }) => {
-      const node = makeNode({ label, tech, shape, x, y });
+    async ({ diagramId, label, x, y, ...rest }) => {
+      const node = makeNode({ label, x, y, ...rest });
       const diagram = addNode(requireRoot(), diagramId, node);
       if (!diagram) throw new Error(`No diagram "${diagramId}"`);
       return text({ id: node.id, type: node.type, label });

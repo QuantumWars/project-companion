@@ -8,6 +8,7 @@ import { getTech } from "@/lib/arch/tech-catalog";
 import { TechIcon, iconLicense } from "@/lib/arch/icons/resolve";
 import { cn } from "@/lib/utils";
 import { TableInspector } from "./table-inspector";
+import { UmlClassInspector } from "./uml-class-inspector";
 import {
   DIAGRAM_TYPE_IDS,
   DIAGRAM_TYPE_LABELS,
@@ -18,6 +19,7 @@ import {
   type ShapeData,
   type ShapeTone,
   type TableData,
+  type UmlClassData,
 } from "@/types/arch";
 import { GEOMETRIES, getGeometry } from "@/lib/arch/shapes";
 
@@ -28,7 +30,8 @@ interface InspectorProps {
       | Partial<ServiceData>
       | Partial<GroupData>
       | Partial<ShapeData>
-      | Partial<TableData>,
+      | Partial<TableData>
+      | Partial<UmlClassData>,
   ) => void;
   onChangeTech: () => void;
 }
@@ -53,6 +56,10 @@ export const Inspector = ({ node, onChange, onChangeTech }: InspectorProps) => {
 
   if (node.data.kind === "group") {
     return <GroupInspector data={node.data} onChange={onChange} />;
+  }
+
+  if (node.data.kind === "umlclass") {
+    return <UmlClassInspector data={node.data} onChange={onChange} />;
   }
 
   if (node.data.kind !== "service") {
