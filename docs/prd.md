@@ -274,3 +274,38 @@ Verify: npm test -- deps
 - [x] An import inside one component is not a boundary crossing
 - [x] Coupling the canvas does not draw is reported, with the files that prove it
 - [x] A declared relation no import backs is reported apart, not as a violation
+
+## Phase: Review
+
+Goal: make a change cheap to review, and stop a review from costing more attention than
+it saves.
+
+### Review packets
+<!-- id: review-packets -->
+
+The expensive part of reviewing is knowing what a change is for. That is deterministic
+retrieval, so the tool does it: the spec slice, the criteria, whether their checks pass,
+what to read and in what order, and what to skip entirely.
+
+Paths: lib/project/review.ts
+
+Verify: npm test -- review
+
+- [x] Machine-written and documentation-only files are set aside, not read
+- [x] The reading order is behaviour first, largest first
+- [x] The packet carries the criteria the change has to satisfy, and their checks
+- [x] Only boundaries this change actually crosses are reported
+
+### Grounded findings
+<!-- id: grounded-findings -->
+
+A finding on a line the change did not touch is dropped before anybody sees it. No model
+is involved, which is why it is a floor rather than a preference.
+
+Paths: lib/project/review.ts
+
+Verify: npm test -- review
+
+- [x] A finding anchored inside the diff is kept
+- [x] A finding on a file the diff does not contain is dropped
+- [x] A finding on a real file but an unchanged line is dropped, and told apart

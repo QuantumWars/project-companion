@@ -61,10 +61,12 @@ import {
   type ComponentNode,
 } from "../lib/project/component";
 import { readEvents } from "../lib/project/events";
+import { componentContext } from "../lib/project/component-context";
 import { parseHook } from "../lib/project/ingest";
 import { mergeBundles } from "../lib/project/merge";
 import { runCheck } from "../lib/project/verify";
 import { dependencyGraph, drift } from "../lib/project/deps";
+import { packet, route, type PacketInput } from "../lib/project/review";
 import { RUN_STATES, type RunState } from "../lib/project/run";
 import {
   editPrd,
@@ -73,7 +75,7 @@ import {
   setPhase,
   setPrdSource,
 } from "../lib/project/roadmap";
-import { gitRoot, readCommits, readStatus, GitError } from "../lib/project/git";
+import { gitRoot, readCommits, readDiffHunks, readStatus, GitError } from "../lib/project/git";
 import { branchNameFor, createBranch, addWorktree } from "../lib/project/git-write";
 import { linkRepository } from "../lib/project/git-link";
 import {
@@ -109,6 +111,7 @@ project-companion - architecture and task boards that live in your repo
   project-companion component doctor         what is wrong with the catalog
   project-companion whose <path>             which component owns a file
   project-companion drift                    the canvas, against what the code does
+  project-companion review [sha]             write a review packet for your agent
 
   project-companion diagram list             list diagrams
   project-companion diagram show <id>        print a diagram as text
@@ -1231,6 +1234,66 @@ const main = () => {
         `${f.id.padEnd(26)} ${fmtStatus(f.status).padEnd(12)} ${String(done).padStart(2)}/${f.acceptance.length}  ${f.title}\n`,
       );
     }
+    return;
+  }
+
+  if (command === "review") {
+    void (async () => {
+      const repo = await gitRoot(root);
+      if (!repo) die("Not inside a git repository.");
+
+      const ref = sub ?? "HEAD";
+      const [commit] = await readCommits(repo!, { ref: ref === "HEAD" ? undefined : ref, limit: 1 });
+      if (!commit) die(`No commit "${ref}".`);
+
+      const components = readComponents(root);
+      const routed = route(commit, components);
+      const roadmap = readRoadmap(root);
+      const touched = new Set(routed.map((f) => f.componentId).filter(Boolean) as string[]);
+
+      // Only the spec the touched components are responsible for. A reviewer
+      // given the whole PRD reads none of it.
+      const spec: PacketInput["spec"] = [];
+      for (const componentId of Array.from(touched)) {
+        const context = await componentContext(root, { componentId, includeEvidence: false });
+        for (const feature of context.spec) {
+          spec.push({
+            componentId,
+            featureId: feature.id,
+            title: feature.title,
+            criteria: feature.criteria.map((c) => ({ text: c.text, done: c.done })),
+          });
+        }
+      }
+
+      const checks = roadmap.features
+        .filter((f) => f.verify && spec.some((s) => s.featureId === f.id))
+        .map((f) => ({ featureId: f.id, ok: true, command: f.verify! }));
+
+      // Only crossings THIS change is part of. Filtering by component instead
+      // lists every boundary the two touched components have ever crossed --
+      // fourteen of them on a commit that crossed none, which buries the
+      // finding that matters under a standing report of the codebase.
+      const changed = new Set(routed.map((f) => f.path));
+      const crossings = drift(declaredEdges(root), dependencyGraph(root, components))
+        .undeclared.filter((e) => e.examples.some((x) => changed.has(x.from) || changed.has(x.to)))
+        .map((e) => ({ from: e.from, to: e.to }));
+
+      const text = packet({ commit, routed, components, spec, checks, drift: crossings });
+      const dir = join(root, ".project-cache", "review", commit.short);
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(join(dir, "packet.md"), text, "utf8");
+
+      const hunks = await readDiffHunks(repo!, commit.sha);
+      writeFileSync(join(dir, "hunks.json"), JSON.stringify(hunks), "utf8");
+
+      const logic = routed.filter((f) => f.kind === "logic").length;
+      process.stdout.write(
+        `${relative(root, join(dir, "packet.md"))}\n\n` +
+          `${logic} of ${routed.length} files need reading, across ${touched.size || "no"} component${touched.size === 1 ? "" : "s"}.\n` +
+          `Hand the packet to your agent; findings come back through report_findings.\n`,
+      );
+    })();
     return;
   }
 

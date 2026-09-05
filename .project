@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-09-05T14:14:07.821Z",
-  "revision": 125,
+  "updatedAt": "2026-09-05T14:19:42.343Z",
+  "revision": 148,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -11,7 +11,7 @@
       "id": "archboard-architecture",
       "title": "Project Companion architecture",
       "type": "architecture",
-      "updatedAt": "2026-08-29T16:32:59.409Z",
+      "updatedAt": "2026-09-05T14:17:54.181Z",
       "nodes": [
         {
           "id": "db683a06",
@@ -589,9 +589,9 @@
         }
       ],
       "viewport": {
-        "x": 108.2637695205006,
-        "y": 119.73919737108417,
-        "zoom": 0.34245824499139155
+        "x": 2.191330366126067,
+        "y": 2.2909362918591114,
+        "zoom": 0.9958497530944582
       }
     },
     "ticketing-schema": {
@@ -599,7 +599,7 @@
       "id": "ticketing-schema",
       "title": "Ticketing schema",
       "type": "erd",
-      "updatedAt": "2026-09-05T08:06:30.706Z",
+      "updatedAt": "2026-09-05T14:18:15.619Z",
       "nodes": [
         {
           "id": "venues",
@@ -1118,9 +1118,9 @@
         }
       ],
       "viewport": {
-        "x": 288,
-        "y": 30,
-        "zoom": 1
+        "x": 12.417267728733748,
+        "y": 274.73697245752874,
+        "zoom": 0.423565148570699
       }
     },
     "containers": {
@@ -1258,11 +1258,12 @@
       "paths": [
         "lib/project/bundle.ts",
         "lib/project/store.ts",
-        "lib/project/types.ts"
+        "lib/project/types.ts",
+        "lib/project/merge.ts"
       ],
       "lifecycle": "active",
       "createdAt": "2026-09-05T09:16:12.798Z",
-      "updatedAt": "2026-09-05T09:16:12.798Z"
+      "updatedAt": "2026-09-05T14:17:01.016Z"
     },
     "spec-engine": {
       "id": "spec-engine",
@@ -1270,11 +1271,12 @@
       "owner": "subhapattnaik@theboringpeople.in",
       "paths": [
         "lib/project/prd.ts",
-        "lib/project/roadmap.ts"
+        "lib/project/roadmap.ts",
+        "lib/project/verify.ts"
       ],
       "lifecycle": "active",
       "createdAt": "2026-09-05T09:16:12.871Z",
-      "updatedAt": "2026-09-05T09:16:12.871Z"
+      "updatedAt": "2026-09-05T14:17:00.948Z"
     },
     "evidence-engine": {
       "id": "evidence-engine",
@@ -1285,11 +1287,13 @@
         "lib/project/git-link.ts",
         "lib/project/git-view.ts",
         "lib/project/git-write.ts",
-        "lib/project/commit-graph.ts"
+        "lib/project/commit-graph.ts",
+        "lib/project/deps.ts",
+        "lib/project/review.ts"
       ],
       "lifecycle": "active",
       "createdAt": "2026-09-05T09:16:12.944Z",
-      "updatedAt": "2026-09-05T09:16:12.944Z"
+      "updatedAt": "2026-09-05T14:17:00.881Z"
     },
     "component-model": {
       "id": "component-model",
@@ -1724,6 +1728,16 @@
       "commits": [
         "b54f9c0e2174772de3137038cddb42737032637e"
       ]
+    },
+    {
+      "id": "fe5e97d2",
+      "title": "Review packets and grounded findings",
+      "status": "in_progress",
+      "componentId": "evidence-engine",
+      "featureId": "review-packets",
+      "createdAt": "2026-09-05T14:19:42.343Z",
+      "updatedAt": "2026-09-05T14:19:42.343Z",
+      "order": 0
     }
   ],
   "roadmap": {

@@ -50,6 +50,9 @@ import {
 } from "../lib/project/component";
 import { componentContext } from "../lib/project/component-context";
 import { RUN_STATES } from "../lib/project/run";
+import { ground, type Finding } from "../lib/project/review";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { editPrd, readRoadmap } from "../lib/project/roadmap";
 import { gitRoot, readStatus } from "../lib/project/git";
 import { linkRepository } from "../lib/project/git-link";
@@ -789,6 +792,61 @@ const build = () => {
       const run = setRunState(requireRoot(), runId, state, reason);
       if (!run) throw new Error(`No run "${runId}".`);
       return text({ runId: run.id, state: run.state, spent: run.spent, touched: run.touched });
+    },
+  );
+
+  server.registerTool(
+    "report_findings",
+    {
+      title: "Report review findings",
+      description:
+        "Report what you found reviewing a commit. Every finding must anchor to a " +
+        "file:line INSIDE the diff -- anything landing on a line the change did not " +
+        "touch is dropped before anybody sees it, and the response tells you which and " +
+        "why. Run `project-companion review <sha>` first to get the packet and the diff.",
+      inputSchema: {
+        sha: z.string().describe("The short sha the packet was written for."),
+        findings: z.array(
+          z.object({
+            file: z.string(),
+            line: z.number(),
+            severity: z.enum(["high", "medium", "low"]),
+            title: z.string(),
+            detail: z.string(),
+          }),
+        ),
+      },
+    },
+    async ({ sha, findings }) => {
+      const root = requireRoot();
+      const dir = join(root, ".project-cache", "review", sha);
+
+      let hunks;
+      try {
+        hunks = JSON.parse(readFileSync(join(dir, "hunks.json"), "utf8"));
+      } catch {
+        throw new Error(
+          `No review prepared for ${sha}. Run \`project-companion review ${sha}\` first.`,
+        );
+      }
+
+      // The one step that needs no model: a finding on code this change did not
+      // touch is not a finding about this change.
+      const result = ground(findings as Finding[], hunks);
+
+      return text({
+        kept: result.kept,
+        dropped: result.dropped.map((d) => ({
+          file: d.finding.file,
+          line: d.finding.line,
+          title: d.finding.title,
+          reason: d.reason,
+        })),
+        summary:
+          result.dropped.length === 0
+            ? `All ${result.kept.length} findings are grounded in the diff.`
+            : `${result.kept.length} kept, ${result.dropped.length} dropped for landing outside the change.`,
+      });
     },
   );
 
