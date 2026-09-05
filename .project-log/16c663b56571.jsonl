@@ -52,3 +52,4 @@
 {"id":"16c663b56571:51","ts":1788616883609,"seq":51,"actor":"16c663b56571","prev":"6afd5d86f1af3fe9","componentId":"data-layer","kind":"task.created","data":{"taskId":"9c66c872","title":"Structural merge for .project, and two P0 debts","status":"in_progress"}}
 {"id":"16c663b56571:52","ts":1788616883679,"seq":52,"actor":"16c663b56571","prev":"0b425aa429e80caa","componentId":"data-layer","kind":"task.moved","data":{"taskId":"302d624c","from":"todo","to":"done"}}
 {"id":"16c663b56571:53","ts":1788616883749,"seq":53,"actor":"16c663b56571","prev":"9d7d47ff6636c101","componentId":"data-layer","kind":"task.moved","data":{"taskId":"a777c062","from":"todo","to":"done"}}
+{"id":"16c663b56571:54","ts":1788616883925,"seq":54,"actor":"16c663b56571","prev":"9bf31f604f5b8896","componentId":"data-layer","kind":"task.moved","data":{"taskId":"9c66c872","from":"in_progress","to":"done"}}

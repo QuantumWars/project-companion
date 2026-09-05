@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-09-05T14:01:23.748Z",
-  "revision": 107,
+  "updatedAt": "2026-09-05T14:01:23.924Z",
+  "revision": 109,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1666,12 +1666,15 @@
     {
       "id": "9c66c872",
       "title": "Structural merge for .project, and two P0 debts",
-      "status": "in_progress",
+      "status": "done",
       "componentId": "data-layer",
       "featureId": "shared-board",
       "createdAt": "2026-09-05T14:01:23.607Z",
-      "updatedAt": "2026-09-05T14:01:23.607Z",
-      "order": 0
+      "updatedAt": "2026-09-05T14:01:23.924Z",
+      "order": 27,
+      "commits": [
+        "b41810e0d5c522931da686e896800e04915f6984"
+      ]
     }
   ],
   "roadmap": {
