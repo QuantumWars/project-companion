@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { useProjectStream } from "./use-stream";
 import type { PrdOp } from "./prd";
 import type { Feature, Phase, Task } from "./types";
 
@@ -60,10 +61,18 @@ export const useRoadmap = (root?: string) => {
     void refresh();
   }, [refresh]);
 
+  // The stream says when the PRD moved. The poll below stays as the fallback and
+  // stands down while the stream is connected -- a stream that cannot establish
+  // itself leaves exactly the behaviour that was here before.
+  const { live } = useProjectStream(() => void refresh(), { only: ["prd"] });
+  const liveRef = useRef(live);
+  liveRef.current = live;
+
   // Poll only for the hash, so a quiet page costs almost nothing. Skipped while
-  // a write is in flight, and while the tab is hidden.
+  // a write is in flight, while the tab is hidden, and while the stream is up.
   useEffect(() => {
     const check = async () => {
+      if (liveRef.current) return;
       if (inflight.current || document.visibilityState === "hidden") return;
       try {
         const response = await fetch(`/api/project/roadmap${query}${query ? "&" : "?"}hash=1`);
@@ -74,7 +83,8 @@ export const useRoadmap = (root?: string) => {
       }
     };
 
-    const timer = setInterval(check, 4000);
+    // Slower than it was: this is now a safety net rather than the mechanism.
+    const timer = setInterval(check, 15000);
     window.addEventListener("focus", check);
     document.addEventListener("visibilitychange", check);
     return () => {

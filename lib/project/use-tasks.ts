@@ -5,11 +5,14 @@
  *
  * Every mutation is applied optimistically and then reconciled with the
  * server's answer. The board is also edited by agents through MCP and the CLI,
- * so it refetches on window focus -- a card an agent moved while you were in
+ * so it follows the change stream and refetches on window focus -- a card an
+ * agent moved while you were in
  * the terminal should be in the right column when you look back.
  */
 
 import { useCallback, useEffect, useState } from "react";
+
+import { useProjectStream } from "./use-stream";
 
 import type { Task, TaskStatus } from "./types";
 
@@ -31,6 +34,10 @@ export const useTasks = (root?: string) => {
       setLoading(false);
     }
   }, [query]);
+
+  // The board refreshed on focus alone, so a card an agent moved while you were
+  // looking at the board stayed where it was until you left and came back.
+  useProjectStream(() => void refresh(), { only: ["project"] });
 
   useEffect(() => {
     void refresh();

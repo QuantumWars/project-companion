@@ -356,3 +356,16 @@ Verify: npm test -- flow
 - [x] Waiting on a person outranks waiting on a machine
 - [x] Blast radius lifts a task logarithmically, not linearly
 - [x] Every ranking carries the reasons that produced it
+
+### Live updates
+<!-- id: live-updates -->
+
+The app polled three endpoints on a timer and several surfaces did not refresh at all, so
+an agent's work was invisible until you navigated. One stream replaces that, with the
+polls kept as a fallback that stands down while it is connected.
+
+Paths: app/api/project/stream/**, lib/project/use-stream.ts
+
+- [x] A change made from the CLI reaches an open browser with no reload
+- [x] A stream that cannot connect degrades to the polling that was there before
+- [x] Only the kind of change is sent; the client re-reads what it needs

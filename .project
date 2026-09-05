@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-09-05T14:30:12.263Z",
-  "revision": 163,
+  "updatedAt": "2026-09-05T14:33:52.077Z",
+  "revision": 167,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1770,11 +1770,21 @@
     {
       "id": "1e53a9ff",
       "title": "Wire SSE so the app stops polling",
-      "status": "todo",
+      "status": "done",
       "componentId": "surfaces",
       "createdAt": "2026-09-05T14:26:10.225Z",
-      "updatedAt": "2026-09-05T14:26:10.225Z",
-      "order": 2
+      "updatedAt": "2026-09-05T14:33:52.077Z",
+      "order": 36
+    },
+    {
+      "id": "2e9ca350",
+      "title": "Live updates over one stream",
+      "status": "in_progress",
+      "componentId": "surfaces",
+      "featureId": "live-updates",
+      "createdAt": "2026-09-05T14:33:51.998Z",
+      "updatedAt": "2026-09-05T14:33:51.998Z",
+      "order": 0
     }
   ],
   "roadmap": {
