@@ -83,6 +83,11 @@ export type EventKind =
   | "run.started"
   | "run.progress"
   | "run.state"
+  // Gates: decisions only a person makes. Their state is a fold; see `gate.ts`.
+  | "gate.requested"
+  | "gate.approved"
+  | "gate.refused"
+  | "track.confirmed"
   // Bookkeeping.
   | "actor.identified";
 

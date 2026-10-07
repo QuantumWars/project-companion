@@ -74,6 +74,23 @@ import { packet, route, type PacketInput } from "../lib/project/review";
 import { attention, checkWip, summarise as summariseFlow, taskFlow } from "../lib/project/flow";
 import { RUN_STATES, type RunState } from "../lib/project/run";
 import {
+  approveGate,
+  checkWork,
+  confirmTrack,
+  GateError,
+  isGateKind,
+  isStage,
+  isTrack,
+  listGates,
+  readGates,
+  refuseGate,
+  requestGate,
+  STAGES,
+  TRACKS,
+  GATE_KINDS,
+  type Stage,
+} from "../lib/project/gate";
+import {
   editPrd,
   readRoadmap,
   setFeatureOverride,
@@ -99,6 +116,15 @@ import {
   registerProject,
 } from "../lib/project/registry";
 import type { DiagramType } from "../types/arch";
+
+/**
+ * The CLI's version and what it can do.
+ *
+ * devolps checks `capabilities` before it relies on a command, so an older
+ * install fails loudly with "upgrade" instead of quietly lacking a gate.
+ */
+const VERSION = "0.2.0";
+const CAPABILITIES = ["gate", "json", "task-show"] as const;
 
 const HELP = `
 project-companion - architecture and task boards that live in your repo
@@ -134,17 +160,29 @@ project-companion - architecture and task boards that live in your repo
 
   project-companion prd sync                 re-read the PRD into the roadmap
   project-companion prd path <file>          point at a different PRD
-  project-companion feature list [--phase P] [--status S]
-  project-companion feature show <id>        criteria, tasks and commits
+  project-companion feature list [--phase P] [--status S] [--json]
+  project-companion feature show <id> [--json]   criteria, tasks and commits
   project-companion feature add <title> [--phase P] [--summary S]
   project-companion feature check <id> <criterion>   tick an acceptance criterion
   project-companion feature pin <id> <status>        override the derived status
   project-companion verify [featureId]       run the PRD's Verify: commands
-  project-companion phase list               phases, in document order
+  project-companion phase list [--json]      phases, in document order
   project-companion phase add <name> [--goal G]
   project-companion phase set <id> [--status S] [--starts D] [--ends D]
 
-  project-companion task list [--status S] [--feature F] [--component C]
+  project-companion gate request <kind> <subject> [--artifact FILE]... [--prd-section EPIC]
+                                     [--head SHA] [--tasks ID,ID]   ask the PM for a gate
+  project-companion gate approve <kind> <subject> --via CHANNEL [--override REASON] [--head SHA]
+  project-companion gate refuse <kind> <subject> --via CHANNEL --reason R [--remedy R]
+  project-companion gate track <subject> <${"full|quick|bugfix"}> --via CHANNEL
+  project-companion gate status [--subject S] [--json]
+  project-companion gate check (--task ID | --epic ID) [--stage STAGE] [--json]
+                                     exit 3 and name the fix when work may not start
+  project-companion gate log [--json]        every gate decision, with its channel
+                                     kinds: ${"prd|design|sprint|merge|release"}
+
+  project-companion task list [--status S] [--feature F] [--component C] [--json]
+  project-companion task show <id> [--json]
   project-companion task add <title> [--status S] [--node ID] [--feature F]
                                              [--component C]
   project-companion task move <id> <status>  ${TASK_STATUSES.join(" | ")}
@@ -174,6 +212,7 @@ project-companion - architecture and task boards that live in your repo
   project-companion reindex          rebuild the diagram index from disk
   project-companion migrate          convert a split store into one .project file
 
+  project-companion version [--json]         version and capabilities
   project-companion projects                 every project on this machine
   project-companion projects forget <path>   drop one from the global index
 
@@ -201,6 +240,15 @@ const flag = (name: string): string | undefined => {
 };
 
 const has = (name: string): boolean => argv.includes(`--${name}`);
+
+/** Every value of a repeatable flag: `--artifact a --artifact b`. */
+const flagAll = (name: string): string[] => {
+  const out: string[] = [];
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === `--${name}` && argv[i + 1] && !argv[i + 1].startsWith("--")) out.push(argv[i + 1]);
+  }
+  return out;
+};
 
 /** Positional arguments, with flags and their values removed. */
 const positional = (): string[] => {
@@ -297,7 +345,16 @@ const installMergeDriver = (root: string): "added" | "present" => {
 };
 
 const HOOK_EVENTS = ["SessionStart", "PostToolUse", "SessionEnd"] as const;
-const HOOK_COMMAND = "npx project-companion ingest";
+/**
+ * Run from the PATH, never through `npx`.
+ *
+ * The package is not on the npm registry. `npx project-companion` in any other
+ * repository therefore did nothing -- or, if somebody ever published that
+ * name, would download and run their code on every tool call. `npm link`
+ * puts the real binary on the PATH instead.
+ */
+const HOOK_COMMAND = "project-companion ingest";
+const LEGACY_HOOK_COMMAND = "npx project-companion ingest";
 
 /**
  * Wires the agent's hooks so runs record themselves.
@@ -327,6 +384,15 @@ const installHooks = (root: string, agentDir: string): "added" | "present" | "sk
 
   for (const event of HOOK_EVENTS) {
     const matchers = Array.isArray(hooks[event]) ? (hooks[event] as Record<string, unknown>[]) : [];
+    // Upgrade the old `npx` entry in place rather than adding a second one.
+    for (const m of matchers) {
+      for (const h of Array.isArray(m.hooks) ? (m.hooks as Record<string, unknown>[]) : []) {
+        if (h.command === LEGACY_HOOK_COMMAND) {
+          h.command = HOOK_COMMAND;
+          added = true;
+        }
+      }
+    }
     const already = matchers.some((m) =>
       (Array.isArray(m.hooks) ? (m.hooks as Record<string, unknown>[]) : []).some(
         (h) => h.command === HOOK_COMMAND,
@@ -504,6 +570,15 @@ const main = () => {
 
   if (!command || command === "help" || command === "--help") {
     process.stdout.write(HELP);
+    return;
+  }
+
+  if (command === "version" || command === "--version") {
+    process.stdout.write(
+      has("json")
+        ? `${JSON.stringify({ version: VERSION, capabilities: CAPABILITIES })}\n`
+        : `project-companion ${VERSION} (${CAPABILITIES.join(", ")})\n`,
+    );
     return;
   }
 
@@ -1073,6 +1148,139 @@ const main = () => {
     return;
   }
 
+  /**
+   * Gates. See `lib/project/gate.ts`.
+   *
+   * There is deliberately no MCP tool for approve, refuse or track: an agent
+   * has no structured way to make the PM's decision. devolps also denies these
+   * subcommands to Claude's Bash tool, and records the PM's typed command.
+   */
+  if (command === "gate") {
+    const prdPath = readRoadmap(root).source;
+    const json = has("json");
+    const say = (value: unknown, text: string) =>
+      process.stdout.write(json ? `${JSON.stringify(value)}\n` : text);
+    const kindArg = (value: string | undefined) => {
+      if (!value || !isGateKind(value)) return die(`Unknown gate "${value ?? ""}". One of: ${GATE_KINDS.join(", ")}`);
+      return value;
+    };
+    try {
+      if (sub === "request") {
+        const kind = kindArg(rest[0]);
+        const subject = rest[1] ?? die("Usage: project-companion gate request <kind> <subject> --artifact FILE");
+        const artifacts = flagAll("artifact");
+        if (flag("prd-section")) artifacts.push(`prd-section:${flag("prd-section")}`);
+        if (flag("head")) artifacts.push(`head:${flag("head")}`);
+        if (!artifacts.length) {
+          die("Name what the PM approves: --artifact <file>, --prd-section <epic> or --head <sha>.");
+        }
+        const gate = requestGate(root, { kind, subject, artifacts, tasks: splitList(flag("tasks")) }, prdPath);
+        say(gate, `Requested the ${kind} gate for ${subject}. The PM approves with /devolps:approve ${kind} ${subject}\n`);
+        return;
+      }
+      if (sub === "approve") {
+        const kind = kindArg(rest[0]);
+        const subject = rest[1] ?? die("Usage: project-companion gate approve <kind> <subject> --via CHANNEL");
+        const gate = approveGate(
+          root,
+          { kind, subject, via: flag("via"), override: flag("override"), head: flag("head") },
+          prdPath,
+        );
+        say(gate, `${gate.state === "overridden" ? "Approved with an override" : "Approved"}: ${kind} gate for ${subject}.\n`);
+        return;
+      }
+      if (sub === "refuse") {
+        const kind = kindArg(rest[0]);
+        const subject = rest[1] ?? die("Usage: project-companion gate refuse <kind> <subject> --via CHANNEL --reason R");
+        const gate = refuseGate(
+          root,
+          { kind, subject, via: flag("via"), reason: flag("reason") ?? "", remedy: flag("remedy") },
+          prdPath,
+        );
+        say(gate, `Refused: ${kind} gate for ${subject}.\n`);
+        return;
+      }
+      if (sub === "track") {
+        const subject = rest[0] ?? die(`Usage: project-companion gate track <subject> <${TRACKS.join("|")}> --via CHANNEL`);
+        const track = rest[1];
+        if (!track || !isTrack(track)) die(`Unknown track "${track ?? ""}". One of: ${TRACKS.join(", ")}`);
+        const decision = confirmTrack(root, { subject, track: track as (typeof TRACKS)[number], via: flag("via") });
+        say(decision, `Track for ${subject}: ${decision.track}.\n`);
+        return;
+      }
+      if (sub === "status") {
+        const book = readGates(root, prdPath);
+        const subject = flag("subject");
+        const gates = listGates(book).filter((g) => !subject || g.subject === subject);
+        const tracks = Array.from(book.tracks.values()).filter((t) => !subject || t.subject === subject);
+        if (json) {
+          process.stdout.write(`${JSON.stringify({ gates, tracks })}\n`);
+          return;
+        }
+        if (!gates.length && !tracks.length) {
+          process.stdout.write("No gates yet.\n");
+          return;
+        }
+        for (const t of tracks) process.stdout.write(`track   ${t.subject.padEnd(24)} ${t.track}\n`);
+        for (const g of gates) {
+          const why = g.state === "stale" ? `  changed: ${g.changed.join(", ")}` : g.reason ? `  ${g.reason}` : "";
+          process.stdout.write(`${g.kind.padEnd(7)} ${g.subject.padEnd(24)} ${g.state}${why}\n`);
+        }
+        return;
+      }
+      if (sub === "check") {
+        const taskId = flag("task");
+        const epicId = flag("epic");
+        if (!taskId && !epicId) die("Usage: project-companion gate check (--task ID | --epic ID) [--stage STAGE]");
+        const stageArg = flag("stage") ?? (taskId ? "build" : undefined);
+        if (!stageArg || !isStage(stageArg)) die(`Unknown stage "${stageArg ?? ""}". One of: ${STAGES.join(", ")}`);
+        const task = taskId ? readTasks(root).tasks.find((t) => t.id === taskId) : undefined;
+        const epic =
+          epicId ??
+          task?.phaseId ??
+          readRoadmap(root).features.find((f) => f.id === task?.featureId)?.phaseId;
+        const result = checkWork(
+          readGates(root, prdPath),
+          {
+            stage: stageArg as Stage,
+            epic,
+            taskId,
+            task: task ? { id: task.id, epic } : taskId ? null : undefined,
+          },
+          (path) => existsSync(join(root, path)),
+        );
+        say(
+          result,
+          result.ok
+            ? `May start: ${result.stage}${result.track ? ` (${result.track} track)` : ""}.\n`
+            : `May not start ${result.stage}:\n${result.missing.map((m) => `  - ${m.what} ${m.subject}: ${m.remedy}`).join("\n")}\n`,
+        );
+        if (!result.ok) process.exit(3);
+        return;
+      }
+      if (sub === "log") {
+        const decisions = readEvents(root)
+          .filter((e) => e.kind.startsWith("gate.") || e.kind === "track.confirmed")
+          .map((e) => ({ event: e.kind, ts: e.ts, actor: e.actor, ...e.data }));
+        if (json) {
+          process.stdout.write(`${JSON.stringify(decisions)}\n`);
+          return;
+        }
+        for (const d of decisions) {
+          const data = d as Record<string, unknown>;
+          process.stdout.write(
+            `${new Date(d.ts).toISOString()}  ${d.event.padEnd(16)} ${String(data.kind ?? data.track ?? "").padEnd(8)} ${String(data.subject ?? "")}  via ${String(data.via ?? "-")}\n`,
+          );
+        }
+        return;
+      }
+      die(HELP);
+    } catch (error) {
+      if (error instanceof GateError) die(error.message);
+      throw error;
+    }
+  }
+
   if (command === "task") {
     if (sub === "list") {
       const status = flag("status");
@@ -1091,6 +1299,10 @@ const main = () => {
           (!feature || t.featureId === feature) &&
           (!scope || scope.includes(t.componentId ?? "")),
       );
+      if (has("json")) {
+        process.stdout.write(`${JSON.stringify(tasks)}\n`);
+        return;
+      }
       if (!tasks.length) {
         process.stdout.write("No tasks.\n");
         return;
@@ -1103,6 +1315,25 @@ const main = () => {
           `${t.id}  ${t.status.padEnd(12)} ${t.title}${owner}${linked}${nodes}\n`,
         );
       }
+      return;
+    }
+
+    if (sub === "show") {
+      const id = rest[0] ?? die("Usage: project-companion task show <id>");
+      const task = readTasks(root).tasks.find((t) => t.id === id) ?? die(`No task "${id}"`);
+      const epic = task.phaseId ?? readRoadmap(root).features.find((f) => f.id === task.featureId)?.phaseId;
+      if (has("json")) {
+        process.stdout.write(`${JSON.stringify({ ...task, epic: epic ?? null })}\n`);
+        return;
+      }
+      process.stdout.write(
+        `${task.id}  ${task.status}  ${task.title}\n` +
+          (epic ? `  epic:      ${epic}\n` : "") +
+          (task.featureId ? `  feature:   ${task.featureId}\n` : "") +
+          (task.componentId ? `  component: ${task.componentId}\n` : "") +
+          (task.branch ? `  branch:    ${task.branch}\n` : "") +
+          (task.commits?.length ? `  commits:   ${task.commits.join(", ")}\n` : ""),
+      );
       return;
     }
 
@@ -1216,6 +1447,10 @@ const main = () => {
       const id = rest[0] ?? die("Usage: project-companion feature show <id>");
       const feature =
         roadmap.features.find((f) => f.id === id) ?? die(`No feature "${id}"`);
+      if (has("json")) {
+        process.stdout.write(`${JSON.stringify({ ...feature, tasks: tasksForFeature(root, feature.id) })}\n`);
+        return;
+      }
       const lines = [
         `${feature.title}  [${fmtStatus(feature.status)}]  id=${feature.id}`,
         feature.phaseId ? `phase: ${feature.phaseId}` : "",
@@ -1274,6 +1509,10 @@ const main = () => {
     const rows = roadmap.features.filter(
       (f) => (!phase || f.phaseId === phase) && (!status || f.status === status),
     );
+    if (has("json")) {
+      process.stdout.write(`${JSON.stringify(rows)}\n`);
+      return;
+    }
     if (!rows.length) {
       process.stdout.write("No features.\n");
       return;
@@ -1536,6 +1775,10 @@ const main = () => {
       return;
     }
 
+    if (has("json")) {
+      process.stdout.write(`${JSON.stringify(roadmap.phases)}\n`);
+      return;
+    }
     if (!roadmap.phases.length) {
       process.stdout.write("No phases. Add `## Phase: <name>` to the PRD.\n");
       return;

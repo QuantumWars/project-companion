@@ -27,6 +27,10 @@ if (!files.length) {
   process.exit(1);
 }
 
+// The CLI suites run dist/, so build it first. Testing a stale bundle would let
+// a suite pass against code that no longer exists.
+execFileSync(process.execPath, [join(ROOT, "scripts", "build-tools.mjs")], { stdio: "inherit", cwd: ROOT });
+
 // Bundles go inside the repo, not a temp dir: `packages: "external"` leaves
 // imports bare, and Node resolves those relative to the FILE, so a bundle in
 // /tmp cannot see node_modules.
