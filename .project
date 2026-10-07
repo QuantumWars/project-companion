@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-09-05T14:41:01.452Z",
-  "revision": 180,
+  "updatedAt": "2026-09-06T00:55:51.332Z",
+  "revision": 182,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -11,7 +11,7 @@
       "id": "archboard-architecture",
       "title": "Project Companion architecture",
       "type": "architecture",
-      "updatedAt": "2026-09-05T14:17:54.181Z",
+      "updatedAt": "2026-09-06T00:55:51.331Z",
       "nodes": [
         {
           "id": "db683a06",
@@ -589,9 +589,9 @@
         }
       ],
       "viewport": {
-        "x": 2.191330366126067,
-        "y": 2.2909362918591114,
-        "zoom": 0.9958497530944582
+        "x": 0,
+        "y": 0,
+        "zoom": 1
       }
     },
     "ticketing-schema": {
@@ -1828,10 +1828,11 @@
       "componentId": "surfaces",
       "featureId": "live-updates",
       "createdAt": "2026-09-05T14:33:51.998Z",
-      "updatedAt": "2026-09-05T14:33:52.245Z",
+      "updatedAt": "2026-09-05T15:21:50.163Z",
       "order": 37,
       "commits": [
-        "76bdcf59fa97f114cda99a0771c24598ae90cc70"
+        "76bdcf59fa97f114cda99a0771c24598ae90cc70",
+        "b577c12914b74941017e10fdded3aa1bccfef913"
       ]
     }
   ],

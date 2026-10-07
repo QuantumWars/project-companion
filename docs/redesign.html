@@ -1,0 +1,1101 @@
+<title>Agents Fill Stages, Humans Open Gates</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+  :root {
+    --paper:      #EFF1F0;
+    --surface:    #F8F9F8;
+    --surface-2:  #E6EAE8;
+    --ink:        #191D1C;
+    --ink-2:      #4E5755;
+    --ink-3:      #798280;
+    --rule:       #D0D6D4;
+    --rule-soft:  #E1E5E4;
+    --accent:     #14504B;
+    --accent-dim: #4E8C85;
+    --human:      #97551F;
+    --agent:      #33608C;
+    --proven:     #2C6B4F;
+    --failing:    #A2382C;
+    --claimed:    #86701C;
+    --human-wash: rgba(151, 85, 31, .10);
+    --agent-wash: rgba(51, 96, 140, .10);
+    --accent-wash:rgba(20, 80, 75, .08);
+    --code-bg:    #E4E9E7;
+
+    --serif: "Spectral", Georgia, "Times New Roman", serif;
+    --mono:  "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:      #0F1413;
+      --surface:    #151B1A;
+      --surface-2:  #1C2423;
+      --ink:        #E3E8E6;
+      --ink-2:      #98A3A1;
+      --ink-3:      #6C7775;
+      --rule:       #29332F;
+      --rule-soft:  #1E2726;
+      --accent:     #5FBDAF;
+      --accent-dim: #3A7C74;
+      --human:      #D69A5F;
+      --agent:      #82ACD9;
+      --proven:     #6FBF8F;
+      --failing:    #E08272;
+      --claimed:    #D2B863;
+      --human-wash: rgba(214, 154, 95, .12);
+      --agent-wash: rgba(130, 172, 217, .12);
+      --accent-wash:rgba(95, 189, 175, .10);
+      --code-bg:    #1B2322;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper:      #0F1413;
+    --surface:    #151B1A;
+    --surface-2:  #1C2423;
+    --ink:        #E3E8E6;
+    --ink-2:      #98A3A1;
+    --ink-3:      #6C7775;
+    --rule:       #29332F;
+    --rule-soft:  #1E2726;
+    --accent:     #5FBDAF;
+    --accent-dim: #3A7C74;
+    --human:      #D69A5F;
+    --agent:      #82ACD9;
+    --proven:     #6FBF8F;
+    --failing:    #E08272;
+    --claimed:    #D2B863;
+    --human-wash: rgba(214, 154, 95, .12);
+    --agent-wash: rgba(130, 172, 217, .12);
+    --accent-wash:rgba(95, 189, 175, .10);
+    --code-bg:    #1B2322;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .doc {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 28px 120px;
+  }
+
+  /* ---------- the margin rail ---------- */
+
+  section.sec {
+    display: grid;
+    grid-template-columns: 132px minmax(0, 1fr);
+    gap: 0 36px;
+    border-top: 1px solid var(--rule);
+    padding-top: 34px;
+    margin-top: 52px;
+  }
+
+  .rail {
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.55;
+    color: var(--ink-3);
+    letter-spacing: .06em;
+    position: sticky;
+    top: 24px;
+    align-self: start;
+    padding-top: 4px;
+  }
+
+  .rail b {
+    display: block;
+    font-weight: 600;
+    color: var(--accent);
+    font-size: 12px;
+    letter-spacing: .1em;
+    margin-bottom: 7px;
+  }
+
+  .rail span { display: block; text-transform: uppercase; }
+
+  .body { min-width: 0; }
+  .body > * + * { margin-top: 1.05em; }
+  .body > h2 { margin-top: 0; }
+  .body > h3 { margin-top: 2.1em; }
+  .body > .rule + * { margin-top: 0; }
+
+  @media (max-width: 860px) {
+    section.sec { grid-template-columns: 1fr; gap: 0; }
+    .rail { position: static; margin-bottom: 18px; }
+    .rail span { display: inline; }
+    .rail b { display: inline; margin-right: 10px; }
+  }
+
+  /* ---------- type ---------- */
+
+  h1 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: clamp(38px, 6vw, 60px);
+    line-height: 1.04;
+    letter-spacing: -.018em;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  h2 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 27px;
+    line-height: 1.2;
+    letter-spacing: -.011em;
+    text-wrap: balance;
+    margin: 0 0 .55em;
+  }
+
+  h3 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 20px;
+    line-height: 1.28;
+    margin: 0 0 .4em;
+    text-wrap: balance;
+  }
+
+  h4 {
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: 11.5px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 .7em;
+  }
+
+  p { margin: 0; max-width: 68ch; }
+  .body ul, .body ol { margin: 0; padding-left: 1.25em; max-width: 68ch; }
+  .body li + li { margin-top: .42em; }
+  .body li::marker { color: var(--ink-3); }
+
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+
+  strong { font-weight: 600; }
+  em { font-style: italic; }
+
+  code, .m {
+    font-family: var(--mono);
+    font-size: .855em;
+    background: var(--code-bg);
+    padding: .1em .34em;
+    border-radius: 3px;
+    word-break: break-word;
+  }
+
+  .lede {
+    font-size: 21px;
+    line-height: 1.5;
+    color: var(--ink-2);
+    max-width: 60ch;
+  }
+
+  .rule { border: 0; border-top: 1px solid var(--rule-soft); margin: 1.6em 0; }
+
+  /* ---------- masthead ---------- */
+
+  header.mast { padding: 64px 0 12px; }
+
+  .kicker {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: 22px;
+  }
+  .kicker span { color: var(--accent); }
+
+  .mast-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 26px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--ink-3);
+    letter-spacing: .04em;
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    padding: 13px 0;
+    margin-top: 40px;
+  }
+  .mast-meta b { color: var(--ink-2); font-weight: 500; }
+
+  /* ---------- the claim ---------- */
+
+  .claim {
+    font-size: clamp(22px, 3.3vw, 30px);
+    line-height: 1.32;
+    font-weight: 500;
+    letter-spacing: -.012em;
+    max-width: 26ch;
+    border-left: 3px solid var(--accent);
+    padding-left: 24px;
+    text-wrap: balance;
+  }
+  .claim em { color: var(--accent); font-style: italic; }
+
+  /* ---------- callout ---------- */
+
+  .note {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent-dim);
+    padding: 16px 20px;
+    font-size: 15.5px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    max-width: 68ch;
+  }
+  .note b { color: var(--ink); }
+
+  .note.warn { border-left-color: var(--claimed); }
+
+  /* ---------- tables ---------- */
+
+  .scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 14.5px;
+    line-height: 1.48;
+    font-variant-numeric: tabular-nums;
+  }
+  th, td {
+    text-align: left;
+    vertical-align: top;
+    padding: 11px 16px 11px 0;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+  th {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 9px;
+    white-space: nowrap;
+  }
+  td:last-child, th:last-child { padding-right: 0; }
+  tbody tr:last-child td { border-bottom: 1px solid var(--rule); }
+  td.who { font-family: var(--mono); font-size: 12.5px; color: var(--ink); white-space: nowrap; }
+  td.sub { color: var(--ink-2); }
+
+  table.field { min-width: 860px; }
+  table.lanes { min-width: 620px; }
+  table.build { min-width: 720px; }
+
+  /* ---------- lane coding ---------- */
+
+  .tag {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+  .tag.human { color: var(--human); background: var(--human-wash); }
+  .tag.agent { color: var(--agent); background: var(--agent-wash); }
+  .tag.have  { color: var(--proven); background: rgba(44,107,79,.10); }
+  .tag.part  { color: var(--claimed); background: rgba(134,112,28,.12); }
+  .tag.none  { color: var(--failing); background: rgba(162,56,44,.10); }
+
+  :root[data-theme="dark"] .tag.have, :root:not([data-theme="light"]) .tag.have { background: rgba(111,191,143,.13); }
+  :root[data-theme="dark"] .tag.part, :root:not([data-theme="light"]) .tag.part { background: rgba(210,184,99,.13); }
+  :root[data-theme="dark"] .tag.none, :root:not([data-theme="light"]) .tag.none { background: rgba(224,130,114,.13); }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) .tag.have { background: rgba(44,107,79,.10); }
+    :root:not([data-theme="dark"]) .tag.part { background: rgba(134,112,28,.12); }
+    :root:not([data-theme="dark"]) .tag.none { background: rgba(162,56,44,.10); }
+  }
+
+  /* ---------- the pipeline figure ---------- */
+
+  figure { margin: 0; }
+  figure svg { display: block; width: 100%; height: auto; min-width: 700px; }
+  figcaption {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--ink-3);
+    line-height: 1.5;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--rule-soft);
+    max-width: 70ch;
+  }
+
+  /* ---------- mechanism blocks ---------- */
+
+  .mech {
+    border-top: 1px solid var(--rule);
+    padding-top: 22px;
+    margin-top: 34px;
+  }
+  .mech-head {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: .5em;
+    flex-wrap: wrap;
+  }
+  .mech-head .letter {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: .1em;
+  }
+  .mech-head h3 { margin: 0; }
+  .mech > * + * { margin-top: 1em; }
+
+  .kv {
+    display: grid;
+    grid-template-columns: 104px minmax(0,1fr);
+    gap: 7px 18px;
+    font-size: 15.5px;
+    max-width: 68ch;
+  }
+  .kv dt {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    padding-top: 5px;
+  }
+  .kv dd { margin: 0; color: var(--ink-2); }
+  .kv dd strong { color: var(--ink); }
+  @media (max-width: 560px) {
+    .kv { grid-template-columns: 1fr; gap: 2px 0; }
+    .kv dd { margin-bottom: 10px; }
+  }
+
+  /* ---------- provenance gutter mock ---------- */
+
+  .prov {
+    border: 1px solid var(--rule);
+    background: var(--surface);
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.75;
+    overflow-x: auto;
+  }
+  .prov-bar {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--rule);
+    color: var(--ink-3);
+    font-size: 10.5px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .prov-bar i { font-style: normal; display: inline-flex; align-items: center; gap: 6px; }
+  .prov-bar u { display: inline-block; width: 3px; height: 12px; text-decoration: none; }
+  .prov-code { padding: 10px 0; min-width: 560px; }
+  .pl { display: grid; grid-template-columns: 3px 40px 1fr; align-items: baseline; }
+  .pl > .g { align-self: stretch; }
+  .pl > .n { color: var(--ink-3); text-align: right; padding-right: 14px; font-size: 11px; }
+  .pl > .c { white-space: pre; padding-right: 14px; }
+  .pl.a { background: var(--agent-wash); }
+  .pl.a > .g { background: var(--agent); }
+  .pl.h { background: var(--human-wash); }
+  .pl.h > .g { background: var(--human); }
+  .pl.r > .g { background: linear-gradient(var(--agent) 0 50%, var(--human) 50% 100%); }
+  .pl.r { background: linear-gradient(90deg, var(--agent-wash), var(--human-wash)); }
+  .pl.u > .g { background: var(--rule); }
+  .kw { color: var(--accent); }
+  .st { color: var(--ink-3); }
+
+  /* ---------- reject list ---------- */
+
+  .reject { display: grid; gap: 0; max-width: 78ch; }
+  .reject > div {
+    display: grid;
+    grid-template-columns: minmax(150px, 210px) minmax(0,1fr);
+    gap: 6px 26px;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--rule-soft);
+    align-items: baseline;
+  }
+  .reject > div:first-child { border-top: 1px solid var(--rule); }
+  .reject b {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--failing);
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
+  }
+  .reject span { color: var(--ink-2); font-size: 15.5px; }
+  @media (max-width: 620px) { .reject > div { grid-template-columns: 1fr; } }
+
+  /* ---------- phase cards ---------- */
+
+  .phase {
+    display: grid;
+    grid-template-columns: 62px minmax(0,1fr);
+    gap: 4px 22px;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+  .phase:first-of-type { border-top: 1px solid var(--rule); }
+  .phase .num {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--accent);
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+  }
+  .phase h3 { margin-bottom: .25em; }
+  .phase p { font-size: 16px; color: var(--ink-2); }
+  .phase .ships {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-3);
+    margin-top: .7em;
+    line-height: 1.65;
+  }
+  .phase .ships b { color: var(--ink-2); font-weight: 500; letter-spacing: .08em; text-transform: uppercase; font-size: 10.5px; }
+  @media (max-width: 560px) { .phase { grid-template-columns: 1fr; } }
+
+  details {
+    border: 1px solid var(--rule);
+    background: var(--surface);
+    padding: 0 18px;
+    max-width: 78ch;
+  }
+  details[open] { padding-bottom: 16px; }
+  summary {
+    cursor: pointer;
+    padding: 14px 0;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  details > *:not(summary) { font-size: 15.5px; color: var(--ink-2); max-width: none; }
+
+  footer {
+    margin-top: 72px;
+    border-top: 1px solid var(--rule);
+    padding-top: 26px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    line-height: 1.75;
+    color: var(--ink-3);
+    max-width: 78ch;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+
+<div class="doc">
+
+<header class="mast">
+  <div class="kicker">Project Companion &nbsp;·&nbsp; <span>Redesign proposal</span> &nbsp;·&nbsp; branch <code>component-model-and-event-log</code></div>
+  <h1>Agents fill stages.<br>Humans open gates.</h1>
+  <div class="mast-meta">
+    <span><b>Prepared for</b> QuantumWars</span>
+    <span><b>Date</b> 6 September 2026</span>
+    <span><b>Status</b> proposal — nothing here is built yet</span>
+    <span><b>Covers</b> phases 9–14</span>
+  </div>
+</header>
+
+<!-- ============================================================ 01 -->
+<section class="sec">
+  <div class="rail"><b>01</b><span>The claim</span></div>
+  <div class="body">
+    <p class="claim">Every other project tool is a database <em>beside</em> your repository. This one is a <em>query over it</em>.</p>
+
+    <p>You asked me to look at the current system, survey what exists in project management, and restate your vision properly. Here is the restatement, and it is sharper than the brief you gave me.</p>
+
+    <p>You described adding AI features to a project management tool: a VS&nbsp;Code extension, separate AI and human tracking, a CodeRabbit-style reviewer, an ideation stage in front and an architecture stage after it. Every one of those is right. But framed as features they undersell what you are actually building, and they will get built in the wrong order.</p>
+
+    <p>What you are describing is not a project tool with AI in it. It is a <strong>manufacturing pipeline for software in which the scarce input has changed</strong>. Boards, sprints, story points, velocity, capacity planning and resource-levelled Gantt charts are all machinery for rationing a scarce supply of implementation. That supply is no longer scarce. What is scarce now is deciding what to build, specifying it so precisely that a machine cannot misread it, and believing the result.</p>
+
+    <p>So the queue moved. It used to form in front of the developer. It now forms in front of the reviewer — and every tool on the market still draws its widest column in the old place.</p>
+
+    <div class="note">
+      <b>Your repository already says this.</b> The Flow phase of <code>docs/prd.md</code> opens with: <em>“AI made generation cheap and review expensive, so work accumulates in front of the reviewer. Show that, and put a valve on it.”</em> That is the sharpest sentence in this whole analysis, and it is currently the goal of one phase out of eight. It should be the thesis of the product.
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 02 -->
+<section class="sec">
+  <div class="rail"><b>02</b><span>What actually</span><span>changed</span></div>
+  <div class="body">
+    <h2>Every tool encodes a guess about where the bottleneck is</h2>
+
+    <p>You can read a project tool's assumption straight off what it spends its complexity on. Jira spends it on a workflow engine and a permission scheme, because it assumes the problem is coordinating many people and enforcing process. Linear spends it on latency and triage, because it assumes the problem is the tool getting in a good team's way. Basecamp spends it on appetite and betting, because it assumes the problem is scope creep against fixed time. MS&nbsp;Project spends it on resource levelling, because it assumes the problem is scheduling scarce labour.</p>
+
+    <p>All four assumptions share a premise: <strong>implementation capacity is finite and must be allocated</strong>. Story points size the demand. Velocity measures the supply. Sprint commitment matches them. Burndown reports the variance. Capacity planning forecasts next quarter. WIP limits protect the developer column.</p>
+
+    <p>When one well-specified feature becomes a plausible implementation in minutes, and twenty of them can run at once, that entire apparatus is measuring a resource that is no longer the constraint. It does not become wrong so much as irrelevant — a fuel gauge on an electric car.</p>
+
+    <h3>What stayed scarce</h3>
+    <ul>
+      <li><strong>Deciding what to build.</strong> Entirely human, still slow, and now proportionally the largest cost.</li>
+      <li><strong>Specifying it unambiguously.</strong> Partly automatable — an agent drafts a good first pass — but the judgement about what “done” means is not.</li>
+      <li><strong>Believing the output.</strong> Review, verification, trust. This is the new bottleneck and almost nothing is built for it.</li>
+      <li><strong>Absorbing the consequences.</strong> Twenty parallel changes landing in one codebase is an integration problem no board models.</li>
+    </ul>
+
+    <p>Which gives the design rule that everything below follows from: <strong>the tool's job is to make specification cheap and verification cheap, and to be honest about where humans are the queue.</strong></p>
+  </div>
+</section>
+
+<!-- ============================================================ 03 -->
+<section class="sec">
+  <div class="rail"><b>03</b><span>The field,</span><span>honestly</span></div>
+  <div class="body">
+    <h2>What to take from each family, and where each one breaks</h2>
+
+    <p>You named ClickUp, Jira, Kanban, Gantt, GitHub Projects and “what FAANG uses”. Here is that field grouped by what each family is actually <em>for</em>, what is worth taking, and the specific point at which it stops working when most code is machine-written.</p>
+
+    <div class="scroll">
+      <table class="field">
+        <thead>
+          <tr>
+            <th>Family</th>
+            <th>Core abstraction</th>
+            <th>Take this</th>
+            <th>Breaks because</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="who">Enterprise agile<br><span style="color:var(--ink-3)">Jira, Azure&nbsp;Boards, Rally</span></td>
+            <td class="sub">Issue-type hierarchy plus a configurable workflow engine: states, transitions, conditions, validators, post-functions.</td>
+            <td class="sub">The <strong>validator on a transition</strong> is already a gate — it is the right idea, applied to the wrong thing. Also JQL: a query language over work is the correct interface for agents.</td>
+            <td class="sub">The validator checks that the <em>form</em> is filled, never that the <em>claim</em> is true. Status is still a human clicking a dropdown, and custom fields are self-report at scale.</td>
+          </tr>
+          <tr>
+            <td class="who">Modern startup<br><span style="color:var(--ink-3)">Linear, Shortcut, Height</span></td>
+            <td class="sub">Cycles, a triage inbox, projects and initiatives; keyboard-first, opinionated defaults.</td>
+            <td class="sub"><strong>Triage as a first-class inbox</strong> — the correct home for agent-proposed work. Cycles that auto-roll unfinished work rather than requiring a ceremony.</td>
+            <td class="sub">One assignee slot shared between people and agents, so a person and a process are the same kind of thing. Cycle scope maths assumes human throughput.</td>
+          </tr>
+          <tr>
+            <td class="who">Bet-based<br><span style="color:var(--ink-3)">Basecamp / Shape&nbsp;Up</span></td>
+            <td class="sub">Appetite — fixed time, variable scope. A betting table instead of a backlog. Hill charts. The circuit breaker.</td>
+            <td class="sub"><strong>Appetite instead of estimate.</strong> The only sizing model that survives elastic implementation. And the hill chart's split between “figuring it out” and “getting it done” maps exactly onto specification versus construction.</td>
+            <td class="sub">Six-week cycles are sized to human building time. The uphill half is now nearly the whole hill.</td>
+          </tr>
+          <tr>
+            <td class="who">Developer-native<br><span style="color:var(--ink-3)">GitHub Projects, GitLab, Gerrit, Graphite, Backstage</span></td>
+            <td class="sub">Work living next to code. Entities declared in YAML. The change as an object with an identity of its own.</td>
+            <td class="sub">Gerrit's <strong>Change-Id trailer</strong>: stable identity across rewrites — precisely what run attribution needs. Backstage's entity/relation catalogue. Stacked diffs, which are the natural shape of agent output.</td>
+            <td class="sub">GitHub Projects is still a board; nothing derives status from the repository. Backstage catalogues services but knows nothing about the work inside them.</td>
+          </tr>
+          <tr>
+            <td class="who">Internal, at scale<br><span style="color:var(--ink-3)">Google, Meta, Amazon</span></td>
+            <td class="sub">An ownership tree; review as a first-class object with attributes; a design document that gates implementation.</td>
+            <td class="sub"><code>OWNERS</code> as the join key — <em>you already have this</em> as <code>Paths:</code>. Critique separating <strong>approval from correctness</strong> as two different signals. Amazon writing the press release before the code.</td>
+            <td class="sub">All of it assumes the author is a person who can be asked “why did you do this?”. An agent's answer to that question is generated, not recalled.</td>
+          </tr>
+          <tr>
+            <td class="who">AI review<br><span style="color:var(--ink-3)">CodeRabbit, Greptile, Bugbot, Copilot review</span></td>
+            <td class="sub">Diff plus repository context, in; findings posted as pull-request comments, out.</td>
+            <td class="sub">The noise controls, which are the hard part: path filters, confidence thresholds, learned suppressions, and only ever commenting on changed lines.</td>
+            <td class="sub"><strong>None of them know what the change was supposed to do.</strong> They review a diff against general good taste. Nothing in their pipeline connects a change to its acceptance criteria — which is the entire opening.</td>
+          </tr>
+          <tr>
+            <td class="who">Agent platforms<br><span style="color:var(--ink-3)">Devin, Codex, Jules, Copilot agent, Factory</span></td>
+            <td class="sub">A session or run as the unit of work: metered, sandboxed, ending in a pull request.</td>
+            <td class="sub">The run-as-unit model — <em>you already have this</em>. Budget metering. A mission-control surface. Parallel fan-out with worktree isolation.</td>
+            <td class="sub">The run ends at the PR. Nothing carries it back to the specification, and nothing measures whether its output survived review.</td>
+          </tr>
+          <tr>
+            <td class="who">Spec-first<br><span style="color:var(--ink-3)">Spec&nbsp;Kit, Kiro, the RFC/ADR tradition</span></td>
+            <td class="sub">A staged flow from intent to plan to tasks; requirements, design and tasks as three separately reviewable artifacts.</td>
+            <td class="sub"><strong>The triad is exactly the missing middle of your pipeline.</strong> Separating requirements from design from tasks is the right decomposition and you should adopt it wholesale.</td>
+            <td class="sub">They generate the spec and then walk away. Nothing checks the code against it afterwards, and nothing ever un-approves a requirement the code failed to meet.</td>
+          </tr>
+          <tr>
+            <td class="who">Metrics<br><span style="color:var(--ink-3)">DORA, SPACE, GitClear, LinearB</span></td>
+            <td class="sub">Delivery metrics derived from version control and CI events rather than from surveys.</td>
+            <td class="sub">Deriving from artifacts rather than asking people. The four keys still hold and still matter.</td>
+            <td class="sub">“Percentage of AI-written code” is <strong>inferred by heuristic everywhere</strong> — commit size, IDE telemetry sampling, suggestion-acceptance rates. All soft, all gameable, none of it a record.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note warn">
+      <b>Accuracy caveat.</b> I launched a fifteen-agent research workflow to verify this against primary sources — official docs, API references, configuration schemas. It hit the account session limit and returned nothing after 847k tokens. The table above is from my own knowledge, current to roughly mid-2026. The <em>shape</em> of the argument I stand behind; specific product claims about 2026 feature sets should be re-verified before any of this goes in front of an investor or a customer. Re-running the survey after the limit resets is cheap and I would do it.
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 04 -->
+<section class="sec">
+  <div class="rail"><b>04</b><span>Your vision,</span><span>restated</span></div>
+  <div class="body">
+    <h2>Five stages, each with a typed artifact and a gate that can refuse</h2>
+
+    <p>You described ideation, then architecture and schemas, then development tooling. That sequence is right. What makes it a <em>system</em> rather than a set of screens is two properties, and both of them you have already proven once in this codebase.</p>
+
+    <p><strong>First: each stage produces a machine-readable artifact that lives in the repository.</strong> Not a Jira field, not a Confluence page — a file an agent can read and write and a human can review in a diff. You have already done this for the feature list: <code>docs/prd.md</code> is a document people read, and the app splices only the ranges it owns.</p>
+
+    <p><strong>Second: each transition is a gate that can refuse.</strong> Not a warning, not a checklist — a refusal, with a reason, that names what would satisfy it. You have already done this twice: a full column refuses <code>task start</code>, and a failing <code>Verify:</code> command <em>unticks</em> criteria the repository just declined to agree with.</p>
+
+    <p>Generalise those two properties across all five stages and you have the whole product.</p>
+
+    <figure id="pipeline">
+      <div class="scroll">
+        <svg viewBox="0 0 900 252" role="img" aria-label="Five pipeline stages — Intent, Specification, Design, Construction, Proof — each separated by a gate, with the artifact each stage produces named beneath it.">
+          <!-- top caption -->
+          <text x="16" y="20" font-family="IBM Plex Mono, monospace" font-size="10.5" letter-spacing="1.6" fill="var(--agent)">AGENTS DRAFT THE ARTIFACT →</text>
+
+          <!-- flow line -->
+          <line x1="16" y1="106" x2="878" y2="106" stroke="var(--rule)" stroke-width="1"></line>
+
+          <!-- STAGE BOXES -->
+          <g font-family="Spectral, Georgia, serif">
+            <rect x="16"  y="76" width="140" height="60" rx="3" fill="var(--surface)" stroke="var(--rule)"></rect>
+            <rect x="188" y="76" width="140" height="60" rx="3" fill="var(--surface)" stroke="var(--rule)"></rect>
+            <rect x="360" y="76" width="140" height="60" rx="3" fill="var(--surface)" stroke="var(--rule)"></rect>
+            <rect x="532" y="76" width="140" height="60" rx="3" fill="var(--surface)" stroke="var(--rule)"></rect>
+            <rect x="704" y="76" width="140" height="60" rx="3" fill="var(--surface)" stroke="var(--rule)"></rect>
+
+            <text x="86"  y="103" text-anchor="middle" font-size="16" font-weight="600" fill="var(--ink)">Intent</text>
+            <text x="258" y="103" text-anchor="middle" font-size="16" font-weight="600" fill="var(--ink)">Specification</text>
+            <text x="430" y="103" text-anchor="middle" font-size="16" font-weight="600" fill="var(--ink)">Design</text>
+            <text x="602" y="103" text-anchor="middle" font-size="16" font-weight="600" fill="var(--ink)">Construction</text>
+            <text x="774" y="103" text-anchor="middle" font-size="16" font-weight="600" fill="var(--ink)">Proof</text>
+          </g>
+
+          <g font-family="IBM Plex Mono, monospace" font-size="9.5" fill="var(--ink-3)" text-anchor="middle">
+            <text x="86"  y="122">what is worth</text><text x="86"  y="132">solving</text>
+            <text x="258" y="122">what “done”</text><text x="258" y="132">means</text>
+            <text x="430" y="122">where it goes,</text><text x="430" y="132">what it changes</text>
+            <text x="602" y="122">the work</text><text x="602" y="132">itself</text>
+            <text x="774" y="122">what the repo</text><text x="774" y="132">agreed to</text>
+          </g>
+
+          <!-- GATES -->
+          <g>
+            <rect x="163" y="72" width="14" height="68" rx="2" fill="var(--accent)"></rect>
+            <rect x="335" y="72" width="14" height="68" rx="2" fill="var(--accent)"></rect>
+            <rect x="507" y="72" width="14" height="68" rx="2" fill="var(--accent)"></rect>
+            <rect x="679" y="72" width="14" height="68" rx="2" fill="var(--accent)"></rect>
+            <rect x="851" y="72" width="14" height="68" rx="2" fill="var(--accent)"></rect>
+            <g fill="var(--paper)">
+              <rect x="166" y="102" width="8" height="8" rx="1"></rect>
+              <rect x="338" y="102" width="8" height="8" rx="1"></rect>
+              <rect x="510" y="102" width="8" height="8" rx="1"></rect>
+              <rect x="682" y="102" width="8" height="8" rx="1"></rect>
+              <rect x="854" y="102" width="8" height="8" rx="1"></rect>
+            </g>
+          </g>
+
+          <!-- gate labels above -->
+          <g font-family="IBM Plex Mono, monospace" font-size="9.5" fill="var(--accent)" text-anchor="middle" letter-spacing="0.4">
+            <text x="170" y="62">somebody bets</text>
+            <text x="342" y="62">falsifiable</text>
+            <text x="514" y="62">schema exists</text>
+            <text x="686" y="62">in budget</text>
+            <text x="858" y="62">repo agrees</text>
+          </g>
+
+          <!-- bottom caption, paired with the gates directly above it -->
+          <text x="16" y="160" font-family="IBM Plex Mono, monospace" font-size="10.5" letter-spacing="1.6" fill="var(--human)">↑ HUMANS OPEN THE GATES</text>
+
+          <!-- artifacts row -->
+          <line x1="16" y1="180" x2="878" y2="180" stroke="var(--rule-soft)" stroke-width="1"></line>
+          <text x="16" y="198" font-family="IBM Plex Mono, monospace" font-size="9.5" letter-spacing="1.4" fill="var(--ink-3)">ARTIFACT IN THE REPOSITORY</text>
+          <g font-family="IBM Plex Mono, monospace" font-size="10.5" fill="var(--ink-2)" text-anchor="middle">
+            <text x="86"  y="224">ideas/*.md</text>
+            <text x="258" y="224">docs/prd.md</text>
+            <text x="430" y="224">.project</text>
+            <text x="602" y="224">git commits</text>
+            <text x="774" y="224">.project-log/</text>
+          </g>
+          <g font-family="IBM Plex Mono, monospace" font-size="9" fill="var(--ink-3)" text-anchor="middle">
+            <text x="86"  y="238">problem + appetite</text>
+            <text x="258" y="238">criteria + Verify:</text>
+            <text x="430" y="238">components + schema</text>
+            <text x="602" y="238">attributed to tasks</text>
+            <text x="774" y="238">findings + checks</text>
+          </g>
+        </svg>
+      </div>
+      <figcaption>The five stages. Agents can draft any artifact; only a human moves work through a gate. Stages 2 and 4 exist today. Stage 3 exists as drawings but has no gate. Stages 1 and 5 are the work ahead.</figcaption>
+    </figure>
+
+    <h3>The one-line version</h3>
+    <p class="claim" style="font-size:24px;max-width:34ch;">Agents fill the stages. Humans open the gates.</p>
+    <p>That is the division of labour the whole product should express. It is why “assign this ticket to an AI” is the wrong primitive — it puts the agent in the human's slot instead of giving it its own. And it is why a gate that cannot refuse is worthless: if the only thing standing between a generated spec and generated code is another generation, you have built a machine for producing confident nonsense at scale.</p>
+  </div>
+</section>
+
+<!-- ============================================================ 05 -->
+<section class="sec">
+  <div class="rail"><b>05</b><span>Two economies</span></div>
+  <div class="body">
+    <h2>A person and an agent are not the same kind of worker</h2>
+
+    <p>You asked to “track each progress of AI and human separately”. That is not a reporting preference — it is the load-bearing primitive, because the two lanes obey different physics and any number averaged across them is meaningless.</p>
+
+    <div class="scroll">
+      <table class="lanes">
+        <thead>
+          <tr>
+            <th></th>
+            <th><span class="tag human">Human lane</span></th>
+            <th><span class="tag agent">Agent lane</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="who">Scarce resource</td><td class="sub">Attention, and it does not recover quickly</td><td class="sub">Tokens and wall clock, both purchasable</td></tr>
+          <tr><td class="who">Cost of a bad attempt</td><td class="sub">High — hours, and morale</td><td class="sub">Near zero — discard and re-run</td></tr>
+          <tr><td class="who">Parallelism</td><td class="sub">One, honestly</td><td class="sub">As many as you can review</td></tr>
+          <tr><td class="who">What you give it</td><td class="sub">Context, autonomy, and the reason why</td><td class="sub">A specification and a boundary</td></tr>
+          <tr><td class="who">Failure mode</td><td class="sub">Burnout, context-switching, silent blocking</td><td class="sub">Confident wrongness, at volume, plausibly formatted</td></tr>
+          <tr><td class="who">Right question</td><td class="sub">Is this person blocked?</td><td class="sub">Did this output survive contact with a human?</td></tr>
+          <tr><td class="who">Right metric</td><td class="sub">Flow efficiency, wait time, WIP</td><td class="sub">Attempts per acceptance, survival rate</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Five measurements that only this design can produce</h3>
+    <p>All of these fold out of the event log and the provenance ledger. None of them exists in any tool today, because no tool has a record of who wrote which line.</p>
+    <dl class="kv">
+      <dt>Attempts</dt><dd><strong>Runs per accepted change.</strong> Three agent runs to land one feature is the true cost, and it is invisible if you only count the merge.</dd>
+      <dt>Survival</dt><dd><strong>Fraction of agent-written lines that reach merge unmodified by a person.</strong> The single best quality signal available, and the honest replacement for “percentage of AI code”.</dd>
+      <dt>Revision</dt><dd><strong>How deeply a human rewrote agent output</strong> — a touch-up versus a rewrite. Volume says the agent contributed; depth says whether it helped.</dd>
+      <dt>Spec defect</dt><dd><strong>Runs that failed because the specification was ambiguous, not because the agent was poor.</strong> This is the number that tells you where to invest, and it is the one nobody measures.</dd>
+      <dt>Wait</dt><dd><strong>Time work spends in front of a person</strong> — decision latency plus review queue. On a project of this shape it is most of the calendar.</dd>
+    </dl>
+
+    <div class="note">
+      <b>Design rule.</b> Never average across lanes, and never publish a leaderboard of agent volume. Volume is trivially gameable by an agent and rewards exactly the wrong behaviour. Publish <em>survival</em>, which is not.
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 06 -->
+<section class="sec">
+  <div class="rail"><b>06</b><span>Five load-bearing</span><span>mechanisms</span></div>
+  <div class="body">
+    <h2>The parts that make it more than a nicer board</h2>
+    <p>Each of these is a mechanism rather than a screen, and each has a property no competitor can copy without rebuilding their foundation.</p>
+
+    <!-- A -->
+    <div class="mech">
+      <div class="mech-head"><span class="letter">A</span><h3>The provenance ledger</h3></div>
+      <p><strong>The problem.</strong> Git records who <em>committed</em>, never who <em>wrote</em>. In the normal case a person commits an agent's work, so <code>git blame</code> actively lies. Every “percentage of AI-written code” figure on the market is inferred from commit-size heuristics, IDE telemetry sampling or suggestion-acceptance rates. All of it is soft, and all of it is gameable.</p>
+
+      <p><strong>What you have that nobody else does.</strong> <code>lib/project/ingest.ts</code> already normalises harness hooks onto the OpenTelemetry GenAI conventions and captures, per tool call, the paths actually written — tied to a run whose <code>actor.kind</code> is <span class="tag human">human</span> or <span class="tag agent">agent</span> and whose model and harness are known. That is a <em>record</em>, not an inference. The comment in that file already makes the argument: “a report is a claim and a hook is a record.”</p>
+
+      <p><strong>The extension.</strong> Capture byte ranges, not just paths. An <code>Edit</code> hook payload carries the old and new strings; a <code>Write</code> carries the whole file. From that you maintain, per file, a line-to-run map — rebased forward on every subsequent edit the way a blame tree is. The result: for any line in the working tree you can name the run that wrote it, the model, the task, the criterion it claimed to satisfy, and whether a human has since revised it.</p>
+
+      <dl class="kv">
+        <dt>Lives in</dt><dd><code>.project-cache/provenance/</code> — derived and regenerable from the log, so your rule holds: deleting the cache may only ever change latency, never an answer.</dd>
+        <dt>Honest limit</dt><dd>Exact for edits made through an instrumented harness. A human editing in vim outside the harness falls back to blame-based inference, and <strong>must be labelled as inferred</strong> in every surface. A provenance system that hides its own uncertainty is worse than none.</dd>
+        <dt>Unlocks</dt><dd>The VS&nbsp;Code gutter, both AI-versus-human diffs, and all five measurements above. This is why it is phase one.</dd>
+      </dl>
+    </div>
+
+    <!-- B -->
+    <div class="mech">
+      <div class="mech-head"><span class="letter">B</span><h3>The gate, as an abstraction</h3></div>
+      <p>You have two gates and they are hard-coded. Promote the idea: a <strong>gate</strong> is a named predicate on a stage transition that returns a refusal, a reason, and — the part that matters — <em>what would satisfy it</em>.</p>
+      <ul>
+        <li><span class="tag have">have</span> &nbsp;A full column refuses <code>task start</code>, naming itself and the numbers.</li>
+        <li><span class="tag have">have</span> &nbsp;A failing <code>Verify:</code> command unticks the criteria it refused.</li>
+        <li><span class="tag none">new</span> &nbsp;<strong>Falsifiability</strong> — a feature cannot leave Specification while a criterion is unfalsifiable. “Checkout should be fast” is refused; “p95 under 400ms, proven by <code>npm run bench:checkout</code>” passes.</li>
+        <li><span class="tag none">new</span> &nbsp;<strong>Design completeness</strong> — a feature cannot enter Construction until the components it touches exist in the catalogue and any schema change has a migration.</li>
+        <li><span class="tag none">new</span> &nbsp;<strong>Merge</strong> — the composite: criteria proven, no unresolved high finding, no new drift, no boundary violation.</li>
+      </ul>
+      <div class="note"><b>The rule that keeps gates from becoming bureaucracy:</b> every refusal must name the smallest thing that would turn it into a yes. A gate that only says no is process; a gate that says “no, and here is the one line that would fix it” is a tool. Where the fix is mechanical, offer to make it.</div>
+    </div>
+
+    <!-- C -->
+    <div class="mech">
+      <div class="mech-head"><span class="letter">C</span><h3>The reviewer that reads the specification</h3></div>
+      <p>You asked for “an AI review system like CodeRabbit”. Build something they structurally cannot: <strong>a reviewer that knows what the change was supposed to do.</strong> CodeRabbit, Greptile, Bugbot and Copilot review all read a diff and apply general good taste, because nothing in their pipeline connects a pull request to acceptance criteria. Your <code>lib/project/review.ts</code> already assembles a packet containing the criteria, their check results, the owning components and the reading order. That packet is the moat.</p>
+
+      <p>Three tiers, cheapest first — which is also the noise architecture:</p>
+      <dl class="kv">
+        <dt>Tier 0</dt><dd><strong>Deterministic, no model.</strong> Grounding (exists — a finding off the diff is dropped before anyone sees it), architecture drift, boundary violations, failing verify, a schema change with no migration. <em>Zero false positives by construction</em>, which is why it is a floor rather than a preference.</dd>
+        <dt>Tier 1</dt><dd><strong>Specification conformance.</strong> For each criterion this change claims: does the diff implement it, and if not, which one does it miss? A finding here can <em>untick a criterion</em>, exactly as a failing verify does. This is the differentiated tier and nobody has it.</dd>
+        <dt>Tier 2</dt><dd><strong>Craft.</strong> Bugs, security, performance. Commodity — match the field, do not try to beat it. Run inside the component boundary, ground every finding, and cap the output.</dd>
+      </dl>
+
+      <p><strong>Budget the review's own attention cost.</strong> A review that emits forty comments costs more attention than it saves, which is the well-documented failure of this whole product category. Cap findings per change, rank by severity × blast radius, and put the remainder behind a “not shown” list rather than in the reader's face. The reviewer needs a token budget too — a reviewer that costs more than the work it reviewed is a net loss, and yours can enforce that because runs already have budgets.</p>
+
+      <p><strong>Learn in the open.</strong> A dismissed finding is an event. Suppression patterns accumulate per component and are stored in <code>.project</code>, where they show up in a diff and can be argued with in code review — unlike the opaque “learnings” competitors accumulate on their own servers.</p>
+    </div>
+
+    <!-- D -->
+    <div class="mech">
+      <div class="mech-head"><span class="letter">D</span><h3>Drift, generalised — this is your architecture-and-schemas stage</h3></div>
+      <p>You already do the hard version once: <code>lib/project/deps.ts</code> diffs the architecture canvas against the real import graph, and reports coupling that exists and is not drawn. That is an instance of a general mechanism — <strong>a drawn claim, checked against what the code actually does</strong> — and it is what makes a design stage worth having rather than a folder of stale pictures.</p>
+      <p>Three more instances, all the same shape:</p>
+      <ul>
+        <li><strong>Schema drift.</strong> The ER diagram against <code>prisma/schema.prisma</code>, the SQL DDL, or the migration directory. You already parse both formats in <code>lib/arch/import/</code> — you import one way and never compare back. Closing that loop is a small amount of code for the largest single piece of the stage you asked for.</li>
+        <li><strong>Contract drift.</strong> The API surface drawn on the canvas against the actual route handlers, exported types or OpenAPI document. Agents change contracts casually; this is the check that catches it.</li>
+        <li><strong>Ownership drift.</strong> Declared <code>Paths:</code> against the files that exist. <code>coverage</code> and <code>catalogWarnings</code> in <code>component.ts</code> already compute most of this — surface unclaimed source as drift, because unowned code is where agent output goes to rot.</li>
+      </ul>
+      <div class="note">This is the honest answer to “we should have system architecture and schemas before development begins”. Documented architecture decays. <strong>Checked architecture does not</strong>, and the check is the whole product difference.</div>
+    </div>
+
+    <!-- E -->
+    <div class="mech">
+      <div class="mech-head"><span class="letter">E</span><h3>The critical path of waiting — your Gantt, made honest</h3></div>
+      <p>You asked for Gantt. Gantt is two things bolted together, and they have aged very differently. Its <strong>dependency graph</strong> is genuinely valuable and you should build it. Its <strong>durations and resource levelling</strong> are fiction when the implementation lane is elastic — you cannot schedule a resource you can buy more of at will.</p>
+      <p>So: model dependencies between features explicitly (a <code>Requires:</code> line in the PRD, parsed like <code>Paths:</code> and <code>Verify:</code> already are), compute the critical path — but <strong>weight the edges by waiting, not by working</strong>. Decision latency. Review queue depth. Time spent refused at a gate. Time blocked on a person.</p>
+      <p>What you get is a chart of where the project is <em>actually</em> stuck, which on a team using agents is nearly always a human decision or a review backlog. That is a chart no other tool draws, and it is the legitimate successor to the Gantt chart rather than a nostalgic copy of one. Your <code>next</code> command already ranks individual work by age weighted by blast radius; this is that same idea at project scale.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 07 -->
+<section class="sec">
+  <div class="rail"><b>07</b><span>What you</span><span>already have</span></div>
+  <div class="body">
+    <h2>Do not rebuild these — they are the hard part and they are done</h2>
+    <p>I read the codebase before writing any of this. Several of the invariants already in it are things the commercial field does not have and mostly cannot retrofit. The redesign extends them; it should not touch them.</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Invariant</th><th>Where</th><th>Why it matters more now</th></tr></thead>
+        <tbody>
+          <tr><td class="who">Two actor kinds, natively</td><td class="sub"><code>RunActor.kind: "human" | "agent"</code>, with model and harness — <code>run.ts</code></td><td class="sub">The two-lane split you asked for already exists at the data-model level. Nothing else in the field distinguishes them below the assignee field.</td></tr>
+          <tr><td class="who">Status is derived, not stored</td><td class="sub"><code>roadmap.ts</code>, <code>prd.ts</code></td><td class="sub">An agent ticking a checkbox moves the board; moving a card never rewrites the document. This is what makes agents first-class writers rather than API clients.</td></tr>
+          <tr><td class="who">Five ranked attribution signals</td><td class="sub"><code>git-link.ts</code></td><td class="sub">And the refusal that proves the design was thought about: path overlap names a <em>component</em>, never a task, because an inference must not masquerade as a claim.</td></tr>
+          <tr><td class="who">Hash-chained, per-actor event log</td><td class="sub"><code>.project-log/</code>, <code>events.ts</code></td><td class="sub">Two writers never touch the same file, so a merge has nothing to resolve — not by CRDT, by construction. Every metric is a fold over it, so nothing is self-reported.</td></tr>
+          <tr><td class="who">Executable acceptance criteria</td><td class="sub"><code>verify.ts</code>, the <code>Verify:</code> line</td><td class="sub">A failing check <em>unticks</em> what it refuses. When agents do the ticking, this is the difference between a board and a fiction.</td></tr>
+          <tr><td class="who">Paths as the universal join key</td><td class="sub"><code>component.ts</code></td><td class="sub">Declared once, and commits, tasks, features, runs and findings all resolve through it. This is Google's <code>OWNERS</code> idea, done properly, and it is what makes boundaries enforceable.</td></tr>
+          <tr><td class="who">Grounded findings</td><td class="sub"><code>review.ts</code> — <code>ground()</code></td><td class="sub">A finding off the diff is dropped with no model involved. A mechanical floor under the false-positive rate that competitors approach with prompt engineering.</td></tr>
+          <tr><td class="who">Budget and boundary on a run</td><td class="sub"><code>run.ts</code></td><td class="sub">Over budget <em>blocks</em> rather than failing the session; a write outside the boundary is refused and reported, never silently counted.</td></tr>
+          <tr><td class="who">File-backed, in the repository</td><td class="sub"><code>.project</code>, <code>docs/prd.md</code></td><td class="sub">The reason a VS&nbsp;Code extension is a weekend rather than a quarter: it is a second client over the same files, with no sync protocol and no second source of truth.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>And the honest gaps against the vision</h3>
+    <ul>
+      <li><span class="tag none">missing</span> &nbsp;<strong>No ideation stage at all.</strong> The PRD begins already written. There is nowhere for an idea to live before it is a feature.</li>
+      <li><span class="tag none">missing</span> &nbsp;<strong>Nothing produces findings.</strong> <code>report_findings</code> accepts them and <code>ground()</code> filters them, but no reviewer generates them. The pipe is laid and empty.</li>
+      <li><span class="tag part">partial</span> &nbsp;<strong>The design stage has drawings but no gate.</strong> Nothing stops a task starting before its component exists or its schema is drawn, and <code>import_schema</code> is one-way.</li>
+      <li><span class="tag part">partial</span> &nbsp;<strong>Provenance stops at the file.</strong> Runs record which files they touched, not which lines. Everything AI-versus-human depends on closing that.</li>
+      <li><span class="tag none">missing</span> &nbsp;<strong>No dependency model.</strong> No feature blocks another, so there is no critical path to compute.</li>
+      <li><span class="tag none">missing</span> &nbsp;<strong>No editor surface.</strong> Everything is a browser tab or a terminal, which is not where the work happens.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================================================ 08 -->
+<section class="sec">
+  <div class="rail"><b>08</b><span>The editor</span><span>surface</span></div>
+  <div class="body">
+    <h2>The extension is a second client, not a second system</h2>
+    <p>Because the store is files in the repository, the extension reads <code>.project</code>, <code>.project-log/</code> and <code>docs/prd.md</code> directly and shells out to the existing CLI for anything heavy. No server, no sync, no second source of truth. This is the payoff of a decision you already made.</p>
+
+    <h3>The headline: three diffs git cannot give you</h3>
+    <p>Register a <code>TextDocumentContentProvider</code> on a virtual scheme — <code>companion-run:</code> — that reconstructs file state from the event log, then hand it to the built-in <code>vscode.diff</code>. That yields diffs no git command can produce, because a run is not a commit:</p>
+    <ul>
+      <li><strong>Since this run started.</strong> What the agent changed in this session, whether or not it has been committed.</li>
+      <li><strong>Agent-only.</strong> The working tree with human-attributed hunks removed.</li>
+      <li><strong>Mine-only.</strong> The inverse — what <em>you</em> changed, with the agent's contribution subtracted out. This is the one people will actually open every day.</li>
+    </ul>
+
+    <h3>The gutter</h3>
+    <p><code>TextEditorDecorationType</code> for a provenance stripe and a faint tint; hovering names the run, model, task and the criterion it claimed to satisfy.</p>
+
+    <div class="prov">
+      <div class="prov-bar">
+        <i><u style="background:var(--agent)"></u> agent</i>
+        <i><u style="background:var(--human)"></u> human</i>
+        <i><u style="background:linear-gradient(var(--agent) 0 50%, var(--human) 50% 100%)"></u> agent, revised</i>
+        <i><u style="background:var(--rule)"></u> inferred</i>
+        <i style="margin-left:auto;color:var(--ink-3)">lib/project/verify.ts</i>
+      </div>
+      <div class="prov-code">
+        <div class="pl u"><span class="g"></span><span class="n">41</span><span class="c"><span class="kw">export const</span> runCheck = (feature: Feature) =&gt; {</span></div>
+        <div class="pl a"><span class="g"></span><span class="n">42</span><span class="c">  <span class="kw">const</span> command = feature.verify;</span></div>
+        <div class="pl a"><span class="g"></span><span class="n">43</span><span class="c">  <span class="kw">if</span> (!command) <span class="kw">return</span> { ok: <span class="st">true</span>, skipped: <span class="st">true</span> };</span></div>
+        <div class="pl r"><span class="g"></span><span class="n">44</span><span class="c">  <span class="kw">const</span> result = spawnSync(command, { shell: <span class="st">true</span>, timeout: <span class="st">120_000</span> });</span></div>
+        <div class="pl a"><span class="g"></span><span class="n">45</span><span class="c">  <span class="kw">if</span> (result.status !== <span class="st">0</span>) untick(feature, result);</span></div>
+        <div class="pl h"><span class="g"></span><span class="n">46</span><span class="c">  <span class="st">// a check that times out is a failure, not a pass</span></span></div>
+        <div class="pl h"><span class="g"></span><span class="n">47</span><span class="c">  <span class="kw">if</span> (result.error?.code === <span class="st">"ETIMEDOUT"</span>) untick(feature, result);</span></div>
+        <div class="pl u"><span class="g"></span><span class="n">48</span><span class="c">  <span class="kw">return</span> { ok: result.status === <span class="st">0</span> };</span></div>
+        <div class="pl u"><span class="g"></span><span class="n">49</span><span class="c">};</span></div>
+      </div>
+    </div>
+    <p style="font-family:var(--mono);font-size:11.5px;color:var(--ink-3);max-width:70ch;margin-top:12px;">Illustration of the gutter, not a real capture. Line&nbsp;44 is the interesting case: the agent wrote it and a human raised the timeout. Line&nbsp;46–47 is a human catching a case the agent missed — <em>that</em> is the signal worth measuring, and today nothing anywhere records it.</p>
+
+    <h3>The rest of the surface, mapped to real APIs</h3>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>What the user sees</th><th>VS Code API</th></tr></thead>
+        <tbody>
+          <tr><td class="sub"><strong>Attention, board, roadmap, runs, findings</strong> in the sidebar — tasks split by lane, features shown as proven / failing / claimed</td><td class="who">TreeDataProvider<br><span style="color:var(--ink-3)">WebviewViewProvider for the canvas and flow charts</span></td></tr>
+          <tr><td class="sub"><strong>Review findings as real comment threads</strong> on the lines they anchor to, with a reply that posts back through <code>report_findings</code></td><td class="who">CommentController<br><span style="color:var(--ink-3)">the same API the GitHub PR extension uses</span></td></tr>
+          <tr><td class="sub"><strong>Drift, boundary violations and failing verifies</strong> in the Problems panel, where a developer already looks</td><td class="who">DiagnosticCollection</td></tr>
+          <tr><td class="sub"><strong>Above each PRD heading:</strong> “3 criteria · verify passing · 2 tasks · 1 run in flight”, and tick a criterion from the editor</td><td class="who">CodeLens</td></tr>
+          <tr><td class="sub"><strong>A badge on files an agent is writing right now</strong></td><td class="who">FileDecorationProvider</td></tr>
+          <tr><td class="sub"><strong>Runs in flight and spend</strong>, always visible; click to block or approve</td><td class="who">StatusBarItem</td></tr>
+          <tr><td class="sub"><strong><code>@companion</code> in chat</strong>, and the same operations callable by Copilot or Claude as tools</td><td class="who">Chat Participant API<br><span style="color:var(--ink-3)">lm.registerTool — mirrors your 28 MCP tools</span></td></tr>
+          <tr><td class="sub"><strong>Everything updates live</strong> as the CLI or another agent writes</td><td class="who">FileSystemWatcher<br><span style="color:var(--ink-3)">on .project and .project-log/</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <details>
+      <summary>Limits worth designing around, not discovering later</summary>
+      <p>Webviews are isolated — everything crosses a <code>postMessage</code> boundary, so the React&nbsp;Flow canvas can be reused but not simply imported. The extension host is single-threaded and shared with every other extension, so drift computation and provenance folding must go out to the CLI as a subprocess rather than run inline; a slow extension host is the most common reason an extension gets uninstalled. There is no arbitrary gutter UI beyond decorations and a fixed icon slot. Comment threads are ephemeral unless you persist them — you already do, in <code>.project</code>. And web extensions on vscode.dev have no filesystem access at all, so this is desktop-first by construction; say so up front rather than half-supporting it.</p>
+    </details>
+  </div>
+</section>
+
+<!-- ============================================================ 09 -->
+<section class="sec">
+  <div class="rail"><b>09</b><span>What to refuse</span></div>
+  <div class="body">
+    <h2>The conventions worth deliberately not having</h2>
+    <p>A tool is defined as much by what it declines to model. Each refusal below should be a stated position, not an omission — and several of them are already the position this codebase takes.</p>
+
+    <div class="reject">
+      <div><b>story points</b><span>Sizing a task by how long a human would take, when a human is not the one doing it. Use appetite — fixed time, variable scope — which survives the change.</span></div>
+      <div><b>velocity</b><span>Throughput averaged across two lanes with different physics. The number is arithmetically valid and means nothing.</span></div>
+      <div><b>burndown</b><span>Measures adherence to a plan rather than the health of a system. A cumulative flow diagram over the event log answers the same question honestly.</span></div>
+      <div><b>sprint commitment</b><span>Keep the phase as a container for a <em>goal</em>. Drop the capacity arithmetic — you are no longer committing a fixed supply of hours.</span></div>
+      <div><b>manual status</b><span>Already refused, and it is the best decision in the codebase. Keep refusing it everywhere the new stages add state.</span></div>
+      <div><b>assignee = a person</b><span>An assignment is a lane plus optionally an identity. Putting an agent in a person's slot is what makes every other tool's agent support feel bolted on.</span></div>
+      <div><b>Gantt durations</b><span>Keep the dependency graph, discard resource levelling. You cannot schedule a resource you can buy more of mid-sprint.</span></div>
+      <div><b>agent leaderboards</b><span>“Our AI wrote 60% of the code” rewards volume, which an agent can produce infinitely. Publish survival rate instead — it cannot be gamed by generating more.</span></div>
+      <div><b>LGTM without criteria</b><span>Approval and correctness are different signals; Critique separates them for good reason. An approval that does not name what it approved is theatre.</span></div>
+      <div><b>a hosted work database</b><span>The moment the board lives somewhere the repository does not, it starts drifting from the repository. That is the whole disease.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 10 -->
+<section class="sec">
+  <div class="rail"><b>10</b><span>Build order</span></div>
+  <div class="body">
+    <h2>Six phases, and why this order rather than the narrative one</h2>
+    <p>Your vision reads ideation → design → development. The build order is close to the reverse, for two reasons. First, <strong>you can hand-write a PRD today but you cannot hand-derive provenance</strong> — the later stages depend on the earlier machinery, not the other way round. Second, <strong>build the parts nothing else in the field has, first</strong>. Ideation surfaces and dependency charts are commodity; a line-level provenance ledger and a spec-conformance reviewer are not.</p>
+
+    <div class="phase">
+      <div class="num">09</div>
+      <div>
+        <h3>Provenance</h3>
+        <p>Line-level authorship from harness hooks, and the first two-lane measurements. Nothing else in the plan can be built honestly without it, and it is the only phase with no external precedent to copy from.</p>
+        <div class="ships"><b>Ships</b> &nbsp;byte-range capture in <code>ingest.ts</code> · the line-to-run map in <code>.project-cache/</code> · <code>blame --provenance</code> in the CLI · survival and revision-depth metrics · inferred-versus-recorded labelling everywhere</div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="num">10</div>
+      <div>
+        <h3>The reviewer</h3>
+        <p>Three tiers, with tier&nbsp;1 — does this diff satisfy the criteria it claims? — as the differentiator. Findings that untick, suppressions that live in a diff, and a budget on the reviewer itself. Works in the web app before any extension exists.</p>
+        <div class="ships"><b>Ships</b> &nbsp;tier&nbsp;0 deterministic findings · spec-conformance review against the existing packet · finding → untick, via the <code>verify</code> mechanism · per-component learned suppressions · a cap and a ranking on what a human is shown</div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="num">11</div>
+      <div>
+        <h3>The extension</h3>
+        <p>The second client. Needs 09 to render the gutter and 10 to have findings to render. This is the phase that changes daily behaviour, because it puts all of the above where the work actually happens.</p>
+        <div class="ships"><b>Ships</b> &nbsp;the three diffs · provenance gutter · findings as comment threads · drift in Problems · CodeLens on the PRD · runs and spend in the status bar · <code>@companion</code> chat participant</div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="num">12</div>
+      <div>
+        <h3>Design</h3>
+        <p>The architecture-and-schemas stage you asked for, made checkable rather than documented. Mostly a matter of closing loops that are already half-built.</p>
+        <div class="ships"><b>Ships</b> &nbsp;schema drift against Prisma / DDL / migrations · contract drift · ownership drift for unclaimed source · a design record per feature · the gate that refuses Construction without one</div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="num">13</div>
+      <div>
+        <h3>Intent</h3>
+        <p>Ideas, bets and appetite, with the falsifiability gate in front of the PRD. Deliberately last of the core five: it is the stage a human can do on paper today, and it is worth designing once you have watched the rest of the pipeline run.</p>
+        <div class="ships"><b>Ships</b> &nbsp;an idea as a repository artifact · appetite rather than estimate · a betting surface · agent-drafted criteria a human accepts or rejects · the gate that refuses an unfalsifiable criterion</div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="num">14</div>
+      <div>
+        <h3>Waiting</h3>
+        <p>Dependencies between features, and the critical path weighted by waiting rather than working. The honest successor to the Gantt chart, and the surface that finally shows a manager where the project is actually stuck.</p>
+        <div class="ships"><b>Ships</b> &nbsp;<code>Requires:</code> parsed from the PRD · the dependency DAG · critical path by decision latency and queue depth · the project-scale view of the attention router</div>
+      </div>
+    </div>
+
+    <div class="note" style="margin-top:28px;">
+      <b>One structural change worth making early, in phase 09.</b> Promote <code>Verify:</code> and the WIP limit into a single <em>gate</em> abstraction before you add the third and fourth gate. Five hard-coded gates will be five different shapes; one abstraction with five instances stays one shape — and it gives you a single place to enforce the rule that a refusal must always name its remedy.
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 11 -->
+<section class="sec">
+  <div class="rail"><b>11</b><span>Risks and</span><span>open questions</span></div>
+  <div class="body">
+    <h2>Where I think this is weakest</h2>
+    <dl class="kv">
+      <dt>Provenance</dt><dd>Accurate only through an instrumented harness. If your team edits substantially outside one, the ledger degrades to inference and the headline feature loses its claim to being a record. <strong>Test this early on real usage</strong> before building the gutter on top of it.</dd>
+      <dt>Review cost</dt><dd>A reviewer that spends more than the work it reviewed is a net loss. Budget it from day one and report its cost next to its findings, so the trade is visible rather than assumed.</dd>
+      <dt>Gate friction</dt><dd>Every gate is somewhere a team learns to route around. Each one must earn its refusal, and you should instrument how often each is overridden. A gate overridden 90% of the time is not a gate.</dd>
+      <dt>Scale</dt><dd>The event log shards per actor and merges cleanly, but <code>.project</code> is one file — already 48KB at eight phases — and the PRD is one document. At fifty engineers and four hundred features, both become contention points. Worth a plan before it is a problem.</dd>
+      <dt>Scope</dt><dd>The model is single-repository. Multi-repo and multi-service organisations are where Backstage-class tools earn their keep, and this design has no answer yet.</dd>
+      <dt>The reviewer's floor</dt><dd>Grounding drops findings off the diff — but a genuinely important finding <em>is</em> often off-diff (“this change is fine, but it makes the caller in another file wrong”). The floor is right as a default and needs a deliberate escape hatch.</dd>
+    </dl>
+
+    <h3>Two questions only you can answer</h3>
+    <ul>
+      <li><strong>Is this a product or your team's tool?</strong> Everything above works either way, but the answer changes phase 13 completely — a product needs an ideation surface that a non-engineer can use, and an internal tool does not.</li>
+      <li><strong>Single-player or team?</strong> The event log and merge driver are built for teams, but every surface today assumes one person at a terminal. Deciding this determines whether phase 11 needs presence, assignment and notification at all.</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <p>Written 6 September 2026 against <code>component-model-and-event-log</code> at <code>3e1a167</code>. Grounded in a direct reading of <code>lib/project/</code>, <code>cli/index.ts</code>, <code>mcp/server.ts</code> and <code>docs/prd.md</code>; the market survey in §03 is from model knowledge to mid-2026 and was not verified against primary sources — the fifteen-agent research pass intended to do that hit an account limit and returned nothing. Re-run it before this is used externally.</p>
+</footer>
+
+</div>
