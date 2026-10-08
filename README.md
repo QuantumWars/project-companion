@@ -141,6 +141,63 @@ cloning:
 npm run build:tools
 ```
 
+## Gates, sprints and the PM cockpit
+
+Version 0.2.0 adds what a gated development harness such as devolps needs: the
+work stops at gates that only a person opens, and a project manager who does not
+read code can follow it.
+
+**Gates.** A gate is requested with the documents it covers, and the approval is
+bound to their SHA-256 hashes. If a document changes after the approval, the gate
+goes stale and must be approved again. A merge gate is bound to the pull
+request's head commit.
+
+```bash
+project-companion gate request prd checkout --prd-section checkout
+project-companion gate approve prd checkout --via prompt:<id>   # a person's decision
+project-companion gate track checkout full --via prompt:<id>    # full, quick or bugfix
+project-companion gate check --task <id> --stage build          # may this work start?
+project-companion gate status --json                            # what waits for a decision
+project-companion gate log --json                               # every decision, with its channel
+```
+
+Every decision records its channel (`--via`), so a harness can match each one to
+the command a person typed. A run is marked merged only when its pull request has
+an approved merge gate.
+
+**Sprints, cards and updates.**
+
+```bash
+project-companion sprint add 2026-w42 --start 2026-10-12 --end 2026-10-16 --goal "Guest receipts"
+project-companion sprint commit 2026-w42 --tasks <id,id>        # added work is kept apart
+project-companion card open --subject checkout --ask "SES or Mailgun?" --options "ses|mailgun"
+project-companion task block <id> --reason "Waiting for API keys" --cause outside --unblocker PM
+project-companion update draft 2026-w42 --health at-risk --reason "Keys are late"
+project-companion pr link <task id> <pr number>                  # through gh; no token is stored
+```
+
+The PM's answer to a card and the published update are decisions, so they take
+`--via` like gate approvals.
+
+**Metrics, split by lane.** Agent work and human work are measured apart and
+never added together:
+
+```bash
+project-companion flow --lane agent      # cycle time, attempts per accepted change, wait on a person
+project-companion flow --lane human      # points and velocity
+project-companion gate metrics           # wait time and override share for each gate
+```
+
+**The cockpit** is one read-only page for the project manager, at
+`/project/cockpit`. It answers, in plain words: what needs a decision, how each
+epic is doing, how the sprint is going, what is blocked and why, what shipped this
+week, the weekly update, and what each agent is doing. Each card shows the exact
+command that answers it, with a copy button. The terminal gets the same model from
+`project-companion cockpit --json`.
+
+The development server listens on 127.0.0.1 only, and the cockpit's API accepts
+reads only.
+
 ## How a project is stored
 
 ```
@@ -169,7 +226,7 @@ Projects created before the single-file format keep opening unchanged;
 
 ```bash
 npm run dev          # the app
-npm test             # 335 assertions across nineteen suites
+npm test             # 404 tests across 21 suites
 npm run build:tools  # rebuild the CLI and MCP bundles
 npm run build:icons  # needed once before the typecheck below
 npx tsc --noEmit     # typecheck, CLI and MCP included
