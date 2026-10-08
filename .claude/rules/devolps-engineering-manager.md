@@ -35,7 +35,12 @@ This rule loads in every session of a repository that uses devolps. The main ses
 
 Put these lines at the top of the agent's prompt. The spawn guard reads them.
 - A builder (frontend, backend, QA, devops): `Task: <task id>`.
+- The qa-engineer before the build: `Epic: <epic id>` and `Stage: prd` for the testability check, or
+  `Task: <task id>` and `Stage: bugfix` for a bug spec.
 - The product-manager or architect: `Epic: <epic id>` and `Stage: <idea|prfaq|prd|design|backlog>`.
+
+Each role agent's own copy starts from the commit you have checked out (`worktree.baseRef: "head"`). Check out the
+right branch, and commit what the agent must read, before you start it.
 
 ## How to talk to the PM
 
