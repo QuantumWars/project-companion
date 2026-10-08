@@ -36,6 +36,9 @@ Notes:
   `TS2307: Cannot find module './icon-data.json'`.
 - `npm test` sets its own git name and email inside the tests, so it needs
   no git configuration on the machine or runner.
+- `npm test` runs every suite with `PROJECT_COMPANION_NOTIFY=off`, so tests
+  never show a real notification. A suite that starts a child process must
+  spread `process.env` into the child's `env`, or the child loses the switch.
 - Use Node 22 locally to match the runner.
 
 ## Reading a failure

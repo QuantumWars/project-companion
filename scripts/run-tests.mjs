@@ -55,7 +55,7 @@ try {
 
     process.stdout.write(`\n${file}\n`);
     try {
-      execFileSync(process.execPath, [bundle], { stdio: "inherit", cwd: ROOT });
+      execFileSync(process.execPath, [bundle], { stdio: "inherit", cwd: ROOT, env: { ...process.env, PROJECT_COMPANION_NOTIFY: "off" } });
     } catch {
       failed++;
     }
