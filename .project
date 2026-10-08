@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-08T21:57:23.161Z",
-  "revision": 231,
+  "updatedAt": "2026-10-08T22:09:24.917Z",
+  "revision": 233,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1940,8 +1940,15 @@
       "points": 1,
       "role": "devops-sre",
       "createdAt": "2026-10-08T16:42:12.477Z",
-      "updatedAt": "2026-10-08T21:57:23.161Z",
-      "order": 0
+      "updatedAt": "2026-10-08T21:57:56.708Z",
+      "order": 0,
+      "pr": {
+        "number": 10,
+        "url": "https://github.com/QuantumWars/project-companion/pull/10",
+        "state": "OPEN",
+        "headSha": "b086e9073dfc60eae7d7d0f44e771fa2ed0879b4",
+        "syncedAt": "2026-10-08T21:57:56.707Z"
+      }
     },
     {
       "id": "0c8e6562",
@@ -1978,7 +1985,7 @@
     {
       "id": "8e6e5a71",
       "title": "Pass decision text to osascript only as arguments",
-      "description": "da-t4. Criteria: DA-02.4 (argument half). Tests: 'DA-02.4: osascript passes every argument after -- unchanged' (required, darwin only); 'DA-02.4: notifierArgs gives 10 items, text only after --'; 'TH-3: notifierPath defaults to /usr/bin/osascript and takes the override' (both cases from design.md:445-446: the default, and PROJECT_COMPANION_NOTIFIER \"/x\" gives \"/x\"). Verify: npm test -- notify. Creates lib/project/notify.ts (constants, notifierPath, notifierArgs, dispatch). Lines: ~90 (source: architect hand-off; not checked). Depends on: da-t2.",
+      "description": "da-t4. Criteria: DA-02.4 (argument half). Tests: 'DA-02.4: osascript passes every argument after -- unchanged' (required, darwin only); 'DA-02.4: notifierArgs gives 10 items, text only after --'; 'TH-3: notifierPath defaults to /usr/bin/osascript and takes the override' (both cases from design.md:445-446: the default, and PROJECT_COMPANION_NOTIFIER \"/x\" gives \"/x\"). Verify: npm test -- notify. Creates lib/project/notify.ts (constants, notifierPath, notifierArgs, dispatch). Lines: ~90 (source: architect hand-off; not checked). Depends on: da-t2.\n\nTest rule from the PR #10 security review (finding 1, TH-19, low; EM, 2026-10-09): the off switch guards only notifyDecision, not dispatch(program, args) (design.md:287). Tests call dispatch only with notifierPath(stubEnv(...)), never with NOTIFIER or notifierPath(process.env), or a test run can show a real banner on the PM's Mac. QA check at review: grep 'dispatch(' tests/notify.test.ts and confirm every call uses a stubEnv path. CI also runs on macos-latest (card c-18a31a), so there the off switch, not the platform check, stops dispatch.",
       "status": "backlog",
       "componentId": "notifier",
       "featureId": "notify-safety",
@@ -1988,7 +1995,7 @@
       "points": 2,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.781Z",
-      "updatedAt": "2026-10-08T16:50:03.368Z",
+      "updatedAt": "2026-10-08T22:09:24.917Z",
       "order": 9
     },
     {
