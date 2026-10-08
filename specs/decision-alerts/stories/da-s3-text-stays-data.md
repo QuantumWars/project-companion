@@ -11,7 +11,8 @@ Verify: `npm test -- notify` (requirements, "Requirements": the suite `tests/not
 Named test (design 3.4, required): `DA-02.4: osascript passes every argument after -- unchanged`.
 Test note (requirements, DA-02): "DA-02.4 opens a card whose question contains `"`, `\`, a line break and AppleScript text. The stub must receive the text unchanged, and the text must reach the system notifier only as an argument, never inside script source."
 ## Tasks
-- (the EM adds task ids after the architect proposes tasks)
+- 8e6e5a71 (da-t4) — Pass decision text to osascript only as arguments — role: backend-engineer — component: notifier
+- Note: DA-02.4: the stub half is proved in 6042a875 (da-t8, story da-s5), because it needs the CLI calls.
 ## Done means
 - Every criterion passes its check
 - Tests pass

@@ -11,7 +11,8 @@ Estimate: 3 points, because the change is a new module of about 70 lines with a 
 Verify: `npm test -- notify` (requirements, "Requirements": the suite `tests/notify.test.ts` proves every criterion).
 Test notes (requirements, DA-04): "DA-04.1 checks one line for each decision, once for each outcome." "DA-04.2 runs `git check-ignore` on the record path."
 ## Tasks
-- (the EM adds task ids after the architect proposes tasks)
+- 398705ee (da-t3) — Add the notification record with a symlink-safe append — role: backend-engineer — component: notifier
+- 1b3763e7 (da-t9) — Prove one record line per decision for each outcome — role: qa-engineer — component: notifier
 ## Done means
 - Every criterion passes its check
 - Tests pass

@@ -10,7 +10,8 @@ Estimate: 1 point, because the change is one `env` option on the suite call in `
 Verify: `npm test -- notify` (requirements, "Requirements": the suite `tests/notify.test.ts` proves every criterion).
 Test note (requirements, DA-03): "DA-03.2 is a test in the suite that reads the variable that the runner set."
 ## Tasks
-- (the EM adds task ids after the architect proposes tasks)
+- cc05f85e (da-t1) — Set the notify off switch in the test runner — role: devops-sre — component: agent-tooling
+- 0c8e6562 (da-t2) — Start the notify suite with stubEnv and the runner test — role: backend-engineer — component: notifier
 ## Done means
 - Every criterion passes its check
 - Tests pass

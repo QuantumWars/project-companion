@@ -13,7 +13,8 @@ Estimate: 5 points, because this story has the most failure cases in the epic: o
 Verify: `npm test -- notify` (requirements, "Requirements": the suite `tests/notify.test.ts` proves every criterion).
 Test notes (requirements, DA-02): "DA-02.1 and DA-02.2 use a notifier path that does not exist, and a record path that cannot be written." "DA-02.3 uses a stub that waits until the test releases it. The command must exit while the stub still waits. No timing number is needed."
 ## Tasks
-- (the EM adds task ids after the architect proposes tasks)
+- 02d2e84e (da-t6) — Report notifier failures without echoing decision text — role: backend-engineer — component: notifier
+- 6042a875 (da-t8) — Prove a failed or slow notifier leaves the CLI unchanged — role: qa-engineer — component: notifier
 ## Done means
 - Every criterion passes its check
 - Tests pass

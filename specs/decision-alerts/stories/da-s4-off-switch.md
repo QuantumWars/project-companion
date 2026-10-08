@@ -12,7 +12,9 @@ Estimate: 2 points, because the change is rows 1 and 2 of the outcome precedence
 Verify: `npm test -- notify` (requirements, "Requirements": the suite `tests/notify.test.ts` proves every criterion).
 Test notes (requirements, DA-03): "DA-03.3 runs the notifier with the system set to `linux` and to `win32`." "DA-03.4 is a test in the suite that reads `README.md`."
 ## Tasks
-- (the EM adds task ids after the architect proposes tasks)
+- 108eb782 (da-t5) — Add notifyDecision with the off switch and platform check — role: backend-engineer — component: notifier
+- Note: DA-03.3: the CLI half is proved in 6042a875 (da-t8, story da-s5).
+- Note: DA-03.4: the README paragraph ships in bdcf995e (da-t7, story da-s6), in the same change as the CLI calls (constitution rule 12).
 ## Done means
 - Every criterion passes its check
 - Tests pass

@@ -15,7 +15,7 @@ Estimate: 5 points, because this is the main path (`notifyDecision`, `decisionTe
 Verify: `npm test -- notify` (requirements, "Requirements": the suite `tests/notify.test.ts` proves every criterion).
 Test notes (requirements, DA-01): "DA-01.3 runs `gate request` for each gate kind (prd, design, sprint, merge, release) and `card open` for a question card and a track card. Then it compares the stub's text with `cockpit --json`." "DA-01.5 runs `gate approve`, `gate refuse`, `gate track`, `card answer`, `gate status` and `cockpit` with the stub, and expects zero calls."
 ## Tasks
-- (the EM adds task ids after the architect proposes tasks)
+- bdcf995e (da-t7) — Notify the PM from gate request and card open — role: backend-engineer — component: agent-tooling
 ## Done means
 - Every criterion passes its check
 - Tests pass
