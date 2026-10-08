@@ -1,7 +1,7 @@
 # ADR-0001: Send decision alerts through /usr/bin/osascript, with the text as arguments only
 
 Status: Proposed (it becomes Accepted when the PM approves the design gate for `decision-alerts`)
-Date: 2026-10-08
+Date: 2026-10-08 (revised the same day for the security review, SR-5 and SR-6)
 Epic: decision-alerts
 Design: `specs/decision-alerts/design.md`. Threat model: `specs/decision-alerts/threat-model.md`.
 
@@ -15,7 +15,8 @@ DA-02.3).
 Checked on this Mac on 2026-10-08:
 - macOS 27.0.1. `/usr/bin/osascript` exists. `terminal-notifier` and `alerter` are not installed (`which`).
 - osascript gives arguments after `--` to `on run argv` unchanged. Quotes, backslashes, line breaks, AppleScript
-  text, `-e` and a literal `--` all arrived unchanged.
+  text, `-e`, `-l`, `JavaScript`, `-i` and a literal `--` all arrived unchanged, first, in the middle, last and
+  repeated (4 cases; the EM ran a fifth probe with 8 arguments, with the same result).
 - Without `--`, an argument that starts with `-e` is read as an option, and the next argument becomes script source.
 - System Integrity Protection is enabled, and `/` is mounted sealed and read-only.
 
@@ -32,7 +33,11 @@ choice also sets which app macOS lists for these notifications, and so which set
    never put into script source.
 4. The CLI starts it with `spawn(…, { detached: true, stdio: "ignore", shell: false })`, adds an `error` listener,
    and calls `unref()`. It does not wait.
-5. Tests replace the program with `PROJECT_COMPANION_NOTIFIER=<absolute path>`. The stub gets the same arguments.
+5. A pure function `notifierPath(env)` picks the program: `PROJECT_COMPANION_NOTIFIER` when it is set (tests only,
+   an absolute path), or `/usr/bin/osascript`. A stub gets the same 10 arguments.
+6. A required test, on darwin only, runs the real `/usr/bin/osascript` with a script that only returns the argument
+   count and every argument. Its inputs put `-e`, `-l`, `JavaScript`, `-i` and a literal `--` at several positions.
+   It shows nothing on screen.
 
 ## Alternatives
 
@@ -52,8 +57,8 @@ choice also sets which app macOS lists for these notifications, and so which set
   whether it asks for permission on first use, is UNKNOWN. The PM checks this at rollout.
 - The notification has no click action. The PM decides only by typing the command in Claude Code, as the
   requirements say.
-- If a later macOS changes how osascript reads `--`, DA-02.4 breaks. The recommended darwin-only test runs osascript
-  with a script that only returns its first argument, and catches such a change.
+- If a later macOS changes how osascript reads `--`, DA-02.4 breaks. The required darwin-only test (decision 6)
+  catches such a change on the PM's Mac.
 - The test override can start any program. The threat model accepts this as TH-2, for the PM to decide at the
   design gate.
 - To change the notifier later, write a new ADR that supersedes this one. Do not edit this ADR after it is accepted.
