@@ -1,7 +1,7 @@
 # Story: A notifier problem never fails, slows or changes the command
 Epic: decision-alerts   Feature: notify-safety   Points: 5
 From: [Requirements, DA-02](../requirements.md#da-02-safe-delivery-notify-safety); [Design 3.2, Flow 2](../design.md#32-sequences-mermaid); [Design 3.3, "Outcome precedence", "Dispatch" and "Standard error lines"](../design.md#33-data-model-and-api-contracts); [Design 3.4, test seams and test notes](../design.md#34-components-and-paths); [Design 6, step 5](../design.md#6-rollout-and-rollback); [Threat model, TH-5, TH-7, TH-8, TH-16](../threat-model.md#threat-model-decision-alerts)
-Estimate: 5 points, because this story has the most failure cases in the epic: one `try`/`catch`, detached dispatch and 9 reason texts (design 3.3), with CLI tests for a missing notifier, a record that cannot be written, a held stub, the event log and the 2 TH-5 tests.
+Estimate: 5 points, because this story has the most failure cases in the epic: one `try`/`catch`, detached dispatch and 9 reason texts (design 3.3), with tests for a missing notifier, a record that cannot be written, a held stub and the event log, and the 2 TH-5 tests (in process in da-t6, through the CLI in da-t8).
 ## Criteria
 | ID | Requirement (EARS) | Plain English |
 |---|---|---|

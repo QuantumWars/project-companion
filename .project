@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-08T16:42:13.292Z",
-  "revision": 198,
+  "updatedAt": "2026-10-08T16:50:09.013Z",
+  "revision": 206,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1946,7 +1946,7 @@
     {
       "id": "0c8e6562",
       "title": "Start the notify suite with stubEnv and the runner test",
-      "description": "da-t2. Criteria: DA-03.2. Tests: 'DA-03.2: the runner sets PROJECT_COMPANION_NOTIFY=off'; 'TH-19: stubEnv refuses an empty or relative path'. Verify: npm test -- notify. Stub must exit at once when STUB_OUT is not set. Lines: ~50 (architect estimate, not checked). Depends on: da-t1.",
+      "description": "da-t2. Criteria: DA-03.2. Tests: 'DA-03.2: the runner sets PROJECT_COMPANION_NOTIFY=off'; 'TH-19: stubEnv refuses an empty or relative path'. Verify: npm test -- notify. Stub must exit at once when STUB_OUT is not set. Lines: ~50 (source: architect hand-off; not in design 3.4; not checked). Depends on: da-t1.",
       "status": "backlog",
       "componentId": "notifier",
       "featureId": "notify-switch",
@@ -1956,13 +1956,13 @@
       "points": 1,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.579Z",
-      "updatedAt": "2026-10-08T16:42:12.579Z",
+      "updatedAt": "2026-10-08T16:50:04.859Z",
       "order": 7
     },
     {
       "id": "398705ee",
       "title": "Add the notification record with a symlink-safe append",
-      "description": "da-t3. Criteria: DA-04.2. Tests: 'DA-04.2: git ignores the record path'; TH-13, TH-15, TH-21 in-process tests. Verify: npm test -- notify. Creates lib/project/notify-record.ts. Lines: ~140 (70 code per design 3.4 + 70 tests, not checked); over 100 because splitting would merge an untested guard. Depends on: da-t1, da-t2.",
+      "description": "da-t3. Criteria: DA-04.2. Tests: 'DA-04.2: git ignores the record path'; TH-13, TH-15, TH-21 in-process tests. Verify: npm test -- notify. Creates lib/project/notify-record.ts. Lines: ~140 (70 code from design 3.4 + 70 tests from architect hand-off; not checked). Over 100 because splitting would merge an untested guard. Depends on: da-t1, da-t2.",
       "status": "backlog",
       "componentId": "notifier",
       "featureId": "notify-record",
@@ -1972,13 +1972,13 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.680Z",
-      "updatedAt": "2026-10-08T16:42:12.680Z",
+      "updatedAt": "2026-10-08T16:50:06.415Z",
       "order": 8
     },
     {
       "id": "8e6e5a71",
       "title": "Pass decision text to osascript only as arguments",
-      "description": "da-t4. Criteria: DA-02.4 (argument half). Tests: 'DA-02.4: osascript passes every argument after -- unchanged' (required, darwin only); 'DA-02.4: notifierArgs gives 10 items, text only after --'; 'TH-3: notifierPath defaults to /usr/bin/osascript'. Verify: npm test -- notify. Creates lib/project/notify.ts (constants, notifierPath, notifierArgs, dispatch). Lines: ~90 (not checked). Depends on: da-t2.",
+      "description": "da-t4. Criteria: DA-02.4 (argument half). Tests: 'DA-02.4: osascript passes every argument after -- unchanged' (required, darwin only); 'DA-02.4: notifierArgs gives 10 items, text only after --'; 'TH-3: notifierPath defaults to /usr/bin/osascript and takes the override' (both cases from design.md:445-446: the default, and PROJECT_COMPANION_NOTIFIER \"/x\" gives \"/x\"). Verify: npm test -- notify. Creates lib/project/notify.ts (constants, notifierPath, notifierArgs, dispatch). Lines: ~90 (source: architect hand-off; not checked). Depends on: da-t2.",
       "status": "backlog",
       "componentId": "notifier",
       "featureId": "notify-safety",
@@ -1988,13 +1988,13 @@
       "points": 2,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.781Z",
-      "updatedAt": "2026-10-08T16:42:12.781Z",
+      "updatedAt": "2026-10-08T16:50:03.368Z",
       "order": 9
     },
     {
       "id": "108eb782",
       "title": "Add notifyDecision with the off switch and platform check",
-      "description": "da-t5. Criteria: DA-03.1, DA-03.3 (in-process half). Tests: 'DA-03.1: off passes no notification'; 'DA-03.3: linux and win32 pass no notification'. Verify: npm test -- notify. Adds decisionText, notifyDecision (precedence rows 1, 2, 6), catch that records failed, 'record not written' line. Lines: ~95 (not checked). Depends on: da-t3, da-t4.",
+      "description": "da-t5. Criteria: DA-03.1, DA-03.3 (in-process half). Tests: 'DA-03.1: off passes no notification'; 'DA-03.3: linux and win32 pass no notification'. Verify: npm test -- notify. Adds decisionText, notifyDecision (precedence rows 1, 2, 6), catch that records failed, 'record not written' line. Lines: ~95 (source: architect hand-off; not checked). Depends on: da-t3, da-t4.",
       "status": "backlog",
       "componentId": "notifier",
       "featureId": "notify-switch",
@@ -2004,13 +2004,13 @@
       "points": 2,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.883Z",
-      "updatedAt": "2026-10-08T16:42:12.883Z",
+      "updatedAt": "2026-10-08T16:50:07.979Z",
       "order": 10
     },
     {
       "id": "02d2e84e",
       "title": "Report notifier failures without echoing decision text",
-      "description": "da-t6. Criteria: DA-02.2, DA-02.5. Tests: 'DA-02.2: a missing notifier gives one stderr line'; 'DA-02.5: the notifier appends no event'; TH-5 NUL and EISDIR tests. Verify: npm test -- notify. Adds precedence rows 3-5, reason table, control-character cleanup, 'not sent' line. Lines: ~100 (not checked). Depends on: da-t5.",
+      "description": "da-t6. Criteria: DA-02.2, DA-02.5. Tests: 'DA-02.2: a missing notifier gives one stderr line'; 'DA-02.5: the notifier appends no event'; TH-5 NUL and EISDIR tests, in process (they call notifyDecision directly and check the one stderr line and the outcome `failed`; the CLI half of TH-5 is in da-t8, because the CLI call arrives in da-t7). Verify: npm test -- notify. Adds precedence rows 3-5, reason table, control-character cleanup, 'not sent' line. Lines: ~100 (source: architect hand-off; not checked). Depends on: da-t5.",
       "status": "backlog",
       "componentId": "notifier",
       "featureId": "notify-safety",
@@ -2020,13 +2020,13 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.986Z",
-      "updatedAt": "2026-10-08T16:42:12.986Z",
+      "updatedAt": "2026-10-08T16:49:56.749Z",
       "order": 11
     },
     {
       "id": "bdcf995e",
       "title": "Notify the PM from gate request and card open",
-      "description": "da-t7. Criteria: DA-01.1 to DA-01.6; DA-03.4 (README, rule 12; tech-writer writes the paragraph at /devolps:pr step 2). Tests: one 'DA-01.n: ...' test per criterion; 'DA-03.4: README names the commands, the off switch and macOS only'. Verify: npm test -- notify. Adds 1 import and 2 calls in cli/index.ts. Lines: ~100 (cli 4 + README 12 per design 3.4, tests 85 not checked). Depends on: da-t1 merged, da-t6. Real banners start on this Mac once built here; merge da-t8 right after.",
+      "description": "da-t7. Criteria: DA-01.1 to DA-01.6; DA-03.4 (README, rule 12; tech-writer writes the paragraph at /devolps:pr step 2). Tests: one 'DA-01.n: ...' test per criterion; 'DA-03.4: README names the commands, the off switch and macOS only'. Verify: npm test -- notify. Adds 1 import and 2 calls in cli/index.ts. Lines: ~101 (cli 4 + README 12 from design 3.4; tests 85 from architect hand-off, not checked). Depends on: da-t1 merged, da-t6. Real banners start on this Mac once built here; merge da-t8 right after.",
       "status": "backlog",
       "componentId": "agent-tooling",
       "featureId": "decision-notify",
@@ -2036,13 +2036,13 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:13.087Z",
-      "updatedAt": "2026-10-08T16:42:13.087Z",
+      "updatedAt": "2026-10-08T16:50:01.127Z",
       "order": 12
     },
     {
       "id": "6042a875",
       "title": "Prove a failed or slow notifier leaves the CLI unchanged",
-      "description": "da-t8. Criteria: DA-02.1, DA-02.3; finishes DA-02.4 (stub half) and DA-03.3 (CLI half). Tests: 'DA-02.1: same exit code and stdout as off'; 'DA-02.3: the CLI exits while the notifier waits'; 'DA-02.4: a hostile card question reaches the stub unchanged'; 'DA-03.3: linux and win32 give the same output as off'; TH-21 CLI test. Verify: npm test -- notify. Lines: ~90 tests (not checked). Depends on: da-t7.",
+      "description": "da-t8. Criteria: DA-02.1, DA-02.3; finishes DA-02.4 (stub half), DA-03.3 (CLI half) and the CLI half of TH-5. Tests: 'DA-02.1: same exit code and stdout as off'; 'DA-02.3: the CLI exits while the notifier waits'; 'DA-02.4: a hostile card question reaches the stub unchanged'; 'DA-03.3: linux and win32 give the same output as off'; 'TH-5: a folder in place of an approved artifact gives one stderr line and output as with off' (design 3.4, design.md:450-454); TH-21 CLI test. Verify: npm test -- notify. Lines: ~100 tests (source: architect hand-off ~90, plus ~10 for the TH-5 CLI test; not checked). Depends on: da-t7.",
       "status": "backlog",
       "componentId": "notifier",
       "featureId": "notify-safety",
@@ -2052,13 +2052,13 @@
       "points": 3,
       "role": "qa-engineer",
       "createdAt": "2026-10-08T16:42:13.187Z",
-      "updatedAt": "2026-10-08T16:42:13.187Z",
+      "updatedAt": "2026-10-08T16:49:59.122Z",
       "order": 13
     },
     {
       "id": "1b3763e7",
       "title": "Prove one record line per decision for each outcome",
-      "description": "da-t9. Criteria: DA-04.1. Test: 'DA-04.1: one record line per decision, once for each outcome' (through the CLI, exact key order; a multi-line question gives one line). Verify: npm test -- notify. Lines: ~40 tests (not checked). Depends on: da-t7.",
+      "description": "da-t9. Criteria: DA-04.1. Test: 'DA-04.1: one record line per decision, once for each outcome' (through the CLI, exact key order; a multi-line question gives one line). Verify: npm test -- notify. Lines: ~40 tests (source: architect hand-off; not checked). Depends on: da-t7.",
       "status": "backlog",
       "componentId": "notifier",
       "featureId": "notify-record",
@@ -2068,7 +2068,7 @@
       "points": 1,
       "role": "qa-engineer",
       "createdAt": "2026-10-08T16:42:13.291Z",
-      "updatedAt": "2026-10-08T16:42:13.291Z",
+      "updatedAt": "2026-10-08T16:50:09.013Z",
       "order": 14
     }
   ],

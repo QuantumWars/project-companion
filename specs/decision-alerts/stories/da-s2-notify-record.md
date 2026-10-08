@@ -1,7 +1,7 @@
 # Story: Keep a local record of each notification
 Epic: decision-alerts   Feature: notify-record   Points: 3
 From: [Requirements, DA-04](../requirements.md#da-04-notification-record-notify-record); [Design 3.2, Flow 2](../design.md#32-sequences-mermaid); [Design 3.3, "Record line" and "Record write"](../design.md#33-data-model-and-api-contracts); [Design 3.4](../design.md#34-components-and-paths); [Threat model, TH-13, TH-15, TH-21](../threat-model.md#threat-model-decision-alerts)
-Estimate: 3 points, because the change is a new module of about 70 lines with a 4-step write that refuses symlinks (design 3.3, 3.4), one root `.gitignore` line, and tests for the 4 outcomes and threats TH-13, TH-15 and TH-21.
+Estimate: 3 points, because the change is a new module of about 70 lines with a 4-step write that refuses symlinks (design 3.3, 3.4), and tests for the 4 outcomes and threats TH-13, TH-15 and TH-21.
 ## Criteria
 | ID | Requirement (EARS) | Plain English |
 |---|---|---|

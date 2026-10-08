@@ -1,7 +1,7 @@
 # Story: Test runs never show notifications
 Epic: decision-alerts   Feature: notify-switch   Points: 1
 From: [Requirements, DA-03](../requirements.md#da-03-off-switch-and-systems-notify-switch); [Design 3.3, "Test runner"](../design.md#33-data-model-and-api-contracts); [Design 3.4, test seam "The off switch in the runner"](../design.md#34-components-and-paths); [Design 6, step 1](../design.md#6-rollout-and-rollback); [Threat model, TH-19](../threat-model.md#threat-model-decision-alerts)
-Estimate: 1 point, because the change is one `env` option on the suite call in `scripts/run-tests.mjs` (about 1 line, design 3.4) and one test that reads the variable.
+Estimate: 1 point, because the change is one `env` option on the suite call in `scripts/run-tests.mjs` (about 1 line, design 3.4), the root `.gitignore` line for `/.project-notify/` (PM card c-1cb9f6; task da-t1 carries it) and one test that reads the variable.
 ## Criteria
 | ID | Requirement (EARS) | Plain English |
 |---|---|---|
