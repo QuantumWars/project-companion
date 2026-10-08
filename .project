@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-08T21:46:41.762Z",
-  "revision": 230,
+  "updatedAt": "2026-10-08T21:57:23.161Z",
+  "revision": 231,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1931,7 +1931,7 @@
       "id": "cc05f85e",
       "title": "Set the notify off switch in the test runner",
       "description": "da-t1. Criteria: DA-03.2 (runner half). Changes: scripts/run-tests.mjs env PROJECT_COMPANION_NOTIFY=off; .gitignore /.project-notify/ (card c-1cb9f6). Verify: npm test -> pass; git check-ignore -q .project-notify/record.jsonl -> exit 0; grep -c 'PROJECT_COMPANION_NOTIFY: \"off\"' scripts/run-tests.mjs -> 1. Lines: ~4 (design 3.4). Depends on: none. Merges first (design 6 step 1).",
-      "status": "in_progress",
+      "status": "review",
       "componentId": "agent-tooling",
       "featureId": "notify-switch",
       "phaseId": "decision-alerts",
@@ -1940,7 +1940,7 @@
       "points": 1,
       "role": "devops-sre",
       "createdAt": "2026-10-08T16:42:12.477Z",
-      "updatedAt": "2026-10-08T21:46:41.762Z",
+      "updatedAt": "2026-10-08T21:57:23.161Z",
       "order": 0
     },
     {
