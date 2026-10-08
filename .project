@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-08T21:16:32.148Z",
-  "revision": 226,
+  "updatedAt": "2026-10-08T21:17:44.903Z",
+  "revision": 227,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2115,9 +2115,16 @@
       "kind": "task",
       "role": "devops-sre",
       "createdAt": "2026-10-08T20:52:59.167Z",
-      "updatedAt": "2026-10-08T21:16:32.147Z",
+      "updatedAt": "2026-10-08T21:17:44.903Z",
       "order": 0,
-      "points": 2
+      "points": 2,
+      "pr": {
+        "number": 8,
+        "url": "https://github.com/QuantumWars/project-companion/pull/8",
+        "state": "OPEN",
+        "headSha": "aeadebbbad1a8ab99eceb38f92cb81e86d7480ad",
+        "syncedAt": "2026-10-08T21:17:44.901Z"
+      }
     }
   ],
   "roadmap": {
