@@ -68,3 +68,6 @@ next-env.d.ts
 /.project.lock
 .claude/harness-state/
 .claude/worktrees/
+
+# decision alerts notification record; safe to delete at any time
+/.project-notify/
