@@ -369,3 +369,64 @@ Paths: app/api/project/stream/**, lib/project/use-stream.ts
 - [x] A change made from the CLI reaches an open browser with no reload
 - [x] A stream that cannot connect degrades to the polling that was there before
 - [x] Only the kind of change is sent; the client re-reads what it needs
+
+## Phase: Decision alerts
+
+Goal: tell the PM, on their Mac, when the tracker records a decision that waits for them -- with the same title and command the cockpit shows. The PM's answers to Q1 to Q5 are recorded in `specs/decision-alerts/requirements.md`.
+
+### Notify on a new decision
+<!-- id: decision-notify -->
+
+A new gate request, question card or track card makes one macOS notification with the cockpit's own title and command, so the PM learns of it away from the terminal and the browser.
+
+Paths: lib/project/notify.ts
+
+Verify: npm test -- notify
+
+- [ ] DA-01.1 When `project-companion gate request` records a gate request, the CLI shall pass one notification for that gate to the system notifier. — Each new gate request makes one notification on the PM's Mac.
+- [ ] DA-01.2 When `project-companion card open` records a question card or a track card, the CLI shall pass one notification for that card to the system notifier. — Each new question card or track card makes one notification.
+- [ ] DA-01.3 The notification shall contain the decision's title, its command and the project name, with the same text that `project-companion cockpit --json` shows in its `needsYou` and `project` fields. — The notification says what the cockpit says, word for word.
+- [ ] DA-01.4 If `gate request` or `card open` refuses its input and records nothing, then the CLI shall pass no notification. — A request that failed does not alert the PM.
+- [ ] DA-01.5 The CLI shall pass notifications only from the `gate request` and `card open` commands. — Approvals, answers, status reads and the cockpit send nothing.
+- [ ] DA-01.6 When decisions are recorded one after another, the CLI shall pass one notification for each decision, with no limit, delay or quiet hours of its own. — macOS Focus decides what the PM sees.
+
+### Safe delivery
+<!-- id: notify-safety -->
+
+A notification is a side effect of recording a decision, never a condition of it: a notifier that is broken, slow or fed hostile text cannot fail, slow or change the command.
+
+Paths: lib/project/notify.ts
+
+Verify: npm test -- notify
+
+- [ ] DA-02.1 If the system notifier cannot start, or the notification record cannot be written, then the CLI shall exit with the same exit code and write the same standard output as it does with the off switch set. — A broken notifier never breaks the EM's command or its `--json` output.
+- [ ] DA-02.2 If the system notifier cannot start, then the CLI shall write one line to standard error that says no notification was sent and why. — The EM can see a broken notifier and report it.
+- [ ] DA-02.3 When the CLI passes a notification to the system notifier, the CLI shall exit without waiting for the system notifier to finish. — A slow or stuck notifier never holds up the command.
+- [ ] DA-02.4 If a title, command or project name contains quotes, backslashes or line breaks, then the notifier shall deliver that text unchanged and run no part of it as code. — A card question that an agent wrote cannot run commands on the PM's Mac.
+- [ ] DA-02.5 The notifier shall append no gate, track or card event to the event log. — Sending a notification never records or changes a decision.
+
+### Off switch and systems
+<!-- id: notify-switch -->
+
+Tests and CI turn notifications off with one environment variable, the test runner sets it for every suite, and a system that is not macOS sends nothing and fails nothing.
+
+Paths: lib/project/notify.ts, scripts/run-tests.mjs
+
+Verify: npm test -- notify
+
+- [ ] DA-03.1 While the environment variable `PROJECT_COMPANION_NOTIFY` has the value `off`, the CLI shall pass no notification. — Tests, CI or the PM can turn notifications off for one shell.
+- [ ] DA-03.2 When `npm test` runs a suite, the test runner shall set `PROJECT_COMPANION_NOTIFY` to `off` for that suite. — Running the tests never shows notifications to the PM.
+- [ ] DA-03.3 If the CLI runs on a system other than macOS, then the CLI shall pass no notification and exit with the exit code and standard output that it gives with the off switch set. — On Linux or Windows, nothing is sent and nothing fails.
+- [ ] DA-03.4 The README section "Gates, sprints and the PM cockpit" shall name the commands that send a notification, the off switch and the supported systems. — The PM and the agents can find how alerts work and how to turn them off.
+
+### Notification record
+<!-- id: notify-record -->
+
+One line for each decision says whether its notification was sent and, if not, why -- the evidence for the outcome metric. It is local to this Mac and never committed.
+
+Paths: lib/project/notify-record.ts
+
+Verify: npm test -- notify
+
+- [ ] DA-04.1 When `gate request` or `card open` records a decision, the CLI shall add one line of JSON to the notification record with the decision id, the time, the title, the command and the outcome `sent`, `off`, `unsupported` or `failed`. — We can count which decisions were notified, and why the others were not.
+- [ ] DA-04.2 The notification record shall be a file in the project that git ignores, outside `.project-cache/` and `.project-log/`. — The record stays on this Mac, is not committed, and is not lost when the cache is cleaned.
