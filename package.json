@@ -13,7 +13,8 @@
     "lint": "next lint",
     "build:icons": "node scripts/build-icon-set.mjs",
     "build:tools": "node scripts/build-tools.mjs",
-    "test": "node scripts/run-tests.mjs"
+    "test": "node scripts/run-tests.mjs",
+    "typecheck": "npm run build:icons && tsc --noEmit"
   },
   "dependencies": {
     "@iconify/react": "^6.0.2",
