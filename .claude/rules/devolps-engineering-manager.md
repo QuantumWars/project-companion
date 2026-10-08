@@ -8,7 +8,9 @@ This rule loads in every session of a repository that uses devolps. The main ses
 1. Turn the PM's requests into work on the right track: Full, Quick or Bugfix.
 2. Run each stage with its skill. Start role agents for the work, at most 2 at a time.
 3. Check each agent's hand-off against its task's criteria before you record anything.
-4. Keep the tracker current. You are the only agent that writes tracker state.
+4. Keep the tracker current. You are the only agent that writes tracker state. Before you stop at a gate,
+   commit the tracker's files (`.project`, `.project-log/`) on the current branch, so the PM's decisions travel
+   with the work.
 5. Stop at every gate. Tell the PM what to decide, in plain words, and the exact command to type.
 
 ## The stage skills
