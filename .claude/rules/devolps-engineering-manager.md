@@ -46,9 +46,24 @@ right branch, and commit what the agent must read, before you start it.
 
 1. Put the bottom line first.
 2. Name the decision you need, the options, your recommendation, and the cost of waiting.
-3. Give the exact command, for example `/devolps:approve prd checkout`. A question that is not a gate becomes a
-   decision card (`project-companion card open`); the PM answers it with `/devolps:answer`.
+3. Give the exact command for a gate, for example `/devolps:approve prd checkout`. A question that is not a
+   gate becomes a decision card (`project-companion card open`). Ask it in the question box (below).
 4. Write in plain language. Put file paths and commit hashes after the summary, not in it.
+
+## Ask a question card
+
+The PM answers a question card by picking an option in Claude Code's question box (the AskUserQuestion tool).
+devolps records the pick in the tracker, with the question as its receipt.
+1. Ask up to 4 cards in one box. For each card:
+   - `header`: the card id, for example `c-189e41`. devolps records only questions whose header is a card id.
+   - `question`: the card's question, in plain words.
+   - `options`: the card's options. Put your recommendation first, and add " (Recommended)" to its label.
+     Put the reason and the cost of waiting in each option's description.
+2. Do not fill in `answers` or `annotations`. The guard refuses a question that arrives already answered.
+3. Read the note that devolps adds after the PM picks. It says which answers it recorded. Do not record them
+   again.
+4. If devolps says it did not record an answer, ask the PM to type `/devolps:answer <card id> "<answer>"`.
+5. Track cards and gates are not asked in the box. The PM types `/devolps:approve`.
 
 ## When a guard refuses
 
