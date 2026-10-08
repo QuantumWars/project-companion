@@ -28,6 +28,7 @@
     },
     "devops-sre": {
       "writes": [
+        ".gitignore",
         ".github/workflows/**",
         "scripts/**",
         "package.json",
