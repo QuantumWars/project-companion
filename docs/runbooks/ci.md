@@ -41,9 +41,10 @@ Notes:
 ## Reading a failure
 
 1. Open the pull request's checks tab and find the failed `ci` run.
-2. Open the run's log and find the first step with a non-zero exit. The 4
-   steps run in order and stop at the first failure, so the failing step is
-   the last one shown.
+2. Open the run's log. GitHub does not show the failing step last: it lists
+   the remaining steps as skipped, then its own "Post Run …" and
+   "Complete job" steps, after the step that failed. Find the step with
+   the red X; the steps after it show as skipped.
 3. Reproduce that single step locally, for example `npm run typecheck`, to
    see the same error without waiting on a runner.
 4. Common causes:
@@ -52,18 +53,35 @@ Notes:
    - `npm run typecheck` fails: a real type error, or `build:icons` itself
      failed (check its output further up the same step's log).
    - `npm test` fails: read the failing test's name and assertion in the
-     log; `scripts/run-tests.mjs` prints each test as it runs.
+     log; `scripts/run-tests.mjs` prints each test as it runs. That script
+     builds the CLI and MCP server first (`scripts/run-tests.mjs` line 32),
+     so an esbuild error there also fails `npm test`, with no test name in
+     the log.
    - `npm run build:tools` fails: an esbuild error in `lib/` or in one of
      the entry points `cli/index.ts` and `mcp/server.ts`, built by esbuild
      from `scripts/build-tools.mjs` (lines 32 and 38).
 
 ## Rollback
 
-If the check is blocking work it should not, do one of:
-- Delete `.github/workflows/ci.yml` from the repository.
-- Disable the workflow on GitHub (the Actions tab, select the `ci`
-  workflow, open the "..." menu, then "Disable workflow"). This stops new
-  runs without deleting the file.
+If the check is blocking work it should not:
 
-Either way, pull requests then have no checks again, and the merge gate
+1. If `ci` is a required status check on `master` (card c-a5d4fd), remove
+   it first, in GitHub's branch protection or ruleset settings for
+   `master`. Only the PM can change this setting. Skip this step if the
+   required-check setting is not on yet.
+   - Once that setting is on, disabling or deleting the workflow without
+     first removing `ci` from required checks leaves every pull request
+     waiting for a check that never comes. GitHub then blocks every
+     merge, including the pull request that deletes the workflow.
+2. Then do one of:
+   - Delete `.github/workflows/ci.yml` from the repository.
+   - Disable the workflow on GitHub (the Actions tab, select the `ci`
+     workflow, open the "..." menu, then "Disable workflow"). This stops
+     new runs without deleting the file.
+
+Either way, pull requests then have no `ci` check again. If `ci` is still
+a required status check on `master` when that happens (step 1 skipped or
+not yet done), GitHub blocks every merge on the web page, not only through
+the devolps merge gate. Once `ci` is off the required-check list (or it
+was never on), pull requests merge again; the devolps merge gate still
 needs an override until the workflow is restored.
