@@ -1,0 +1,12 @@
+#!/bin/sh
+# devolps commit-message check (EN-11): Conventional Commits, the task trailer
+# on task branches, and no co-author lines. Installed by /devolps:setup.
+# Setup records the plugin's bin folder in this clone's git config
+# (devolps.bin), so this file holds no machine path and can be committed.
+B="$(git config --get devolps.bin 2>/dev/null)"
+for d in "$B" "${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/bin}"; do
+  [ -n "$d" ] && [ -x "$d/devolps" ] && exec "$d/devolps" commit-msg "$1"
+done
+if command -v devolps >/dev/null 2>&1; then exec devolps commit-msg "$1"; fi
+echo "devolps: the commit-message check could not run (devolps not found). Run /devolps:setup again." >&2
+exit 1

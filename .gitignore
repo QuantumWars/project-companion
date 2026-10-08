@@ -66,3 +66,4 @@ next-env.d.ts
 
 # transient write lock
 /.project.lock
+.claude/harness-state/

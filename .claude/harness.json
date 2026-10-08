@@ -1,0 +1,52 @@
+{
+  "_note": "devolps settings for Project Companion. Role write scopes widened to this repository's layout; everything else comes from the plugin defaults.",
+  "version": 1,
+  "roles": {
+    "frontend-engineer": {
+      "writes": [
+        "app/**",
+        "components/**",
+        "hooks/**",
+        "providers/**",
+        "store/**",
+        "public/**",
+        "**/*.tsx",
+        "**/*.css",
+        "**/*.test.ts",
+        "**/*.test.tsx"
+      ]
+    },
+    "backend-engineer": {
+      "writes": [
+        "lib/**",
+        "cli/**",
+        "mcp/**",
+        "types/**",
+        "app/api/**",
+        "**/*.test.ts"
+      ]
+    },
+    "devops-sre": {
+      "writes": [
+        ".github/workflows/**",
+        "scripts/**",
+        "package.json",
+        "package-lock.json",
+        "next.config.mjs",
+        "tsconfig.json",
+        "docs/runbooks/**",
+        "docs/releases/*-checklist.md"
+      ]
+    },
+    "tech-writer": {
+      "writes": [
+        "README.md",
+        "CHANGELOG.md",
+        "docs/agents.md",
+        "docs/media/**",
+        "docs/releases/**",
+        "docs/retros/**"
+      ]
+    }
+  }
+}
