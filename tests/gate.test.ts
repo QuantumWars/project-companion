@@ -352,7 +352,8 @@ test("cli: init hooks run the PATH binary, and an old npx hook is upgraded", asy
     await pc(dir, "init", "Demo");
     const settings = readFileSync(join(dir, ".claude", "settings.json"), "utf8");
     ok(!settings.includes("npx project-companion"), "no npx command remains");
-    eq((settings.match(/"project-companion ingest"/g) ?? []).length, 3, "one hook per event, none doubled");
+    eq((settings.match(/"project-companion ingest"/g) ?? []).length, 6, "one hook per event, none doubled");
+    ok(settings.includes('"matcher": "Agent|Task"'), "PreToolUse is hooked only for spawns");
   } finally { cleanup(); }
 });
 

@@ -171,10 +171,51 @@ export type Task = {
    * signal, and the only one that is a claim rather than an inference.
    */
   commits?: string[];
+  /**
+   * What kind of work item this is (Azure DevOps hierarchy, devolps TR-04).
+   * Absent means a plain task, so boards written before kinds existed read
+   * exactly as they did.
+   */
+  kind?: TaskKind;
+  /** The story a task belongs to. */
+  parentId?: string;
+  /** Story points: 1, 2, 3, 5, 8 or 13. Scope tracking, never a lane comparison. */
+  points?: number;
+  /** The devolps role that owns the task, e.g. `frontend-engineer`. One owner. */
+  role?: string;
+  /** The pull request that delivers this task. Kept current by `pr sync`. */
+  pr?: TaskPullRequest;
+  /** Why the task cannot move, and who can unblock it. Cleared on unblock. */
+  blocked?: TaskBlock;
   createdAt: string;
   updatedAt: string;
   /** Sort position within its column. */
   order: number;
+};
+
+export const TASK_KINDS = ["story", "task", "bug"] as const;
+export type TaskKind = (typeof TASK_KINDS)[number];
+
+export type TaskPullRequest = {
+  number: number;
+  url?: string;
+  /** GitHub's state: OPEN, MERGED or CLOSED. */
+  state: string;
+  headSha?: string;
+  syncedAt: string;
+};
+
+export const BLOCK_CAUSES = ["decision", "outside", "agent"] as const;
+export type BlockCause = (typeof BLOCK_CAUSES)[number];
+
+export type TaskBlock = {
+  /** Plain words: what is in the way. */
+  reason: string;
+  /** Waiting on a decision, on someone outside, or on an agent failure. */
+  cause: BlockCause;
+  /** Who can unblock it: "PM", a person's name, or a role. */
+  unblocker: string;
+  since: string;
 };
 
 export type TasksFile = {

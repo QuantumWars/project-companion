@@ -52,6 +52,9 @@ import {
   wipRoom,
   readComponents,
   updateComponent,
+  blockTask,
+  unblockTask,
+  linkPullRequest,
 } from "../lib/project/store";
 import {
   ancestorsOf,
@@ -67,6 +70,13 @@ import {
 import { readEvents } from "../lib/project/events";
 import { componentContext } from "../lib/project/component-context";
 import { parseHook } from "../lib/project/ingest";
+import { recordSpawnRequest, runForAgent, startSubagentRun, stopSubagentRun } from "../lib/project/subagent";
+import { burnup, foldSprints, sprintTasks } from "../lib/project/sprint";
+import { foldCards, foldUpdates, isHealth, weekId } from "../lib/project/decisions";
+import { agentLane, gateMetrics, humanLane } from "../lib/project/metrics";
+import { readCockpit } from "../lib/project/cockpit";
+import { appendEvent } from "../lib/project/events";
+import { randomUUID } from "node:crypto";
 import { mergeBundles } from "../lib/project/merge";
 import { runCheck } from "../lib/project/verify";
 import { dependencyGraph, drift, sourceFiles } from "../lib/project/deps";
@@ -101,8 +111,12 @@ import { gitRoot, readCommits, readDiffHunks, readStatus, GitError } from "../li
 import { branchNameFor, createBranch, addWorktree } from "../lib/project/git-write";
 import { linkRepository } from "../lib/project/git-link";
 import {
+  BLOCK_CAUSES,
   PHASE_STATUSES,
+  TASK_KINDS,
   TASK_STATUSES,
+  type BlockCause,
+  type TaskKind,
   type DiagramFile,
   type TaskStatus,
 } from "../lib/project/types";
@@ -183,6 +197,28 @@ project-companion - architecture and task boards that live in your repo
 
   project-companion task list [--status S] [--feature F] [--component C] [--json]
   project-companion task show <id> [--json]
+  project-companion task set <id> [--kind story|task|bug] [--parent ID] [--points N] [--role R] [--assignee A]
+  project-companion task block <id> --reason R --cause decision|outside|agent [--unblocker WHO]
+  project-companion task unblock <id>
+
+  project-companion sprint add <id> --start D --end D [--goal G] [--tasks A,B]
+  project-companion sprint commit <id> --tasks A,B
+  project-companion sprint add-task <id> <task>      added scope, shown apart on the burn-up
+  project-companion sprint close <id>
+  project-companion sprint list | show <id> | burnup <id>   [--json]
+
+  project-companion card open --subject S --ask Q [--options "a|b"] [--recommend R] [--kind question|track]
+  project-companion card answer <id> <answer> --via CHANNEL   the PM's answer
+  project-companion card list [--open] [--json]
+  project-companion update draft [<week>] --health on-track|at-risk|off-track --reason R [--file F] [--epic E]
+  project-companion update publish <week> --via CHANNEL      the PM publishes
+  project-companion update list | show <week>   [--json]
+
+  project-companion pr link <task> <number>  record a task's pull request (via gh)
+  project-companion pr sync                  refresh every linked pull request
+  project-companion cockpit [--json]         the PM's view: decisions, health, progress
+  project-companion flow --lane agent|human [--json]   metrics for one lane only
+  project-companion gate metrics [--json]    wait and override share per gate
   project-companion task add <title> [--status S] [--node ID] [--feature F]
                                              [--component C]
   project-companion task move <id> <status>  ${TASK_STATUSES.join(" | ")}
@@ -344,7 +380,19 @@ const installMergeDriver = (root: string): "added" | "present" => {
   return added;
 };
 
-const HOOK_EVENTS = ["SessionStart", "PostToolUse", "SessionEnd"] as const;
+/**
+ * Hook events, and the matcher each one needs. PreToolUse is hooked only for a
+ * spawn, so the tracker learns which task a subagent is working on without
+ * running on every other tool call.
+ */
+const HOOK_EVENTS: { event: string; matcher?: string }[] = [
+  { event: "SessionStart" },
+  { event: "PostToolUse" },
+  { event: "SessionEnd" },
+  { event: "PreToolUse", matcher: "Agent|Task" },
+  { event: "SubagentStart" },
+  { event: "SubagentStop" },
+];
 /**
  * Run from the PATH, never through `npx`.
  *
@@ -382,7 +430,7 @@ const installHooks = (root: string, agentDir: string): "added" | "present" | "sk
   const hooks = (settings.hooks ?? {}) as Record<string, unknown[]>;
   let added = false;
 
-  for (const event of HOOK_EVENTS) {
+  for (const { event, matcher } of HOOK_EVENTS) {
     const matchers = Array.isArray(hooks[event]) ? (hooks[event] as Record<string, unknown>[]) : [];
     // Upgrade the old `npx` entry in place rather than adding a second one.
     for (const m of matchers) {
@@ -400,7 +448,7 @@ const installHooks = (root: string, agentDir: string): "added" | "present" | "sk
     );
     if (already) continue;
 
-    matchers.push({ hooks: [{ type: "command", command: HOOK_COMMAND }] });
+    matchers.push({ ...(matcher ? { matcher } : {}), hooks: [{ type: "command", command: HOOK_COMMAND }] });
     hooks[event] = matchers;
     added = true;
   }
@@ -1072,6 +1120,10 @@ const main = () => {
     const runs = readRuns(root).filter(
       (r) => has("all") || (r.state !== "merged" && r.state !== "abandoned"),
     );
+    if (has("json")) {
+      process.stdout.write(`${JSON.stringify(runs)}\n`);
+      return;
+    }
     if (!runs.length) {
       process.stdout.write(
         has("all") ? "No runs yet.\n" : "Nothing in flight. `project-companion run list --all` for finished ones.\n",
@@ -1104,6 +1156,11 @@ const main = () => {
         const event = parseHook(JSON.parse(raw));
         if (event.kind === "unknown") return;
 
+        // Subagents get their own runs (TR-03).
+        if (event.kind === "spawn.requested") return recordSpawnRequest(root, event);
+        if (event.kind === "subagent.start") return void startSubagentRun(root, event);
+        if (event.kind === "subagent.stop") return void stopSubagentRun(root, event.agentId);
+
         if (event.kind === "session.start") {
           if (runForSession(root, event.sessionId)) return; // A resume, not a new run.
           startRun(root, {
@@ -1113,7 +1170,10 @@ const main = () => {
           return;
         }
 
-        const run = runForSession(root, event.sessionId);
+        const run =
+          event.kind === "tool.use" && event.agentId
+            ? runForAgent(root, event.agentId)
+            : runForSession(root, event.sessionId);
         if (!run) return;
 
         if (event.kind === "tool.use") {
@@ -1174,7 +1234,10 @@ const main = () => {
         if (!artifacts.length) {
           die("Name what the PM approves: --artifact <file>, --prd-section <epic> or --head <sha>.");
         }
-        const gate = requestGate(root, { kind, subject, artifacts, tasks: splitList(flag("tasks")) }, prdPath);
+        // A sprint gate covers the sprint's own tasks unless --tasks says otherwise.
+        const sprint = kind === "sprint" ? foldSprints(readEvents(root)).get(subject) : undefined;
+        const tasks = splitList(flag("tasks")) ?? (sprint ? sprintTasks(sprint) : undefined);
+        const gate = requestGate(root, { kind, subject, artifacts, tasks }, prdPath);
         say(gate, `Requested the ${kind} gate for ${subject}. The PM approves with /devolps:approve ${kind} ${subject}\n`);
         return;
       }
@@ -1258,9 +1321,25 @@ const main = () => {
         if (!result.ok) process.exit(3);
         return;
       }
+      if (sub === "metrics") {
+        const metrics = gateMetrics(readEvents(root));
+        if (json) {
+          process.stdout.write(`${JSON.stringify(metrics)}\n`);
+          return;
+        }
+        if (!metrics.length) process.stdout.write("No gate decisions yet.\n");
+        for (const m of metrics) {
+          process.stdout.write(
+            `${m.kind.padEnd(8)} ${m.decided} decided  median wait ${m.medianWaitMs === null ? "-" : asDays(m.medianWaitMs)}  overrides ${m.overrides}${m.overrideShare === null ? "" : ` (${Math.round(m.overrideShare * 100)}%)`}\n`,
+          );
+        }
+        return;
+      }
       if (sub === "log") {
+        // Every decision that is the PM's to make: gates, tracks, card answers and
+        // published updates. devolps reconciles each against a typed command.
         const decisions = readEvents(root)
-          .filter((e) => e.kind.startsWith("gate.") || e.kind === "track.confirmed")
+          .filter((e) => e.kind.startsWith("gate.") || ["track.confirmed", "card.answered", "update.published"].includes(e.kind))
           .map((e) => ({ event: e.kind, ts: e.ts, actor: e.actor, ...e.data }));
         if (json) {
           process.stdout.write(`${JSON.stringify(decisions)}\n`);
@@ -1279,6 +1358,222 @@ const main = () => {
       if (error instanceof GateError) die(error.message);
       throw error;
     }
+  }
+
+  /* ------------------------------ sprints (TR-05) ----------------------------- */
+
+  if (command === "sprint") {
+    const json = has("json");
+    const sprints = foldSprints(readEvents(root));
+    const get = (id: string | undefined) =>
+      (id && sprints.get(id)) || die(`No sprint "${id ?? ""}". Run \`project-companion sprint list\`.`);
+    const taskIds = new Set(readTasks(root).tasks.map((t) => t.id));
+    const checkTasks = (ids: string[]) => {
+      const unknown = ids.filter((id) => !taskIds.has(id));
+      if (unknown.length) die(`No task ${unknown.join(", ")}. Check the ids with \`project-companion task list\`.`);
+    };
+
+    if (sub === "add") {
+      const id = rest[0] ?? die("Usage: project-companion sprint add <id> --start YYYY-MM-DD --end YYYY-MM-DD [--goal G] [--tasks A,B]");
+      if (sprints.has(id)) die(`Sprint "${id}" already exists.`);
+      const start = flag("start") ?? die("A sprint needs --start YYYY-MM-DD.");
+      const end = flag("end") ?? die("A sprint needs --end YYYY-MM-DD.");
+      appendEvent(root, {
+        kind: "sprint.created",
+        data: { sprintId: id, name: flag("name") ?? id, goal: flag("goal"), start, end, capacity: flag("capacity") ? Number(flag("capacity")) : undefined },
+      });
+      const tasks = splitList(flag("tasks"));
+      if (tasks?.length) {
+        checkTasks(tasks);
+        appendEvent(root, { kind: "sprint.committed", data: { sprintId: id, tasks } });
+      }
+      process.stdout.write(`Created sprint ${id} (${start} to ${end})${tasks?.length ? ` with ${tasks.length} task(s)` : ""}.\n`);
+      return;
+    }
+    if (sub === "commit") {
+      const s = get(rest[0]);
+      const tasks = splitList(flag("tasks")) ?? die("Usage: project-companion sprint commit <id> --tasks A,B");
+      checkTasks(tasks);
+      if (s.committedAt) die(`Sprint ${s.id} is already committed. Add work with \`project-companion sprint add-task ${s.id} <task>\` (it counts as added scope).`);
+      appendEvent(root, { kind: "sprint.committed", data: { sprintId: s.id, tasks } });
+      process.stdout.write(`Committed ${tasks.length} task(s) to ${s.id}.\n`);
+      return;
+    }
+    if (sub === "add-task") {
+      const s = get(rest[0]);
+      const task = rest[1] ?? die("Usage: project-companion sprint add-task <sprint> <task>");
+      checkTasks([task]);
+      appendEvent(root, { kind: "sprint.scope_added", data: { sprintId: s.id, taskId: task } });
+      process.stdout.write(`Added ${task} to ${s.id} as added scope.\n`);
+      return;
+    }
+    if (sub === "close") {
+      const s = get(rest[0]);
+      appendEvent(root, { kind: "sprint.closed", data: { sprintId: s.id } });
+      process.stdout.write(`Closed sprint ${s.id}.\n`);
+      return;
+    }
+    if (sub === "show" || sub === "burnup") {
+      const s = get(rest[0]);
+      const b = burnup(s, readTasks(root).tasks, readEvents(root));
+      if (json) {
+        process.stdout.write(`${JSON.stringify(sub === "burnup" ? b : { ...s, burnup: b })}\n`);
+        return;
+      }
+      process.stdout.write(
+        `${s.id}  ${s.status}  ${s.start} to ${s.end}${s.goal ? `\n  goal: ${s.goal}` : ""}\n` +
+          `  committed ${b.committed} ${b.unit}, added ${b.added}, done ${b.done}\n` +
+          b.points.map((p) => `  ${p.date}  scope ${p.scope}  done ${p.done}`).join("\n") + "\n",
+      );
+      return;
+    }
+    const list = Array.from(sprints.values()).sort((a, b) => a.start.localeCompare(b.start));
+    if (json) {
+      process.stdout.write(`${JSON.stringify(list)}\n`);
+      return;
+    }
+    if (!list.length) {
+      process.stdout.write("No sprints.\n");
+      return;
+    }
+    for (const s of list) process.stdout.write(`${s.id.padEnd(16)} ${s.status.padEnd(8)} ${s.start} to ${s.end}  ${sprintTasks(s).length} task(s)  ${s.goal ?? ""}\n`);
+    return;
+  }
+
+  /* ------------------------- decision cards (TR-14) ------------------------- */
+
+  if (command === "card") {
+    const cards = foldCards(readEvents(root));
+    if (sub === "open") {
+      const subject = flag("subject") ?? die("Usage: project-companion card open --subject <epic|task> --ask \"<question>\" [--options \"a|b\"] [--recommend R] [--why W] [--cost C] [--deadline YYYY-MM-DD] [--kind question|track]");
+      const ask = flag("ask") ?? die("A card needs --ask \"<question>\".");
+      const kind = flag("kind") === "track" ? "track" : "question";
+      const options = kind === "track" ? ["full", "quick", "bugfix"] : (flag("options") ?? "").split("|").map((o) => o.trim()).filter(Boolean);
+      const id = `c-${randomUUID().slice(0, 6)}`;
+      appendEvent(root, {
+        kind: "card.opened",
+        data: { cardId: id, kind, subject, ask, why: flag("why"), options, recommendation: flag("recommend"), costOfWaiting: flag("cost"), deadline: flag("deadline") },
+      });
+      process.stdout.write(has("json") ? `${JSON.stringify({ id })}\n` : `Opened card ${id}. The PM answers it with /devolps:answer ${id} "<answer>".\n`);
+      return;
+    }
+    if (sub === "answer") {
+      const id = rest[0] ?? die("Usage: project-companion card answer <id> <answer> --via CHANNEL");
+      const card = cards.get(id) ?? die(`No card "${id}".`);
+      if (card.answer !== undefined) die(`Card ${id} is already answered: ${card.answer}`);
+      const via = flag("via") ?? die("An answer must say how it arrived (--via). The PM answers by typing /devolps:answer.");
+      const answer = rest.slice(1).join(" ").trim() || die("An answer cannot be empty.");
+      appendEvent(root, { kind: "card.answered", data: { cardId: id, answer, via } });
+      process.stdout.write(`Answered ${id}: ${answer}\n`);
+      return;
+    }
+    const list = Array.from(cards.values()).filter((c) => !has("open") || c.answer === undefined);
+    if (has("json")) {
+      process.stdout.write(`${JSON.stringify(list)}\n`);
+      return;
+    }
+    if (!list.length) {
+      process.stdout.write("No cards.\n");
+      return;
+    }
+    for (const c of list) process.stdout.write(`${c.id}  ${c.answer === undefined ? "open    " : "answered"}  ${c.subject.padEnd(16)} ${c.ask}\n`);
+    return;
+  }
+
+  /* ------------------------- weekly updates (TR-14) ------------------------- */
+
+  if (command === "update") {
+    const updates = foldUpdates(readEvents(root));
+    if (sub === "draft") {
+      const id = rest[0] ?? weekId(Date.now());
+      const health = flag("health") ?? die("An update needs --health on-track|at-risk|off-track.");
+      if (!isHealth(health)) die(`Unknown health "${health}". One of: on-track, at-risk, off-track.`);
+      const reason = flag("reason") ?? die("An update needs --reason \"<one line>\".");
+      const file = flag("file");
+      const body = file ? readFileSync(resolve(file), "utf8") : flag("body") ?? "";
+      if (updates.get(id)?.publishedAt) die(`Update ${id} is already published.`);
+      appendEvent(root, { kind: "update.drafted", data: { updateId: id, epic: flag("epic"), health, reason, body } });
+      process.stdout.write(`Drafted update ${id}. The PM publishes it with /devolps:publish-update ${id}.\n`);
+      return;
+    }
+    if (sub === "publish") {
+      const id = rest[0] ?? die("Usage: project-companion update publish <id> --via CHANNEL");
+      const u = updates.get(id) ?? die(`No update "${id}". Draft it first.`);
+      if (u.publishedAt) die(`Update ${id} is already published.`);
+      const via = flag("via") ?? die("Publishing must say how it arrived (--via). The PM publishes by typing /devolps:publish-update.");
+      appendEvent(root, { kind: "update.published", data: { updateId: id, via } });
+      process.stdout.write(`Published update ${id}.\n`);
+      return;
+    }
+    if (sub === "show") {
+      const u = updates.get(rest[0] ?? "") ?? die(`No update "${rest[0] ?? ""}".`);
+      process.stdout.write(has("json") ? `${JSON.stringify(u)}\n` : `${u.id}  ${u.health}  ${u.publishedAt ? "published" : "draft"}\n${u.reason}\n\n${u.body}\n`);
+      return;
+    }
+    const list = Array.from(updates.values()).sort((a, b) => b.draftedAt - a.draftedAt);
+    if (has("json")) {
+      process.stdout.write(`${JSON.stringify(list)}\n`);
+      return;
+    }
+    for (const u of list) process.stdout.write(`${u.id}  ${u.health.padEnd(9)} ${u.publishedAt ? "published" : "draft    "}  ${u.reason}\n`);
+    if (!list.length) process.stdout.write("No updates.\n");
+    return;
+  }
+
+  /* ------------------------------ pull requests (TR-06) ------------------------- */
+
+  if (command === "pr") {
+    const view = (n: string) => {
+      const out = execFileSync("gh", ["pr", "view", n, "--json", "number,url,state,headRefOid"], { cwd: root, encoding: "utf8" });
+      return JSON.parse(out) as { number: number; url: string; state: string; headRefOid: string };
+    };
+    if (sub === "link") {
+      const [taskId, n] = rest;
+      if (!taskId || !n || !/^\d+$/.test(n)) die("Usage: project-companion pr link <task> <pr number>");
+      let pr;
+      try {
+        pr = view(n);
+      } catch (error) {
+        die(`Could not read pull request #${n} with gh: ${error instanceof Error ? error.message.split("\n")[0] : error}`);
+      }
+      const task = linkPullRequest(root, taskId, { number: pr!.number, url: pr!.url, state: pr!.state, headSha: pr!.headRefOid }) ?? die(`No task "${taskId}"`);
+      process.stdout.write(`Linked ${task.id} to pull request #${pr!.number} (${pr!.state}).\n`);
+      return;
+    }
+    if (sub === "sync") {
+      const linked = readTasks(root).tasks.filter((t) => t.pr);
+      let changed = 0;
+      for (const t of linked) {
+        try {
+          const pr = view(String(t.pr!.number));
+          if (pr.state !== t.pr!.state || pr.headRefOid !== t.pr!.headSha) changed++;
+          linkPullRequest(root, t.id, { number: pr.number, url: pr.url, state: pr.state, headSha: pr.headRefOid });
+        } catch {
+          process.stderr.write(`Could not read pull request #${t.pr!.number}; left as it was.\n`);
+        }
+      }
+      process.stdout.write(`Synced ${linked.length} pull request(s); ${changed} changed.\n`);
+      return;
+    }
+    die("Usage: project-companion pr link <task> <number> | pr sync");
+  }
+
+  /* ------------------------------- cockpit (PC) ------------------------------- */
+
+  if (command === "cockpit") {
+    const model = readCockpit(root);
+    if (has("json")) {
+      process.stdout.write(`${JSON.stringify(model)}\n`);
+      return;
+    }
+    const lines = [`${model.project}`, ""];
+    lines.push(model.needsYou.length ? `Needs you now (${model.needsYou.length}):` : "Nothing needs your decision now.");
+    for (const n of model.needsYou) lines.push(`  - ${n.title}${n.overdue ? " (overdue)" : ""}\n      type: ${n.command}`);
+    for (const e of model.epics) lines.push(`${e.name}: ${e.health.value.replace("-", " ")}. ${e.health.reason} Stage: ${e.stage}.`);
+    if (model.blocked.length) lines.push(`Blocked: ${model.blocked.map((b) => `${b.title} (${b.cause})`).join("; ")}`);
+    if (model.update.late) lines.push(model.update.lateReason!);
+    process.stdout.write(`${lines.join("\n")}\n`);
+    return;
   }
 
   if (command === "task") {
@@ -1318,12 +1613,53 @@ const main = () => {
       return;
     }
 
+    if (sub === "set") {
+      const id = rest[0] ?? die("Usage: project-companion task set <id> [--kind K] [--parent ID] [--points N] [--role R] [--assignee A] [--title T]");
+      const kind = flag("kind");
+      if (kind && !TASK_KINDS.includes(kind as never)) die(`Unknown kind "${kind}". One of: ${TASK_KINDS.join(", ")}`);
+      const patchTask: Record<string, unknown> = {};
+      if (kind) patchTask.kind = kind;
+      if (flag("parent")) patchTask.parentId = flag("parent");
+      if (flag("points") !== undefined) patchTask.points = Number(flag("points"));
+      if (flag("role")) patchTask.role = flag("role");
+      if (flag("assignee")) patchTask.assignee = flag("assignee");
+      if (flag("title")) patchTask.title = flag("title");
+      const task = updateTask(root, id, patchTask) ?? die(`No task "${id}"`);
+      process.stdout.write(`Updated ${task.id}.
+`);
+      return;
+    }
+
+    if (sub === "block") {
+      const id = rest[0] ?? die("Usage: project-companion task block <id> --reason R --cause decision|outside|agent --unblocker WHO");
+      const cause = flag("cause") ?? "agent";
+      if (!BLOCK_CAUSES.includes(cause as never)) die(`Unknown cause "${cause}". One of: ${BLOCK_CAUSES.join(", ")}`);
+      const task = blockTask(root, id, {
+        reason: flag("reason") ?? die("A block needs --reason \"<what is in the way>\"."),
+        cause: cause as BlockCause,
+        unblocker: flag("unblocker") ?? (cause === "decision" ? "PM" : "Engineering Manager"),
+      }) ?? die(`No task "${id}"`);
+      process.stdout.write(`${task.id} is blocked: ${task.blocked!.reason}
+`);
+      return;
+    }
+
+    if (sub === "unblock") {
+      const id = rest[0] ?? die("Usage: project-companion task unblock <id>");
+      const task = unblockTask(root, id) ?? die(`No task "${id}"`);
+      process.stdout.write(`${task.id} is no longer blocked.
+`);
+      return;
+    }
+
     if (sub === "show") {
       const id = rest[0] ?? die("Usage: project-companion task show <id>");
       const task = readTasks(root).tasks.find((t) => t.id === id) ?? die(`No task "${id}"`);
       const epic = task.phaseId ?? readRoadmap(root).features.find((f) => f.id === task.featureId)?.phaseId;
       if (has("json")) {
-        process.stdout.write(`${JSON.stringify({ ...task, epic: epic ?? null })}\n`);
+        const book = readGates(root, readRoadmap(root).source);
+        const track = book.tracks.get(task.id)?.track ?? (epic ? book.tracks.get(epic)?.track : undefined) ?? null;
+        process.stdout.write(`${JSON.stringify({ ...task, epic: epic ?? null, track })}\n`);
         return;
       }
       process.stdout.write(
@@ -1356,9 +1692,18 @@ const main = () => {
         die(`No feature "${feature}". Run \`project-companion feature list\`.`);
       }
 
+      const kind = flag("kind");
+      if (kind && !TASK_KINDS.includes(kind as never)) die(`Unknown kind "${kind}". One of: ${TASK_KINDS.join(", ")}`);
+      const points = flag("points") !== undefined ? Number(flag("points")) : undefined;
+      if (points !== undefined && !Number.isFinite(points)) die("--points must be a number.");
       const task = createTask(root, {
         title,
         status,
+        kind: kind as TaskKind | undefined,
+        parentId: flag("parent"),
+        points,
+        role: flag("role"),
+        assignee: flag("assignee"),
         description: flag("description"),
         nodeIds: node ? [node] : undefined,
         componentId: component,
@@ -1546,6 +1891,29 @@ const main = () => {
       limit === null ? `${fmtStatus(sub)} is no longer limited\n` : `${fmtStatus(sub)} limited to ${limit}\n`,
     );
     return;
+  }
+
+  if (command === "flow" && flag("lane")) {
+    const lane = flag("lane");
+    const events = readEvents(root);
+    const tasks = readTasks(root).tasks;
+    const runs = readRuns(root);
+    if (lane === "agent") {
+      const m = agentLane(events, tasks, runs);
+      process.stdout.write(has("json") ? `${JSON.stringify(m)}\n` :
+        `Agent lane: ${m.tasksDone} task(s) done\n` +
+        `  median cycle time: ${m.medianCycleTimeMs === null ? "no data" : asDays(m.medianCycleTimeMs)}\n` +
+        `  attempts per accepted change: ${m.attemptsPerAcceptedChange === null ? "no data" : m.attemptsPerAcceptedChange.toFixed(2)}\n` +
+        `  median wait on the PM: ${m.medianWaitOnPmMs === null ? "no data" : asDays(m.medianWaitOnPmMs)}\n`);
+      return;
+    }
+    if (lane === "human") {
+      const m = humanLane(Array.from(foldSprints(events).values()), events, tasks, runs);
+      process.stdout.write(has("json") ? `${JSON.stringify(m)}\n` :
+        `Human lane velocity:\n${m.velocity.map((v) => `  ${v.sprint}: ${v.delivered} ${v.unit}`).join("\n") || "  no closed sprints"}\n`);
+      return;
+    }
+    die("Unknown lane. One of: agent, human.");
   }
 
   if (command === "flow" || command === "next") {

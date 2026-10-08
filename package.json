@@ -7,9 +7,9 @@
     "project-companion-mcp": "./dist/project-companion-mcp.mjs"
   },
   "scripts": {
-    "dev": "npm run build:icons && next dev",
+    "dev": "npm run build:icons && next dev -H 127.0.0.1",
     "build": "npm run build:icons && npm run build:tools && next build",
-    "start": "next start",
+    "start": "next start -H 127.0.0.1",
     "lint": "next lint",
     "build:icons": "node scripts/build-icon-set.mjs",
     "build:tools": "node scripts/build-tools.mjs",

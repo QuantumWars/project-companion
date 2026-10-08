@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
-  Bot, Boxes, GitBranch, LayoutGrid, Map, Network, Pencil, SquareKanban,
+  Bot, Boxes, Gauge, GitBranch, LayoutGrid, Map, Network, Pencil, SquareKanban,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -36,6 +36,7 @@ type SidebarComponent = {
 
 const SURFACES = [
   { href: "/project", label: "Overview", icon: LayoutGrid, exact: true },
+  { href: "/project/cockpit", label: "Cockpit", icon: Gauge },
   { href: "/project/roadmap", label: "Roadmap", icon: Map },
   { href: "/project/tasks", label: "Board", icon: SquareKanban },
   { href: "/project/agents", label: "Agents", icon: Bot },

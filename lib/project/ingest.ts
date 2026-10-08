@@ -26,13 +26,22 @@ export type HookEvent =
   | {
       kind: "tool.use";
       sessionId: string;
+      /** Set when a subagent made the call, so it counts against the subagent's run. */
+      agentId?: string;
       tool?: string;
       inputTokens?: number;
       outputTokens?: number;
       touched: string[];
     }
   | { kind: "session.end"; sessionId: string; reason?: string }
+  /** The harness asked for a subagent; `taskId` comes from a `Task:` line in its prompt. */
+  | { kind: "spawn.requested"; sessionId: string; agentType: string; taskId?: string }
+  | { kind: "subagent.start"; sessionId: string; agentId: string; agentType: string }
+  | { kind: "subagent.stop"; sessionId: string; agentId: string }
   | { kind: "unknown" };
+
+/** `devolps:frontend-engineer` and `frontend-engineer` name the same role. */
+export const roleName = (agentType: string): string => agentType.split(":").pop() ?? agentType;
 
 const str = (value: unknown): string | undefined =>
   typeof value === "string" && value ? value : undefined;
@@ -95,10 +104,32 @@ export const parseHook = (raw: unknown): HookEvent => {
     };
   }
 
+  if (event === "PreToolUse" && (payload.tool_name === "Agent" || payload.tool_name === "Task")) {
+    const input = typeof payload.tool_input === "object" && payload.tool_input !== null
+      ? (payload.tool_input as Record<string, unknown>)
+      : {};
+    const prompt = str(input.prompt) ?? "";
+    return {
+      kind: "spawn.requested",
+      sessionId,
+      agentType: roleName(str(input.subagent_type) ?? "general-purpose"),
+      taskId: /^\s*Task:\s*([A-Za-z0-9._-]+)/im.exec(prompt)?.[1],
+    };
+  }
+
+  if (event === "SubagentStart" && str(payload.agent_id)) {
+    return { kind: "subagent.start", sessionId, agentId: str(payload.agent_id)!, agentType: roleName(str(payload.agent_type) ?? "") };
+  }
+
+  if (event === "SubagentStop" && str(payload.agent_id)) {
+    return { kind: "subagent.stop", sessionId, agentId: str(payload.agent_id)! };
+  }
+
   if (event === "PostToolUse" || event === "execute_tool") {
     return {
       kind: "tool.use",
       sessionId,
+      agentId: str(payload.agent_id),
       tool: str(payload["gen_ai.tool.name"]) ?? str(payload.tool_name),
       inputTokens: num(payload["gen_ai.usage.input_tokens"]) ?? num(payload.input_tokens),
       outputTokens: num(payload["gen_ai.usage.output_tokens"]) ?? num(payload.output_tokens),

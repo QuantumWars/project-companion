@@ -44,6 +44,7 @@ import {
 } from "./component";
 import { appendEvent, readEvents, type NewEvent } from "./events";
 import { checkWip, taskFlow, type WipVerdict } from "./flow";
+import { readGates } from "./gate";
 import { findingId, findingsFrom, type Finding, type StoredFinding } from "./review";
 import {
   canTransition,
@@ -67,7 +68,10 @@ import {
   type DiagramFile,
   type ProjectFile,
   type DiagramRef,
+  type BlockCause,
   type Task,
+  type TaskKind,
+  type TaskPullRequest,
   type TaskStatus,
   type TasksFile,
   type WhiteboardFile,
@@ -1400,7 +1404,9 @@ export const readRun = (root: string, id: string): AgentRun | null =>
 export const runForSession = (root: string, sessionId: string): AgentRun | null =>
   readRuns(root).find(
     (r) =>
-      r.sessionId === sessionId && r.state !== "merged" && r.state !== "abandoned",
+      // Top-level runs only: a subagent's run shares the session id, and must
+      // not swallow the main session's tool calls or its end.
+      r.sessionId === sessionId && !r.parentRunId && r.state !== "merged" && r.state !== "abandoned",
   ) ?? null;
 
 export type RunInput = {
@@ -1413,6 +1419,10 @@ export type RunInput = {
   worktree?: string;
   /** Overrides the resolved policy. For a caller that knows better, not a default. */
   budget?: AgentPolicy["budget"];
+  /** A subagent's devolps role, its parent run and the harness's agent id. */
+  role?: string;
+  parentRunId?: string;
+  agentId?: string;
 };
 
 /**
@@ -1444,6 +1454,9 @@ export const startRun = (root: string, input: RunInput): AgentRun => {
       writeGlobs: policy.writeGlobs,
       branch: input.branch,
       worktree: input.worktree,
+      ...(input.role ? { role: input.role } : {}),
+      ...(input.parentRunId ? { parentRunId: input.parentRunId } : {}),
+      ...(input.agentId ? { agentId: input.agentId } : {}),
     },
   });
 
@@ -1527,6 +1540,7 @@ export const setRunState = (
   if (!canTransition(run.state, state)) {
     throw new Error(`A ${run.state} run cannot become ${state}.`);
   }
+  if (state === "merged") requireMergeGate(root, run);
 
   logEvent(root, {
     kind: "run.state",
@@ -1534,6 +1548,55 @@ export const setRunState = (
     data: { runId: id, state, reason },
   });
   return readRun(root, id);
+};
+
+/**
+ * A run is merged only by a real merge (devolps EN-08.2, TR-02.4).
+ *
+ * "Merged" used to be a state anyone could set -- a button in the app, an MCP
+ * call -- which made it a claim. Now it needs the task's pull request to have
+ * an approved merge gate, which only the PM's typed `/devolps:ship` records.
+ */
+const requireMergeGate = (root: string, run: AgentRun): void => {
+  const task = run.taskId ? readTasks(root).tasks.find((t) => t.id === run.taskId) : undefined;
+  const pr = task?.pr?.number;
+  const gate = pr !== undefined ? readGates(root).gates.get(`merge:${pr}`) : undefined;
+  if (gate && (gate.state === "approved" || gate.state === "overridden")) return;
+  throw new Error(
+    pr === undefined
+      ? "A run is marked merged only when its task's pull request merges. Link the pull request first (`project-companion pr link <task> <number>`)."
+      : `Pull request #${pr} has no approved merge gate. The PM merges with /devolps:ship pr ${pr}, which approves it.`,
+  );
+};
+
+/** Marks a task blocked, with the reason, the kind of cause and who can unblock it. */
+export const blockTask = (
+  root: string,
+  id: string,
+  block: { reason: string; cause: BlockCause; unblocker: string },
+): Task | null => {
+  const task = updateTask(root, id, { blocked: { ...block, since: now() } });
+  if (task) logEvent(root, { kind: "task.blocked", componentId: task.componentId, data: { taskId: id, ...block } });
+  return task;
+};
+
+export const unblockTask = (root: string, id: string): Task | null => {
+  const task = mutateTasks(root, (tasks) => {
+    const t = tasks.find((x) => x.id === id);
+    if (!t) return null;
+    delete t.blocked;
+    t.updatedAt = now();
+    return t;
+  }) ?? null;
+  if (task) logEvent(root, { kind: "task.unblocked", componentId: task.componentId, data: { taskId: id } });
+  return task;
+};
+
+/** Records the pull request that delivers a task. */
+export const linkPullRequest = (root: string, id: string, pr: Omit<TaskPullRequest, "syncedAt">): Task | null => {
+  const task = updateTask(root, id, { pr: { ...pr, syncedAt: now() } });
+  if (task) logEvent(root, { kind: "task.pr_linked", componentId: task.componentId, data: { taskId: id, ...pr } });
+  return task;
 };
 
 /* --------------------------------- tasks ---------------------------------- */
@@ -1560,6 +1623,10 @@ export type TaskInput = {
   /** The PRD feature this task implements. */
   featureId?: string;
   phaseId?: string;
+  kind?: TaskKind;
+  parentId?: string;
+  points?: number;
+  role?: string;
 };
 
 /**
@@ -1593,6 +1660,10 @@ export const createTask = (root: string, input: TaskInput): Task => {
       assignee: input.assignee,
       featureId: input.featureId,
       phaseId: input.phaseId,
+      ...(input.kind ? { kind: input.kind } : {}),
+      ...(input.parentId ? { parentId: input.parentId } : {}),
+      ...(input.points !== undefined ? { points: input.points } : {}),
+      ...(input.role ? { role: input.role } : {}),
       createdAt: now(),
       updatedAt: now(),
       order: tasks.filter((t) => t.status === status).length,

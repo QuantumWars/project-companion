@@ -89,6 +89,12 @@ export type AgentRun = {
   autonomy: AutonomyLevel;
   componentId?: string;
   taskId?: string;
+  /** The devolps role of a subagent run, e.g. `frontend-engineer`. */
+  role?: string;
+  /** The run that started this one: the main session's run for a subagent. */
+  parentRunId?: string;
+  /** The harness's id for the subagent, so its tool calls find this run. */
+  agentId?: string;
   /** The harness session that owns it, so a hook can find it again. */
   sessionId?: string;
   branch?: string;
@@ -209,6 +215,9 @@ export const runsFrom = (events: readonly ProjectEvent[]): AgentRun[] => {
         autonomy: (data.autonomy as AutonomyLevel) ?? "confirm",
         componentId: event.componentId,
         taskId: typeof data.taskId === "string" ? data.taskId : undefined,
+        role: typeof data.role === "string" ? data.role : undefined,
+        parentRunId: typeof data.parentRunId === "string" ? data.parentRunId : undefined,
+        agentId: typeof data.agentId === "string" ? data.agentId : undefined,
         sessionId: typeof data.sessionId === "string" ? data.sessionId : undefined,
         branch: typeof data.branch === "string" ? data.branch : undefined,
         worktree: typeof data.worktree === "string" ? data.worktree : undefined,

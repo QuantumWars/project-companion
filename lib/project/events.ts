@@ -70,6 +70,9 @@ export type EventKind =
   | "task.moved"
   | "task.updated"
   | "task.deleted"
+  | "task.blocked"
+  | "task.unblocked"
+  | "task.pr_linked"
   // The PRD.
   | "feature.added"
   | "feature.pinned"
@@ -83,11 +86,22 @@ export type EventKind =
   | "run.started"
   | "run.progress"
   | "run.state"
+  // A spawn the harness asked for, matched to the subagent that starts.
+  | "run.requested"
   // Gates: decisions only a person makes. Their state is a fold; see `gate.ts`.
   | "gate.requested"
   | "gate.approved"
   | "gate.refused"
   | "track.confirmed"
+  // Sprints, decision cards and weekly updates; see `sprint.ts`, `decisions.ts`.
+  | "sprint.created"
+  | "sprint.committed"
+  | "sprint.scope_added"
+  | "sprint.closed"
+  | "card.opened"
+  | "card.answered"
+  | "update.drafted"
+  | "update.published"
   // Bookkeeping.
   | "actor.identified";
 

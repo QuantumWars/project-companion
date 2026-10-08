@@ -8,9 +8,10 @@ import { attribute, type AttributableRun } from "@/lib/project/git-link";
 import type { GitCommit } from "@/lib/project/git";
 import type { Feature, Task } from "@/lib/project/types";
 import {
-  createComponent, createTask, initProject, readRun, readRuns, reportRun,
+  createComponent, createTask, initProject, linkPullRequest, readRun, readRuns, reportRun,
   resolvePolicy, setRunState, startRun,
 } from "@/lib/project/store";
+import { approveGate, requestGate } from "@/lib/project/gate";
 import { eq, ok, runAll, test, throws } from "./harness";
 
 const project = () => {
@@ -168,17 +169,34 @@ test("an illegal transition is refused before it is written", () => {
   } finally { cleanup(); }
 });
 
-test("the whole lifecycle round-trips", () => {
+test("the whole lifecycle round-trips, merging through an approved merge gate", () => {
   const { dir, cleanup } = project();
   try {
-    const run = startRun(dir, { actor: { model: "m" } });
+    const task = createTask(dir, { title: "Receipts" });
+    linkPullRequest(dir, task.id, { number: 7, state: "OPEN", headSha: "abc" });
+    const run = startRun(dir, { taskId: task.id, actor: { model: "m" } });
     reportRun(dir, run.id, { inputTokens: 10, toolCalls: 1, touched: ["x.ts"] });
     setRunState(dir, run.id, "awaiting_review");
+    requestGate(dir, { kind: "merge", subject: "7", artifacts: ["head:abc"] });
+    approveGate(dir, { kind: "merge", subject: "7", via: "prompt:pm", head: "abc" });
     const merged = setRunState(dir, run.id, "merged")!;
 
     eq(merged.state, "merged");
     ok(merged.endedAt, "it knows when it ended");
     eq(readRuns(dir).length, 1);
+  } finally { cleanup(); }
+});
+
+test("must refuse: marking a run merged without an approved merge gate", () => {
+  const { dir, cleanup } = project();
+  try {
+    const task = createTask(dir, { title: "Receipts" });
+    const run = startRun(dir, { taskId: task.id, actor: { model: "m" } });
+    setRunState(dir, run.id, "awaiting_review");
+    throws(() => setRunState(dir, run.id, "merged"), /Link the pull request first/, "no pull request, no merge");
+    linkPullRequest(dir, task.id, { number: 8, state: "OPEN", headSha: "def" });
+    throws(() => setRunState(dir, run.id, "merged"), /no approved merge gate/, "a pull request is not an approval");
+    eq(readRun(dir, run.id)?.state, "awaiting_review", "and the run is unchanged");
   } finally { cleanup(); }
 });
 
