@@ -17,8 +17,8 @@ read-only access to repository contents; it cannot push or change the repo.
 The devolps merge gate (`/devolps:ship pr`) reads this check through
 `gh pr checks`. Until the PM turns on the required-status-check setting on
 `master` (card c-a5d4fd, GitHub repository settings, not part of this
-runbook), a missing or failing `ci` check blocks the gate but not a push
-through the GitHub web UI.
+runbook), a missing or failing `ci` check blocks the gate, but not a merge
+from the GitHub web page.
 
 ## Run the same 4 steps locally
 
@@ -53,16 +53,17 @@ Notes:
      failed (check its output further up the same step's log).
    - `npm test` fails: read the failing test's name and assertion in the
      log; `scripts/run-tests.mjs` prints each test as it runs.
-   - `npm run build:tools` fails: an esbuild error in `lib/` or the CLI
-     entry points under `scripts/`.
+   - `npm run build:tools` fails: an esbuild error in `lib/` or in one of
+     the entry points `cli/index.ts` and `mcp/server.ts`, built by esbuild
+     from `scripts/build-tools.mjs` (lines 32 and 38).
 
 ## Rollback
 
 If the check is blocking work it should not, do one of:
 - Delete `.github/workflows/ci.yml` from the repository.
-- Disable the workflow on GitHub (repository Settings > Actions > the `ci`
-  workflow > Disable workflow). This stops new runs without deleting the
-  file.
+- Disable the workflow on GitHub (the Actions tab, select the `ci`
+  workflow, open the "..." menu, then "Disable workflow"). This stops new
+  runs without deleting the file.
 
 Either way, pull requests then have no checks again, and the merge gate
 needs an override until the workflow is restored.
