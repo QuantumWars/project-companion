@@ -48,7 +48,7 @@ export const TableInspector = ({ data, onChange }: TableInspectorProps) => {
   };
 
   return (
-    <aside className="absolute right-2 top-2 z-20 flex max-h-[calc(100vh-5rem)] w-[320px] flex-col rounded-lg border border-line bg-panel shadow-lg">
+    <aside className="absolute right-2 top-16 z-20 flex max-h-[calc(100vh-5rem)] w-[320px] flex-col rounded-lg border border-line bg-panel shadow-lg">
       <div className="border-b p-3">
         <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-fg-subtle">
           Table

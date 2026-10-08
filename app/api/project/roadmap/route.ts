@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 
 import { PrdEditError, type PrdOp } from "@/lib/project/prd";
 import { resolveRequestRoot } from "@/lib/project/request-root";
+import { readEvents } from "@/lib/project/events";
+import { proofState, verifications } from "@/lib/project/verify";
 import { editPrd, readRoadmap, RoadmapConflictError } from "@/lib/project/roadmap";
 import { tasksForFeature } from "@/lib/project/store";
 
@@ -22,9 +24,18 @@ export const GET = async (request: Request) => {
     return NextResponse.json({ configured: true, sourceHash: roadmap.sourceHash });
   }
 
+  // What each declared check last said. Folded from the log rather than stored,
+  // so it can never disagree with the run that produced it.
+  const proven = verifications(readEvents(resolved.root));
+
   return NextResponse.json({
     configured: true,
     ...roadmap,
+    features: roadmap.features.map((f) => ({
+      ...f,
+      proof: proofState(f, proven[f.id]),
+      verifiedAt: proven[f.id]?.at ?? null,
+    })),
     tasksByFeature: Object.fromEntries(
       roadmap.features.map((f) => [f.id, tasksForFeature(resolved.root, f.id)]),
     ),

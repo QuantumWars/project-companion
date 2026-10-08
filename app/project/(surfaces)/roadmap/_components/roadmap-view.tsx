@@ -10,6 +10,9 @@ import {
   GitCommit,
   Plus,
   Square,
+  ShieldAlert,
+  ShieldCheck,
+  ShieldQuestion,
   Tag,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -231,6 +234,51 @@ const Progress = ({ features }: { features: Feature[] }) => {
   );
 };
 
+/**
+ * Whether a finished feature is finished, or only says so.
+ *
+ * Nothing is drawn for work that is not claiming to be done -- an in-progress
+ * feature is not failing verification, it simply has not got there, and a mark
+ * on every row would make the one that matters invisible.
+ */
+const ProofMark = ({
+  feature,
+}: {
+  feature: { status: string; verify?: string; proof?: string };
+}) => {
+  if (feature.status !== "done") return null;
+
+  if (feature.proof === "proven") {
+    return (
+      <span className="shrink-0 text-status-done" title={`Verified: ${feature.verify}`}>
+        <ShieldCheck className="h-3 w-3" />
+      </span>
+    );
+  }
+  if (feature.proof === "failing") {
+    return (
+      <span
+        className="shrink-0 text-status-danger"
+        title={`Claimed done, but \`${feature.verify}\` fails`}
+      >
+        <ShieldAlert className="h-3 w-3" />
+      </span>
+    );
+  }
+  return (
+    <span
+      className="shrink-0 text-fg-subtle"
+      title={
+        feature.verify
+          ? `Claimed done. \`${feature.verify}\` has not been run -- \`project-companion verify\``
+          : "Claimed done. No Verify: command, so nothing checks it."
+      }
+    >
+      <ShieldQuestion className="h-3 w-3" />
+    </span>
+  );
+};
+
 const FeatureCard = ({
   feature,
   tasks,
@@ -313,6 +361,10 @@ const FeatureCard = ({
             {git.commits}
           </span>
         ) : null}
+
+        {/* Done because somebody ticked boxes, or done because a command said
+            so. Every board before this one drew those identically. */}
+        <ProofMark feature={feature} />
 
         {feature.idSource === "slug" ? (
           <span

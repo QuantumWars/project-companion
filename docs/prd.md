@@ -77,7 +77,7 @@ Paths: lib/project/git-link.ts, lib/project/git-view.ts
 - [x] All four signals resolve, strongest first
 - [x] Path overlap attributes to a feature and never to a task
 - [x] An ambiguous path match is no match
-- [ ] The git surface lists unattributed commits for one-click linking
+- [x] The git surface lists unattributed commits for one-click linking
 
 ### Branch creation
 <!-- id: branch-creation -->
@@ -114,6 +114,258 @@ Any node can link to the diagram that details it, with a breadcrumb back.
 
 Paths: app/arch/**
 
-- [ ] Nodes carry a drilldown diagram id
-- [ ] c4 and note nodes exist and are registered
-- [ ] UML class attributes and methods are editable
+- [x] Nodes carry a drilldown diagram id
+- [x] c4 and note nodes exist and are registered
+- [x] UML class attributes and methods are editable
+
+## Phase: Component model
+
+Goal: make every node on the architecture canvas a unit of accountability, with its own
+board, its own owner and its own evidence -- so the diagram becomes the way you navigate
+the work rather than a picture beside it.
+
+### Component catalog
+<!-- id: component-catalog -->
+
+A component is an architecture node that owns work: a title, a directly responsible
+individual, a region of the source, and a place in the containment tree. Its declared
+paths are the join key everything else resolves through.
+
+Paths: lib/project/component.ts
+
+Verify: npm test -- component
+
+- [x] A component has an id that survives a rename, and orphans rather than deletes
+- [x] Path overlap resolves to the most specific claim, and an ambiguous one to nothing
+- [x] The catalog reports what is wrong with it: unowned, pathless, ambiguous, dangling
+- [x] The canvas stamps component ids onto its nodes, and orphans what it removes
+- [x] A component's board, spec and evidence are one surface in the app
+
+### The event log
+<!-- id: event-log -->
+
+An append-only record of what happened, sharded one file per actor so two writers never
+touch the same file and a merge has nothing to resolve. Each shard is hash-chained, so
+editing history after the fact is detectable.
+
+Paths: lib/project/events.ts
+
+Verify: npm test -- events
+
+- [x] Every state change is recorded with its actor, its component and its order
+- [x] Two actors' logs merge with no conflict, by construction
+- [x] Tampering with a record breaks the chain and the break is reported
+- [x] A log that cannot be written never fails the write it was recording
+
+### Concurrent PRD edits
+<!-- id: prd-lock -->
+
+The PRD had a compare-and-swap on its bytes but no mutual exclusion, so two writers could
+both pass the hash check and the second rename erased the first.
+
+Paths: lib/project/roadmap.ts, lib/project/bundle.ts
+
+Verify: npm test -- sync
+
+- [x] The project lock is re-entrant, so a nested write does not deadlock against itself
+- [x] Editing the PRD holds that lock across the whole read-check-write
+- [x] Concurrent ticks from separate processes all land, and the prose is untouched
+
+## Phase: Agent plane
+
+Goal: make an agent a supervised contributor rather than an anonymous one -- with a
+budget, a boundary, and a record of what it actually did that the repository can be
+checked against.
+
+### Agent runs
+<!-- id: agent-runs -->
+
+A run is a unit of agent work with a state machine, a budget and a path boundary, derived
+from the event log rather than stored -- a run updates on every tool call, and taking the
+project lock that often would stall every other writer.
+
+Paths: lib/project/run.ts
+
+Verify: npm test -- agent-run
+
+- [x] A run's lifecycle refuses the transitions that make no sense
+- [x] A run inherits its budget and boundary from the component that owns the work
+- [x] Going over budget blocks the run rather than failing the agent's session
+- [x] A write outside the boundary is refused and reported, never silently counted
+- [x] Mission control shows what is in flight and what it is spending
+
+### Harness ingestion
+<!-- id: harness-ingestion -->
+
+Runs record themselves from the coding agent's own hooks, normalised onto the
+OpenTelemetry GenAI conventions so a harness other than Claude Code needs no adapter.
+
+Paths: lib/project/ingest.ts
+
+Verify: npm test -- agent-run
+
+- [x] A session start, tool use and session end each become the right event
+- [x] Only files the agent wrote are counted, not everything it read
+- [x] A payload this build does not understand is ignored, never an error
+- [x] `init` installs the hooks without disturbing what is already there
+
+### Run attribution
+<!-- id: run-attribution -->
+
+The fifth and second-strongest signal: a commit of files a run was watched writing,
+inside the window it was open. This is what makes attribution work without the trailer.
+
+Paths: lib/project/git-link.ts
+
+Verify: npm test -- agent-run
+
+- [x] A commit matching a run's files and window attributes to that run's task
+- [x] A window without a file overlap is not a match, and neither is the reverse
+- [x] Two runs claiming one commit attribute to neither
+- [x] A recorded sha still outranks it, and it outranks a trailer
+
+### Two clones, one board
+<!-- id: shared-board -->
+
+`.project` is one file everybody writes, so git's line merge turns two people editing
+different parts of the project into a conflict neither can resolve. A structural merge
+makes it disappear, because it was never a real one.
+
+Paths: lib/project/merge.ts
+
+Verify: npm test -- merge
+
+- [x] Two people adding different things both keep them
+- [x] Both sides editing one entity takes the later one, not half of each
+- [x] A genuine collision fails rather than picking a winner
+- [x] Two clones that both edited the board merge through real git
+
+## Phase: Gates
+
+Goal: make "done" a state the repository agreed to rather than one somebody asserted.
+
+### Executable criteria
+<!-- id: executable-criteria -->
+
+A feature names the command that proves it works, beside the paths that say where it
+lives. A criterion whose check fails is unticked -- claimed is not the same as proven.
+
+Paths: lib/project/verify.ts
+
+Verify: npm test -- verify
+
+- [x] A Verify line parses, and is not mistaken for the summary or a code sample
+- [x] Setting, changing and clearing one leaves the rest of the document identical
+- [x] A failing check unticks what it refuses, and records that it did
+- [x] The roadmap shows claimed-but-unverified as distinct from done
+
+### Architecture drift
+<!-- id: architecture-drift -->
+
+The canvas is a claim about how the system should be structured; the import graph is what
+it is. The value is the difference between them, which no diagram tool can see because it
+does not read the code, and no linter can see because it does not read the diagram.
+
+Paths: lib/project/deps.ts
+
+Verify: npm test -- deps
+
+- [x] Every import form is found, including the multi-line ones
+- [x] An import inside one component is not a boundary crossing
+- [x] Coupling the canvas does not draw is reported, with the files that prove it
+- [x] A declared relation no import backs is reported apart, not as a violation
+
+## Phase: Review
+
+Goal: make a change cheap to review, and stop a review from costing more attention than
+it saves.
+
+### Review packets
+<!-- id: review-packets -->
+
+The expensive part of reviewing is knowing what a change is for. That is deterministic
+retrieval, so the tool does it: the spec slice, the criteria, whether their checks pass,
+what to read and in what order, and what to skip entirely.
+
+Paths: lib/project/review.ts
+
+Verify: npm test -- review
+
+- [x] Machine-written and documentation-only files are set aside, not read
+- [x] The reading order is behaviour first, largest first
+- [x] The packet carries the criteria the change has to satisfy, and their checks
+- [x] Only boundaries this change actually crosses are reported
+
+### Grounded findings
+<!-- id: grounded-findings -->
+
+A finding on a line the change did not touch is dropped before anybody sees it. No model
+is involved, which is why it is a floor rather than a preference.
+
+Paths: lib/project/review.ts
+
+Verify: npm test -- review
+
+- [x] A finding anchored inside the diff is kept
+- [x] A finding on a file the diff does not contain is dropped
+- [x] A finding on a real file but an unchanged line is dropped, and told apart
+
+## Phase: Flow
+
+Goal: AI made generation cheap and review expensive, so work accumulates in front of the
+reviewer. Show that, and put a valve on it.
+
+### Flow metrics
+<!-- id: flow-metrics -->
+
+Every number is a fold over the event log. Nothing is reported and nothing is entered --
+moving the card is the measurement.
+
+Paths: lib/project/flow.ts
+
+Verify: npm test -- flow
+
+- [x] A task's time in each stage, and its age where it now sits, come from the log
+- [x] A queue reports its oldest, which is what a mean hides
+- [x] Work that reached review and came back is counted as rework
+- [x] No velocity, no points, no burndown
+
+### WIP limits
+<!-- id: wip-limits -->
+
+A limit is a refusal, not a warning. When the queue in front of the bottleneck is full,
+the useful action is to finish something, not to start a fifth thing.
+
+Paths: lib/project/flow.ts
+
+Verify: npm test -- flow
+
+- [x] A full column refuses `task start` and `run start`, naming itself and the numbers
+- [x] An unset limit is silence, not zero
+
+### The attention router
+<!-- id: attention-router -->
+
+What to look at first: age, weighted by how much rests on it -- and the reasons, so the
+ranking can be argued with.
+
+Paths: lib/project/flow.ts
+
+Verify: npm test -- flow
+
+- [x] Waiting on a person outranks waiting on a machine
+- [x] Blast radius lifts a task logarithmically, not linearly
+- [x] Every ranking carries the reasons that produced it
+
+### Live updates
+<!-- id: live-updates -->
+
+The app polled three endpoints on a timer and several surfaces did not refresh at all, so
+an agent's work was invisible until you navigated. One stream replaces that, with the
+polls kept as a fallback that stands down while it is connected.
+
+Paths: app/api/project/stream/**, lib/project/use-stream.ts
+
+- [x] A change made from the CLI reaches an open browser with no reload
+- [x] A stream that cannot connect degrades to the polling that was there before
+- [x] Only the kind of change is sent; the client re-reads what it needs

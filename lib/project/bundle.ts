@@ -34,8 +34,9 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 
+import type { Component } from "./component";
 import type {
-  DiagramFile, DiagramRef, Feature, FeatureOverride, Phase, Task, WhiteboardFile,
+  DiagramFile, DiagramRef, Feature, FeatureOverride, Phase, Task, TaskStatus, WhiteboardFile,
 } from "./types";
 
 export const BUNDLE_FILE = ".project";
@@ -54,6 +55,14 @@ export type ProjectBundle = {
 
   diagrams: Record<string, DiagramFile>;
   boards: Record<string, WhiteboardFile>;
+  /**
+   * The architecture nodes that own work, keyed by component id.
+   *
+   * Separate from the nodes inside `diagrams` on purpose: a node is how a
+   * component is drawn, and a component outlives any particular drawing of it.
+   * Deleting the node orphans the entry rather than the work attached to it.
+   */
+  components: Record<string, Component>;
   tasks: Task[];
   roadmap: {
     phases: Phase[];
@@ -61,6 +70,47 @@ export type ProjectBundle = {
     orphans: Feature[];
   };
   git: { allowBranchCreate?: boolean };
+  /**
+   * How much an agent may do without being asked, and what it may touch.
+   *
+   * Per component rather than per project, because the right answer differs by
+   * blast radius: a utility module can take autonomous edits, billing cannot.
+   * `default` applies where a component says nothing.
+   */
+  agents: {
+    default?: AgentPolicy;
+    byComponent?: Record<string, AgentPolicy>;
+  };
+  /**
+   * How much unfinished work is allowed to sit in each column.
+   *
+   * Empty by default, because a limit somebody did not choose is a limit they
+   * will route around. Setting one turns the board from a report into a valve:
+   * `task start` and `run start` refuse once the column is full.
+   */
+  wip: Partial<Record<TaskStatus, number>>;
+};
+
+export const AUTONOMY_LEVELS = [
+  "observe",
+  "propose",
+  "confirm",
+  "autonomous",
+] as const;
+
+/** How much rope an agent gets, weakest first. */
+export type AutonomyLevel = (typeof AUTONOMY_LEVELS)[number];
+
+export type AgentPolicy = {
+  autonomy?: AutonomyLevel;
+  /** Hard ceilings on one run. Exhausting any of them stops it. */
+  budget?: { tokens?: number; wallClockMs?: number; toolCalls?: number };
+  /**
+   * Globs a run may write. Left unset, a run inherits its component's declared
+   * paths -- the boundary is the same declaration that drives attribution, so
+   * there is only ever one place to state where a component lives.
+   */
+  writeGlobs?: string[];
 };
 
 export const bundlePath = (root: string): string => join(root, BUNDLE_FILE);
@@ -74,19 +124,63 @@ export const emptyBundle = (name: string): ProjectBundle => ({
   prdSource: "docs/prd.md",
   diagrams: {},
   boards: {},
+  components: {},
   tasks: [],
   roadmap: { phases: [], overrides: {}, orphans: [] },
   git: {},
+  agents: {},
+  wip: {},
 });
 
 export class BundleConflictError extends Error {}
 
 export const hasBundle = (root: string): boolean => existsSync(bundlePath(root));
 
+/**
+ * What a bundle must look like to be one.
+ *
+ * Deliberately shallow. Validating every diagram node would reject a file
+ * written by a newer build the moment it adds a field, and this format is
+ * explicitly forward-compatible -- unknown keys are preserved, missing ones are
+ * filled. What is checked is only what the code below would crash on: the
+ * containers it iterates and the counter it compares.
+ *
+ * A file that fails this returns null, which callers already treat as "no
+ * project here" -- the same path a missing file takes. The alternative was the
+ * old behaviour: spread a corrupt object over the defaults and carry on with a
+ * project that has silently lost its diagrams.
+ */
+const SHAPE: Record<string, "object" | "array" | "number" | "string"> = {
+  diagrams: "object",
+  boards: "object",
+  tasks: "array",
+  revision: "number",
+};
+
+const looksLikeBundle = (value: unknown): value is ProjectBundle => {
+  if (typeof value !== "object" || value === null) return false;
+  const bundle = value as Record<string, unknown>;
+
+  for (const [key, kind] of Object.entries(SHAPE)) {
+    const found = bundle[key];
+    // Absent is fine: a field added after this file was written is filled in
+    // below. Present but the wrong shape is not -- that is corruption.
+    if (found === undefined) continue;
+    const ok =
+      kind === "array"
+        ? Array.isArray(found)
+        : kind === "object"
+          ? typeof found === "object" && found !== null && !Array.isArray(found)
+          : typeof found === kind;
+    if (!ok) return false;
+  }
+  return bundle.diagrams !== undefined;
+};
+
 export const readBundle = (root: string): ProjectBundle | null => {
   try {
-    const parsed = JSON.parse(readFileSync(bundlePath(root), "utf8")) as ProjectBundle;
-    if (!parsed || typeof parsed !== "object" || !parsed.diagrams) return null;
+    const parsed: unknown = JSON.parse(readFileSync(bundlePath(root), "utf8"));
+    if (!looksLikeBundle(parsed)) return null;
     // Older files may predate a field; fill rather than fail.
     return {
       ...emptyBundle(parsed.name ?? "Untitled project"),
@@ -96,7 +190,10 @@ export const readBundle = (root: string): ProjectBundle | null => {
         overrides: parsed.roadmap?.overrides ?? {},
         orphans: parsed.roadmap?.orphans ?? [],
       },
+      components: parsed.components ?? {},
       git: parsed.git ?? {},
+      agents: parsed.agents ?? {},
+      wip: parsed.wip ?? {},
     };
   } catch {
     return null;
@@ -149,7 +246,18 @@ const STALE_LOCK_MS = 10_000;
 const LOCK_TIMEOUT_MS = 5_000;
 
 /**
- * An exclusive lock around the whole read-modify-write.
+ * How deep this process already is inside the lock, per project.
+ *
+ * The lock excludes other PROCESSES. Within one process, execution is
+ * single-threaded, so a nested acquisition is already exclusive -- and would
+ * otherwise deadlock against itself and time out after five seconds. That is not
+ * hypothetical: editing the PRD takes the lock and then writes the sidecar,
+ * which takes it again.
+ */
+const held = new Map<string, number>();
+
+/**
+ * An exclusive lock around a whole read-modify-write.
  *
  * A revision check alone is not enough across processes. Two writers can both
  * read revision N, both find it matches, and both write N+1 -- the second
@@ -159,10 +267,24 @@ const LOCK_TIMEOUT_MS = 5_000;
  * `openSync` with `wx` is atomic at the filesystem level: exactly one caller
  * creates the file and everyone else gets EEXIST. That is the primitive this
  * needs, and it works across processes, which an in-memory mutex would not.
+ *
+ * Exported because the bundle is not the only thing that needs it. `docs/prd.md`
+ * is edited by the same read-check-write shape, on the same project, and a hash
+ * check alone has the identical race.
  */
-const withLock = <T>(root: string, fn: () => T): T => {
+export const withProjectLock = <T>(root: string, fn: () => T): T => {
   const lock = `${bundlePath(root)}${LOCK_SUFFIX}`;
   const started = Date.now();
+
+  const depth = held.get(lock) ?? 0;
+  if (depth > 0) {
+    held.set(lock, depth + 1);
+    try {
+      return fn();
+    } finally {
+      held.set(lock, (held.get(lock) ?? 1) - 1);
+    }
+  }
 
   for (;;) {
     try {
@@ -200,12 +322,15 @@ const withLock = <T>(root: string, fn: () => T): T => {
     }
   }
 
+  held.set(lock, 1);
   try {
     return fn();
   } finally {
+    held.set(lock, 0);
     rmSync(lock, { force: true });
   }
 };
+
 
 /**
  * Read, change, write, once and exclusively.
@@ -219,7 +344,7 @@ export const mutateBundle = (
   root: string,
   change: (bundle: ProjectBundle) => void,
 ): ProjectBundle | null =>
-  withLock(root, () => {
+  withProjectLock(root, () => {
     const bundle = readBundle(root);
     if (!bundle) return null;
 

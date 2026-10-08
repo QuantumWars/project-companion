@@ -12,6 +12,7 @@ import {
   useNodeTasks,
 } from "@/lib/project/task-context";
 import { HANDLE_SIDES, type ArchNode, type HandleSide } from "@/types/arch";
+import { DrilldownBadge } from "./drilldown-badge";
 
 const HANDLE_POSITION: Record<HandleSide, Position> = {
   t: Position.Top,
@@ -77,6 +78,8 @@ export const ServiceNode = memo(({ id, data, selected }: NodeProps<ArchNode>) =>
           {active.length}
         </span>
       ) : null}
+
+      <DrilldownBadge diagramId={data.drilldownDiagramId} />
 
       {HANDLE_SIDES.map((side) => (
         <Handle

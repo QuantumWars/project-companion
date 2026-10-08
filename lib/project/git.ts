@@ -85,14 +85,23 @@ export class GitError extends Error {}
 
 /* -------------------------------- validation ------------------------------ */
 
-const REF = /^[A-Za-z0-9._][A-Za-z0-9._/-]{0,254}$/;
+const REF = /^[A-Za-z0-9._][A-Za-z0-9._/~^{}@-]{0,254}$/;
 
 /**
  * Rejects anything that is not plainly a ref.
  *
  * The leading-character rule is the important half: git parses a leading `-` as
  * an option, so an unvalidated ref is an argument-injection into whatever
- * command it is passed to.
+ * command it is passed to. That rule is what makes the rest of the character
+ * set safe rather than the character set itself.
+ *
+ * `~`, `^`, `@` and braces are allowed because `HEAD~1`, `main^`, `@{upstream}`
+ * and `HEAD@{2}` are refs people type constantly, and rejecting them made the
+ * tool refuse ordinary input. None of them can begin a token, so none of them
+ * can turn an argument into an option.
+ *
+ * `..` stays rejected: it turns a ref into a RANGE, and a caller asking for one
+ * commit would silently get every commit between two.
  */
 export const assertRef = (ref: string): string => {
   if (!REF.test(ref) || ref.includes("..") || ref.endsWith(".lock")) {
@@ -173,6 +182,54 @@ export type CommitQuery = {
   since?: string;
   /** Restrict to commits touching these paths. */
   paths?: string[];
+};
+
+/** The lines a commit actually changed, per file. */
+export type DiffHunk = { path: string; start: number; lines: number };
+
+/**
+ * Which lines a commit touched.
+ *
+ * `--unified=0` so a hunk covers only changed lines rather than three lines of
+ * context either side. Context is what makes a diff readable to a person and
+ * what makes grounding wrong: a finding about a line the commit did not change
+ * is a finding about somebody else's code, and three lines of slack on each
+ * hunk is enough for that to slip through.
+ */
+export const readDiffHunks = async (root: string, ref: string): Promise<DiffHunk[]> => {
+  assertRef(ref);
+  const out = await git(root, [
+    "show",
+    "--unified=0",
+    "--format=",
+    "--no-color",
+    ref,
+  ]);
+
+  const hunks: DiffHunk[] = [];
+  let path: string | undefined;
+
+  for (const line of out.split("\n")) {
+    if (line.startsWith("+++ b/")) {
+      path = line.slice(6).trim();
+      continue;
+    }
+    if (line.startsWith("+++ /dev/null")) {
+      path = undefined;
+      continue;
+    }
+    if (!path || !line.startsWith("@@")) continue;
+
+    // `@@ -old,n +new,m @@` -- the `+` side is the file as it is after the
+    // commit, which is what a reviewer is looking at.
+    const match = /\+(\d+)(?:,(\d+))?/.exec(line.split("@@")[1] ?? "");
+    if (!match) continue;
+    const start = Number(match[1]);
+    const lines = match[2] === undefined ? 1 : Number(match[2]);
+    if (lines > 0) hunks.push({ path, start, lines });
+  }
+
+  return hunks;
 };
 
 export const readCommits = async (root: string, query: CommitQuery = {}): Promise<GitCommit[]> => {

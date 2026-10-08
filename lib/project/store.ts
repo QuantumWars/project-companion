@@ -29,8 +29,33 @@ import {
   removeBundle,
   migrateToBundle,
   writeBundle,
+  type AgentPolicy,
   type ProjectBundle,
 } from "./bundle";
+import {
+  componentId,
+  isNoop,
+  resolveComponent,
+  reconcile,
+  type CanvasNode,
+  type Component,
+  type ComponentLifecycle,
+  type Reconciliation,
+} from "./component";
+import { appendEvent, readEvents, type NewEvent } from "./events";
+import { checkWip, taskFlow, type WipVerdict } from "./flow";
+import { readGates } from "./gate";
+import { findingId, findingsFrom, type Finding, type StoredFinding } from "./review";
+import {
+  canTransition,
+  checkBudget,
+  mayWrite,
+  runsFrom,
+  type AgentRun,
+  type BudgetVerdict,
+  type RunActor,
+  type RunState,
+} from "./run";
 import {
   DEFAULT_STORE_DIR,
   DEFAULT_PRD_PATH,
@@ -43,7 +68,10 @@ import {
   type DiagramFile,
   type ProjectFile,
   type DiagramRef,
+  type BlockCause,
   type Task,
+  type TaskKind,
+  type TaskPullRequest,
   type TaskStatus,
   type TasksFile,
   type WhiteboardFile,
@@ -64,10 +92,53 @@ import type { ArchEdge, ArchNode, DiagramType } from "@/types/arch";
  * than one agent directory and the caller must not have to guess which one is
  * in use.
  */
+/**
+ * Discovery is cached, and the cache checks itself.
+ *
+ * `usesBundle` calls this, and `usesBundle` runs on every read and every write
+ * -- so listing tasks walked the tree once per task, stat-ing four candidate
+ * paths at every level on the way up.
+ *
+ * The cache re-confirms its answer with a single `existsSync` rather than
+ * relying on every code path that creates, moves, migrates or deletes a project
+ * remembering to invalidate it. That discipline is the kind that holds until
+ * somebody adds a fifth such path and does not know they have to; one stat
+ * instead of four-per-level is nearly all of the win and cannot go stale.
+ *
+ * Only positive answers are cached. "There is no project here" has nothing to
+ * re-confirm cheaply, and it is the answer most likely to stop being true --
+ * `init` is precisely the act of making it false.
+ *
+ * Keyed by the directory asked about rather than held as one value, because a
+ * long-lived process (the dev server) serves several projects through `?root=`.
+ */
+const discovered = new Map<string, { root: string; storeDir: string }>();
+
+export const forgetDiscovery = () => discovered.clear();
+
+const stillThere = (found: { root: string; storeDir: string }): boolean =>
+  existsSync(
+    found.storeDir === BUNDLE_FILE
+      ? join(found.root, BUNDLE_FILE)
+      : join(found.root, found.storeDir, "project.json"),
+  );
+
 export const findProject = (
   from?: string,
 ): { root: string; storeDir: string } | null => {
-  let dir = resolvePath(from ?? process.env.CLAUDE_PROJECT_DIR ?? process.cwd());
+  const start = resolvePath(from ?? process.env.CLAUDE_PROJECT_DIR ?? process.cwd());
+
+  const cached = discovered.get(start);
+  if (cached && stillThere(cached)) return cached;
+  if (cached) discovered.delete(start);
+
+  const found = discover(start);
+  if (found) discovered.set(start, found);
+  return found;
+};
+
+const discover = (start: string): { root: string; storeDir: string } | null => {
+  let dir = start;
 
   for (;;) {
     // A `.project` file is the current format and wins wherever it is found.
@@ -153,6 +224,24 @@ export const writeJson = (path: string, value: unknown) => {
 };
 
 const now = () => new Date().toISOString();
+
+/**
+ * Records what just happened, without ever failing the thing that happened.
+ *
+ * The log is an audit trail beside the state, not the state itself: `.project`
+ * is still the source of truth for what a project currently is. So a log that
+ * cannot be written -- a read-only checkout, a permissions problem, a full disk
+ * -- must not turn a successful task edit into an error the user has to
+ * understand. It is appended after the write succeeds, so nothing is ever
+ * recorded that did not actually land.
+ */
+const logEvent = (root: string, event: NewEvent): void => {
+  try {
+    appendEvent(root, event);
+  } catch {
+    // Deliberately silent; see above.
+  }
+};
 
 /** Ids are readable so they are pleasant to type in a CLI and read in a diff. */
 const slugId = (title: string): string => {
@@ -271,6 +360,8 @@ export const moveStore = (
   mkdirSync(dirname(to.dir), { recursive: true });
   renameSync(from.dir, to.dir);
 
+  // The store is somewhere else now; a cached answer would point at the old one.
+  forgetDiscovery();
   return { from: current.storeDir, to: toStoreDir };
 };
 
@@ -544,10 +635,107 @@ export const readDiagram = (root: string, id: string): DiagramFile | null =>
 export const writeDiagram = (root: string, diagram: DiagramFile): DiagramFile => {
   if (!usesBundle(root)) return legacyWriteDiagram(root, diagram);
   const next = { ...diagram, updatedAt: now() };
+
+  // The canvas and the catalog are reconciled in the same transaction as the
+  // save. Doing it afterwards would leave a window where a node has been
+  // deleted but its component still claims to be drawn, and the autosave that
+  // window sits inside fires every time somebody drags a box.
+  let changes: Reconciliation | undefined;
   mutateBundle(root, (b) => {
     b.diagrams[next.id] = next;
+    changes = applyReconciliation(b, next.id, next.nodes as unknown as CanvasNode[]);
   });
+
+  if (changes) logReconciliation(root, changes);
   return next;
+};
+
+/**
+ * Brings the catalog into line with what the diagram now contains.
+ *
+ * Runs inside the bundle lock, so it takes the bundle rather than a root and
+ * does no I/O of its own. The decision of what SHOULD change is `reconcile`,
+ * which is pure and tested on its own; this only applies it.
+ */
+const applyReconciliation = (
+  bundle: ProjectBundle,
+  diagramId: string,
+  nodes: readonly CanvasNode[],
+): Reconciliation => {
+  const changes = reconcile(diagramId, nodes, Object.values(bundle.components));
+  if (isNoop(changes)) return changes;
+
+  for (const made of changes.create) {
+    bundle.components[made.componentId] = {
+      id: made.componentId,
+      title: made.title,
+      nodeId: made.nodeId,
+      diagramId,
+      kind: made.kind,
+      lifecycle: "active",
+      createdAt: now(),
+      updatedAt: now(),
+    };
+  }
+
+  for (const back of changes.restore) {
+    const current = bundle.components[back.componentId];
+    if (!current) continue;
+    // `orphaned` is cleared rather than set false, so the field is absent on a
+    // healthy component and a JSON diff stays quiet.
+    const { orphaned, ...rest } = current;
+    bundle.components[back.componentId] = {
+      ...rest,
+      nodeId: back.nodeId,
+      diagramId,
+      title: back.title,
+      updatedAt: now(),
+    };
+  }
+
+  for (const moved of changes.update) {
+    const current = bundle.components[moved.componentId];
+    if (!current) continue;
+    bundle.components[moved.componentId] = {
+      ...current,
+      nodeId: moved.nodeId,
+      title: moved.title,
+      updatedAt: now(),
+    };
+  }
+
+  for (const gone of changes.orphan) {
+    const current = bundle.components[gone];
+    if (!current) continue;
+    bundle.components[gone] = {
+      ...current,
+      orphaned: true,
+      nodeId: undefined,
+      updatedAt: now(),
+    };
+  }
+
+  return changes;
+};
+
+const logReconciliation = (root: string, changes: Reconciliation): void => {
+  for (const made of changes.create) {
+    logEvent(root, {
+      kind: "component.created",
+      componentId: made.componentId,
+      data: { title: made.title, via: "canvas" },
+    });
+  }
+  for (const back of changes.restore) {
+    logEvent(root, {
+      kind: "component.updated",
+      componentId: back.componentId,
+      data: { restored: true, via: "canvas" },
+    });
+  }
+  for (const gone of changes.orphan) {
+    logEvent(root, { kind: "component.orphaned", componentId: gone, data: { via: "canvas" } });
+  }
 };
 
 export const createDiagram = (
@@ -630,6 +818,10 @@ export const deleteWhiteboard = (root: string, id: string): boolean => {
   mutateBundle(root, (b) => {
     removed = Boolean(b.boards[id]);
     delete b.boards[id];
+    // Same as `deleteDiagram`: both kinds of board share one id space and one
+    // `task.diagramId` field, so a whiteboard deletion left exactly the same
+    // dangling pointer -- it was simply never cleaned up on this path.
+    for (const task of b.tasks) if (task.diagramId === id) task.diagramId = undefined;
   });
   return removed;
 };
@@ -755,6 +947,658 @@ export const removeNode = (
   return writeDiagram(root, diagram);
 };
 
+/* ------------------------------- components ------------------------------- */
+
+/**
+ * Components live only in the bundle.
+ *
+ * They postdate the split store entirely, so rather than growing a `legacy*`
+ * twin that could never have data in it, a pre-bundle project reports none and
+ * refuses to create one. `project-companion migrate` is a single command, and
+ * saying so is better than half-supporting a format on its way out.
+ */
+const requireComponentStore = (root: string): void => {
+  if (!usesBundle(root)) {
+    throw new Error(
+      "Components need the single-file format. Run `project-companion migrate` first.",
+    );
+  }
+};
+
+export const readComponents = (root: string): Component[] =>
+  usesBundle(root) ? Object.values(requireBundle(root).components) : [];
+
+export const readComponent = (root: string, id: string): Component | null =>
+  (usesBundle(root) ? requireBundle(root).components[id] : undefined) ?? null;
+
+export type ComponentInput = {
+  title: string;
+  nodeId?: string;
+  diagramId?: string;
+  kind?: string;
+  owner?: string;
+  paths?: string[];
+  parentId?: string;
+  drilldownDiagramId?: string;
+  lifecycle?: ComponentLifecycle;
+};
+
+export const createComponent = (root: string, input: ComponentInput): Component => {
+  requireComponentStore(root);
+
+  let created: Component | undefined;
+  mutateBundle(root, (b) => {
+    const component: Component = {
+      id: componentId(input.title, Object.keys(b.components)),
+      title: input.title,
+      nodeId: input.nodeId,
+      diagramId: input.diagramId,
+      kind: input.kind,
+      owner: input.owner,
+      paths: input.paths,
+      parentId: input.parentId,
+      drilldownDiagramId: input.drilldownDiagramId,
+      lifecycle: input.lifecycle ?? "active",
+      createdAt: now(),
+      updatedAt: now(),
+    };
+    b.components[component.id] = component;
+    created = component;
+  });
+
+  if (!created) throw new Error("No project here.");
+  logEvent(root, {
+    kind: "component.created",
+    componentId: created.id,
+    data: { title: created.title, owner: created.owner, paths: created.paths },
+  });
+  return created;
+};
+
+/**
+ * Patches a component.
+ *
+ * `id` is deliberately not patchable. It is what every task, commit and run
+ * points at, and the whole reason it exists is that it never changes -- a
+ * rename is a title change, not a new identity.
+ */
+export const updateComponent = (
+  root: string,
+  id: string,
+  patch: Partial<Omit<Component, "id" | "createdAt">>,
+): Component | null => {
+  requireComponentStore(root);
+
+  let updated: Component | null = null;
+  mutateBundle(root, (b) => {
+    const current = b.components[id];
+    if (!current) return;
+    b.components[id] = { ...current, ...patch, id, updatedAt: now() };
+    updated = b.components[id];
+  });
+
+  if (updated) {
+    logEvent(root, {
+      kind: "component.updated",
+      componentId: id,
+      data: { changed: Object.keys(patch) },
+    });
+  }
+  return updated;
+};
+
+/**
+ * Makes a canvas node a component: stamps the node, creates the record.
+ *
+ * The opt-in half of the model. Reconciliation heals a catalog that has drifted,
+ * but it never decides on its own that a box on a diagram is something a team
+ * owns -- that is a claim somebody makes, and this is where they make it.
+ *
+ * Both halves happen in one transaction. Stamping the node and writing the
+ * component separately would leave a save in between where the node points at a
+ * component that does not exist yet, and reconciliation running in that window
+ * would create a second one.
+ */
+export const trackNode = (
+  root: string,
+  diagramId: string,
+  nodeId: string,
+  input: { title?: string; owner?: string; paths?: string[]; parentId?: string } = {},
+): Component | null => {
+  requireComponentStore(root);
+
+  let tracked: Component | null = null;
+  let created = false;
+
+  mutateBundle(root, (b) => {
+    const diagram = b.diagrams[diagramId];
+    const node = diagram?.nodes.find((n) => n.id === nodeId);
+    if (!node) return;
+
+    const data = node.data as { componentId?: string; label?: string; kind?: string };
+
+    // Already tracked: return what is there rather than making a second one.
+    const existing = data.componentId ? b.components[data.componentId] : undefined;
+    if (existing) {
+      tracked = existing;
+      return;
+    }
+
+    const id = componentId(
+      input.title ?? data.label ?? nodeId,
+      Object.keys(b.components),
+    );
+    const component: Component = {
+      id,
+      title: input.title ?? data.label?.trim() ?? id,
+      nodeId,
+      diagramId,
+      kind: data.kind,
+      owner: input.owner,
+      paths: input.paths,
+      parentId: input.parentId,
+      lifecycle: "active",
+      createdAt: now(),
+      updatedAt: now(),
+    };
+
+    b.components[id] = component;
+    data.componentId = id;
+    diagram.updatedAt = now();
+    tracked = component;
+    created = true;
+  });
+
+  if (tracked && created) {
+    logEvent(root, {
+      kind: "component.created",
+      componentId: (tracked as Component).id,
+      data: { title: (tracked as Component).title, nodeId, diagramId, via: "track" },
+    });
+  }
+  return tracked;
+};
+
+/**
+ * Stops treating a node as a component, without discarding what it owns.
+ *
+ * The stamp comes off the node and the component is orphaned rather than
+ * deleted, so tasks and commits attributed to it still resolve. Deleting is a
+ * separate, explicit act -- see `deleteComponent`.
+ */
+export const untrackNode = (root: string, id: string): Component | null => {
+  requireComponentStore(root);
+
+  let untracked: Component | null = null;
+  mutateBundle(root, (b) => {
+    const component = b.components[id];
+    if (!component) return;
+
+    const diagram = component.diagramId ? b.diagrams[component.diagramId] : undefined;
+    const node = diagram?.nodes.find((n) => n.id === component.nodeId);
+    if (node && diagram) {
+      delete (node.data as { componentId?: string }).componentId;
+      diagram.updatedAt = now();
+    }
+
+    b.components[id] = { ...component, orphaned: true, nodeId: undefined, updatedAt: now() };
+    untracked = b.components[id];
+  });
+
+  if (untracked) {
+    logEvent(root, { kind: "component.orphaned", componentId: id, data: { via: "untrack" } });
+  }
+  return untracked;
+};
+
+/**
+ * Marks a component as having lost its node, without losing the work.
+ *
+ * The deletion path a canvas edit should take. Tasks, commits and runs still
+ * resolve; the component simply reports that nothing draws it any more, and
+ * `catalogWarnings` asks somebody to re-attach it.
+ */
+export const orphanComponent = (root: string, id: string): Component | null => {
+  const orphaned = updateComponent(root, id, { orphaned: true, nodeId: undefined });
+  if (orphaned) {
+    logEvent(root, { kind: "component.orphaned", componentId: id, data: {} });
+  }
+  return orphaned;
+};
+
+/**
+ * Removes a component outright.
+ *
+ * Only ever from an explicit "delete this component" -- never from a canvas
+ * edit, which orphans instead. Children are promoted to the deleted component's
+ * parent rather than being deleted with it, because a cascade here would take
+ * out an entire subtree of somebody's work on one click.
+ */
+export const deleteComponent = (root: string, id: string): boolean => {
+  requireComponentStore(root);
+
+  let removed = false;
+  mutateBundle(root, (b) => {
+    const current = b.components[id];
+    if (!current) return;
+
+    for (const child of Object.values(b.components)) {
+      if (child.parentId === id) {
+        b.components[child.id] = { ...child, parentId: current.parentId, updatedAt: now() };
+      }
+    }
+    delete b.components[id];
+    removed = true;
+  });
+
+  return removed;
+};
+
+/* ---------------------------------- runs ---------------------------------- */
+
+/**
+ * What an agent may do here, and how much of it.
+ *
+ * Resolved per component rather than per project, because the right answer
+ * differs by blast radius: a utility module can take autonomous edits, billing
+ * cannot. A component with no policy of its own inherits the project default,
+ * and `writeGlobs` falls back to the component's declared paths -- the boundary
+ * is the same declaration that drives attribution, so there is exactly one
+ * place to say where a component lives.
+ */
+export const resolvePolicy = (
+  root: string,
+  componentId?: string,
+): Required<Pick<AgentPolicy, "autonomy">> & AgentPolicy => {
+  const bundle = usesBundle(root) ? requireBundle(root) : null;
+  const agents = bundle?.agents ?? {};
+  const specific = componentId ? agents.byComponent?.[componentId] : undefined;
+  const component = componentId ? bundle?.components[componentId] : undefined;
+
+  return {
+    // `confirm` by default: an agent proposes and a person approves. Defaulting
+    // to autonomous would make the safest setting the one nobody chose.
+    autonomy: specific?.autonomy ?? agents.default?.autonomy ?? "confirm",
+    budget: { ...agents.default?.budget, ...specific?.budget },
+    writeGlobs: specific?.writeGlobs ?? agents.default?.writeGlobs ?? component?.paths,
+  };
+};
+
+/**
+ * Sets how much rope agents get in one part of the system.
+ *
+ * Per component, because that is where blast radius differs. Passing an empty
+ * policy removes the entry rather than storing an empty object, so a component
+ * that has been returned to the default looks identical to one that never
+ * departed from it -- the same reason `setFeatureOverride` deletes a cleared
+ * override instead of leaving a husk.
+ */
+export const setAgentPolicy = (
+  root: string,
+  componentId: string,
+  policy: AgentPolicy | null,
+): AgentPolicy | null => {
+  requireComponentStore(root);
+
+  mutateBundle(root, (b) => {
+    const byComponent = { ...b.agents.byComponent };
+    if (!policy || !Object.keys(policy).length) delete byComponent[componentId];
+    else byComponent[componentId] = policy;
+    b.agents = { ...b.agents, byComponent };
+  });
+
+  logEvent(root, {
+    kind: "component.updated",
+    componentId,
+    data: { agentPolicy: policy?.autonomy ?? "default" },
+  });
+  return policy;
+};
+
+/**
+ * Records that a feature's declared check was run, and what it said.
+ *
+ * The output is deliberately not kept -- a failing test run is thousands of
+ * lines, the log is committed and pushed, and nobody wants a stack trace in
+ * their git history. What is kept is the fact, the exit code and how long it
+ * took, which is what a "was this ever actually proven" question needs.
+ */
+export const recordVerification = (
+  root: string,
+  featureId: string,
+  result: { command: string; ok: boolean; code: number; ms: number },
+): void => {
+  logEvent(root, {
+    kind: "criterion.verified",
+    data: {
+      featureId,
+      command: result.command,
+      ok: result.ok,
+      code: result.code,
+      ms: result.ms,
+    },
+  });
+};
+
+/**
+ * The relations the architecture claims, as component pairs.
+ *
+ * Read off every diagram rather than one, because a system's parts are drawn
+ * across several -- a context diagram and the container diagram inside it both
+ * assert things, and only counting one would report the other's relations as
+ * undeclared.
+ */
+export const declaredEdges = (root: string): { from: string; to: string }[] => {
+  if (!usesBundle(root)) return [];
+  const bundle = requireBundle(root);
+  const pairs: { from: string; to: string }[] = [];
+
+  for (const diagram of Object.values(bundle.diagrams)) {
+    const owner = new Map<string, string>();
+    for (const node of diagram.nodes) {
+      const id = (node.data as { componentId?: string }).componentId;
+      if (id) owner.set(node.id, id);
+    }
+    for (const edge of diagram.edges) {
+      const from = owner.get(edge.source);
+      const to = owner.get(edge.target);
+      // An edge between boxes nobody owns says nothing about the architecture
+      // of the code, so it is not a claim this can check.
+      if (from && to && from !== to) pairs.push({ from, to });
+    }
+  }
+  return pairs;
+};
+
+/**
+ * Whether there is room to start something.
+ *
+ * Consulted by `task start` and `run start`, which is the difference between a
+ * limit and a chart. The verdict names the column and the numbers so the
+ * refusal is arguable -- an unexplained "no" gets worked around within a day.
+ */
+export const wipRoom = (root: string): WipVerdict => {
+  if (!usesBundle(root)) return { ok: true };
+  const limits = requireBundle(root).wip;
+  if (!Object.keys(limits).length) return { ok: true };
+  return checkWip(taskFlow(readEvents(root), readTasks(root).tasks), limits);
+};
+
+export const readBundleWip = (root: string): Partial<Record<TaskStatus, number>> =>
+  usesBundle(root) ? requireBundle(root).wip : {};
+
+export const setWipLimit = (root: string, status: TaskStatus, limit: number | null): void => {
+  mutateBundle(root, (b) => {
+    const wip = { ...b.wip };
+    if (limit === null || limit <= 0) delete wip[status];
+    else wip[status] = limit;
+    b.wip = wip;
+  });
+};
+
+/**
+ * Records findings that survived grounding.
+ *
+ * Only the grounded ones reach here. A finding the judge dropped never existed
+ * as far as the project is concerned, which is the difference between a floor
+ * under false positives and a filter somebody can turn off.
+ */
+export const recordFindings = (
+  root: string,
+  sha: string,
+  findings: readonly Finding[],
+  componentOf: (file: string) => string | undefined,
+): number => {
+  for (const finding of findings) {
+    logEvent(root, {
+      kind: "review.finding",
+      componentId: componentOf(finding.file),
+      data: {
+        findingId: findingId(sha, finding),
+        sha,
+        file: finding.file,
+        line: finding.line,
+        severity: finding.severity,
+        title: finding.title,
+        detail: finding.detail,
+      },
+    });
+  }
+  return findings.length;
+};
+
+export const resolveFinding = (root: string, id: string): void => {
+  logEvent(root, { kind: "review.resolved", data: { findingId: id } });
+};
+
+/**
+ * Open findings, with ownership resolved now rather than when they were filed.
+ *
+ * A finding is about a FILE, and who owns that file is a current question. The
+ * event records which component it belonged to at the time, which is right for
+ * the log and wrong for the page: extend a component's paths and every finding
+ * already filed against that code should appear on it, not stay orphaned
+ * because the catalog was thinner the day it was written.
+ */
+export const readFindings = (root: string): StoredFinding[] => {
+  const components = readComponents(root);
+  return findingsFrom(readEvents(root)).map((finding) => ({
+    ...finding,
+    componentId: resolveComponent(finding.file, components)?.componentId ?? finding.componentId,
+  }));
+};
+
+export const readRuns = (root: string): AgentRun[] => runsFrom(readEvents(root));
+
+export const readRun = (root: string, id: string): AgentRun | null =>
+  readRuns(root).find((r) => r.id === id) ?? null;
+
+/**
+ * The run a harness session belongs to.
+ *
+ * Hooks fire with a session id and know nothing about runs, so the session is
+ * recorded on the run when it starts and looked up here. Only an unfinished run
+ * matches: a session id can be reused across a resume, and attributing new work
+ * to a merged run would quietly reopen it.
+ */
+export const runForSession = (root: string, sessionId: string): AgentRun | null =>
+  readRuns(root).find(
+    (r) =>
+      // Top-level runs only: a subagent's run shares the session id, and must
+      // not swallow the main session's tool calls or its end.
+      r.sessionId === sessionId && !r.parentRunId && r.state !== "merged" && r.state !== "abandoned",
+  ) ?? null;
+
+export type RunInput = {
+  taskId?: string;
+  componentId?: string;
+  /** The harness session, so hooks can find this run again. */
+  sessionId?: string;
+  actor?: Partial<RunActor>;
+  branch?: string;
+  worktree?: string;
+  /** Overrides the resolved policy. For a caller that knows better, not a default. */
+  budget?: AgentPolicy["budget"];
+  /** A subagent's devolps role, its parent run and the harness's agent id. */
+  role?: string;
+  parentRunId?: string;
+  agentId?: string;
+};
+
+/**
+ * Opens a run.
+ *
+ * The component is taken from the task when not given, so an agent picking up a
+ * card inherits that part of the system's budget and boundary without being
+ * told about either. That is the point: the constraints follow the work rather
+ * than having to be restated at every call site.
+ */
+export const startRun = (root: string, input: RunInput): AgentRun => {
+  const task = input.taskId
+    ? readTasks(root).tasks.find((t) => t.id === input.taskId)
+    : undefined;
+  const componentId = input.componentId ?? task?.componentId;
+  const policy = resolvePolicy(root, componentId);
+  const id = randomUUID().slice(0, 8);
+
+  logEvent(root, {
+    kind: "run.started",
+    componentId,
+    data: {
+      runId: id,
+      taskId: input.taskId,
+      sessionId: input.sessionId,
+      actor: { kind: "agent", ...input.actor },
+      autonomy: policy.autonomy,
+      budget: input.budget ?? policy.budget ?? {},
+      writeGlobs: policy.writeGlobs,
+      branch: input.branch,
+      worktree: input.worktree,
+      ...(input.role ? { role: input.role } : {}),
+      ...(input.parentRunId ? { parentRunId: input.parentRunId } : {}),
+      ...(input.agentId ? { agentId: input.agentId } : {}),
+    },
+  });
+
+  const run = readRun(root, id);
+  if (!run) {
+    // The log is the run, so a log that cannot be written is a run that did not
+    // start. Saying so beats handing back a run object nothing will remember.
+    throw new Error(
+      "Could not record the run. The event log is not writable, so nothing would be tracked.",
+    );
+  }
+  return run;
+};
+
+/**
+ * Records what a run has spent, and says whether it may continue.
+ *
+ * The verdict is the return value rather than a thrown error because this is
+ * called from a hook on every tool use: an exception there would break the
+ * agent's session over a budget, which is a worse outcome than telling it to
+ * stop. A run that goes over is moved to `blocked`, which is recoverable.
+ */
+export const reportRun = (
+  root: string,
+  id: string,
+  progress: {
+    inputTokens?: number;
+    outputTokens?: number;
+    toolCalls?: number;
+    touched?: string[];
+  },
+): { run: AgentRun; verdict: BudgetVerdict; refused: string[] } | null => {
+  const before = readRun(root, id);
+  if (!before) return null;
+
+  // A write outside the boundary is recorded as attempted and reported back,
+  // not silently dropped: it usually means the task spans two components, and
+  // that is a fact about the architecture worth seeing.
+  const refused = (progress.touched ?? []).filter((path) => !mayWrite(before, path));
+  const allowed = (progress.touched ?? []).filter((path) => mayWrite(before, path));
+
+  logEvent(root, {
+    kind: "run.progress",
+    componentId: before.componentId,
+    data: {
+      runId: id,
+      inputTokens: progress.inputTokens ?? 0,
+      outputTokens: progress.outputTokens ?? 0,
+      toolCalls: progress.toolCalls ?? 0,
+      touched: allowed,
+      ...(refused.length ? { refused } : {}),
+    },
+  });
+
+  const run = readRun(root, id)!;
+  const verdict = checkBudget(run);
+
+  if (!verdict.ok && run.state === "running") {
+    setRunState(root, id, "blocked", `Budget exhausted: ${verdict.detail}`);
+    return { run: readRun(root, id)!, verdict, refused };
+  }
+  return { run, verdict, refused };
+};
+
+/**
+ * Moves a run along its lifecycle, refusing a transition that is not allowed.
+ *
+ * The check happens here as well as in the projection. The projection drops an
+ * illegal transition so a bad event cannot corrupt the fold; this refuses to
+ * write one in the first place, so the log stays a record of what happened
+ * rather than a record of what was attempted.
+ */
+export const setRunState = (
+  root: string,
+  id: string,
+  state: RunState,
+  reason?: string,
+): AgentRun | null => {
+  const run = readRun(root, id);
+  if (!run) return null;
+  if (!canTransition(run.state, state)) {
+    throw new Error(`A ${run.state} run cannot become ${state}.`);
+  }
+  if (state === "merged") requireMergeGate(root, run);
+
+  logEvent(root, {
+    kind: "run.state",
+    componentId: run.componentId,
+    data: { runId: id, state, reason },
+  });
+  return readRun(root, id);
+};
+
+/**
+ * A run is merged only by a real merge (devolps EN-08.2, TR-02.4).
+ *
+ * "Merged" used to be a state anyone could set -- a button in the app, an MCP
+ * call -- which made it a claim. Now it needs the task's pull request to have
+ * an approved merge gate, which only the PM's typed `/devolps:ship` records.
+ */
+const requireMergeGate = (root: string, run: AgentRun): void => {
+  const task = run.taskId ? readTasks(root).tasks.find((t) => t.id === run.taskId) : undefined;
+  const pr = task?.pr?.number;
+  const gate = pr !== undefined ? readGates(root).gates.get(`merge:${pr}`) : undefined;
+  if (gate && (gate.state === "approved" || gate.state === "overridden")) return;
+  throw new Error(
+    pr === undefined
+      ? "A run is marked merged only when its task's pull request merges. Link the pull request first (`project-companion pr link <task> <number>`)."
+      : `Pull request #${pr} has no approved merge gate. The PM merges with /devolps:ship pr ${pr}, which approves it.`,
+  );
+};
+
+/** Marks a task blocked, with the reason, the kind of cause and who can unblock it. */
+export const blockTask = (
+  root: string,
+  id: string,
+  block: { reason: string; cause: BlockCause; unblocker: string },
+): Task | null => {
+  const task = updateTask(root, id, { blocked: { ...block, since: now() } });
+  if (task) logEvent(root, { kind: "task.blocked", componentId: task.componentId, data: { taskId: id, ...block } });
+  return task;
+};
+
+export const unblockTask = (root: string, id: string): Task | null => {
+  const task = mutateTasks(root, (tasks) => {
+    const t = tasks.find((x) => x.id === id);
+    if (!t) return null;
+    delete t.blocked;
+    t.updatedAt = now();
+    return t;
+  }) ?? null;
+  if (task) logEvent(root, { kind: "task.unblocked", componentId: task.componentId, data: { taskId: id } });
+  return task;
+};
+
+/** Records the pull request that delivers a task. */
+export const linkPullRequest = (root: string, id: string, pr: Omit<TaskPullRequest, "syncedAt">): Task | null => {
+  const task = updateTask(root, id, { pr: { ...pr, syncedAt: now() } });
+  if (task) logEvent(root, { kind: "task.pr_linked", componentId: task.componentId, data: { taskId: id, ...pr } });
+  return task;
+};
+
 /* --------------------------------- tasks ---------------------------------- */
 
 const legacyReadTasks = (root: string): TasksFile =>
@@ -771,12 +1615,18 @@ export type TaskInput = {
   description?: string;
   status?: TaskStatus;
   nodeIds?: string[];
+  /** The component that owns this work; whose board it appears on. */
+  componentId?: string;
   diagramId?: string;
   labels?: string[];
   assignee?: string;
   /** The PRD feature this task implements. */
   featureId?: string;
   phaseId?: string;
+  kind?: TaskKind;
+  parentId?: string;
+  points?: number;
+  role?: string;
 };
 
 /**
@@ -804,11 +1654,16 @@ export const createTask = (root: string, input: TaskInput): Task => {
       description: input.description,
       status,
       nodeIds: input.nodeIds,
+      componentId: input.componentId,
       diagramId: input.diagramId,
       labels: input.labels,
       assignee: input.assignee,
       featureId: input.featureId,
       phaseId: input.phaseId,
+      ...(input.kind ? { kind: input.kind } : {}),
+      ...(input.parentId ? { parentId: input.parentId } : {}),
+      ...(input.points !== undefined ? { points: input.points } : {}),
+      ...(input.role ? { role: input.role } : {}),
       createdAt: now(),
       updatedAt: now(),
       order: tasks.filter((t) => t.status === status).length,
@@ -818,6 +1673,11 @@ export const createTask = (root: string, input: TaskInput): Task => {
   });
 
   if (!created) throw new Error("No project store found");
+  logEvent(root, {
+    kind: "task.created",
+    componentId: created.componentId,
+    data: { taskId: created.id, title: created.title, status: created.status },
+  });
   return created;
 };
 export const reorderTask = (
@@ -870,33 +1730,80 @@ export const updateTask = (
   root: string,
   id: string,
   patch: Partial<Omit<Task, "id" | "createdAt">>,
-): Task | null =>
-  mutateTasks(root, (tasks) => {
-    const task = tasks.find((t) => t.id === id);
-    if (!task) return null;
-    Object.assign(task, patch, { updatedAt: now() });
-    return task;
-  }) ?? null;
+): Task | null => {
+  const updated =
+    mutateTasks(root, (tasks) => {
+      const task = tasks.find((t) => t.id === id);
+      if (!task) return null;
+      Object.assign(task, patch, { updatedAt: now() });
+      return task;
+    }) ?? null;
+
+  if (updated) {
+    logEvent(root, {
+      kind: "task.updated",
+      componentId: updated.componentId,
+      // Which fields moved, not their contents: a description is somebody's
+      // prose, and the log is committed and pushed.
+      data: { taskId: id, changed: Object.keys(patch) },
+    });
+  }
+  return updated;
+};
 export const moveTask = (
   root: string,
   id: string,
   status: TaskStatus,
-): Task | null =>
-  mutateTasks(root, (tasks) => {
-    const task = tasks.find((t) => t.id === id);
-    if (!task) return null;
+): Task | null => {
+  let from: TaskStatus | undefined;
 
-    if (task.status !== status) {
-      task.order = tasks.filter((t) => t.status === status).length;
-      task.status = status;
-    }
-    task.updatedAt = now();
-    return task;
-  }) ?? null;
-export const deleteTask = (root: string, id: string): boolean =>
-  mutateTasks(root, (tasks) => {
-    const at = tasks.findIndex((t) => t.id === id);
-    if (at === -1) return false;
-    tasks.splice(at, 1);
-    return true;
-  }) ?? false;
+  const moved =
+    mutateTasks(root, (tasks) => {
+      const task = tasks.find((t) => t.id === id);
+      if (!task) return null;
+
+      from = task.status;
+      if (task.status !== status) {
+        task.order = tasks.filter((t) => t.status === status).length;
+        task.status = status;
+      }
+      task.updatedAt = now();
+      return task;
+    }) ?? null;
+
+  // Only a real transition is an event. A drag that lands a card back in the
+  // column it came from is not something that happened to the work, and every
+  // cycle-time measurement downstream would be wrong if it counted.
+  if (moved && from !== status) {
+    logEvent(root, {
+      kind: "task.moved",
+      componentId: moved.componentId,
+      data: { taskId: id, from, to: status },
+    });
+  }
+  return moved;
+};
+export const deleteTask = (root: string, id: string): boolean => {
+  let removed: Task | undefined;
+
+  const ok =
+    mutateTasks(root, (tasks) => {
+      const at = tasks.findIndex((t) => t.id === id);
+      if (at === -1) return false;
+      removed = tasks[at];
+      tasks.splice(at, 1);
+      return true;
+    }) ?? false;
+
+  // The card is gone from the board, but the fact that it existed is not: the
+  // log is the only place a deleted task leaves a trace, and "what happened to
+  // that ticket" is a question somebody always asks.
+  if (ok && removed) {
+    logEvent(root, {
+      kind: "task.deleted",
+      componentId: removed.componentId,
+      data: { taskId: id, title: removed.title, status: removed.status },
+    });
+  }
+  return ok;
+};

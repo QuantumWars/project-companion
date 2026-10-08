@@ -1,24 +1,33 @@
 /**
  * Attributing commits to features and tasks.
  *
- * Four signals, strongest first:
+ * Five signals, strongest first:
  *
  *   1. `task.commits[]`      recorded explicitly by the CLI or MCP
- *   2. a message trailer     `archboard: 978ce4d6`
- *   3. the branch name       `feat/978ce4d6-refunds`
- *   4. path overlap          against a feature's declared `paths` globs
+ *   2. an agent run          the files this commit changed were written by a
+ *                            run, while it was open, against a known task
+ *   3. a message trailer     `archboard: 978ce4d6`
+ *   4. the branch name       `feat/978ce4d6-refunds`
+ *   5. path overlap          against a feature's declared `paths` globs
  *
- * The ordering is not arbitrary. The first three are claims somebody made; the
- * fourth is an inference. So path overlap attributes to a FEATURE and never to
- * a task -- a feature is a region of the codebase, which paths can reasonably
+ * The ordering is not arbitrary. The first four are claims somebody made; the
+ * last is an inference. So path overlap attributes to a FEATURE and never to a
+ * task -- a feature is a region of the codebase, which paths can reasonably
  * describe, whereas a task is a specific piece of work, and guessing which one
  * a commit belongs to would put false evidence next to somebody's name.
+ *
+ * The run signal is second because it is the strongest thing short of somebody
+ * typing the sha. A run observed the edits through the harness's own hooks: it
+ * is not reading intent out of a branch name, it is matching a commit against
+ * the files an agent was watched writing, inside the window it was writing
+ * them. That is also what finally makes attribution work without the trailer
+ * convention, which this repository documented for a year and never once used.
  */
 
 import { readCommits, readBranches, repoFingerprint, type GitCommit } from "./git";
 import type { Feature, Task } from "./types";
 
-export type AttributionSignal = "recorded" | "trailer" | "branch" | "paths";
+export type AttributionSignal = "recorded" | "run" | "trailer" | "branch" | "paths";
 
 export type Attribution = {
   sha: string;
@@ -116,11 +125,51 @@ export const matchesAny = (path: string, globs: readonly string[]): boolean =>
 
 /* ------------------------------- attribution ------------------------------ */
 
+/**
+ * The run that produced a commit, if exactly one did.
+ *
+ * Two conditions, both required. The commit has to land inside the run's window
+ * -- an agent cannot have written something committed before it started -- and
+ * it has to touch a file the run was seen writing. Either alone is far too
+ * loose: a window catches every unrelated commit somebody made in parallel, and
+ * a file overlap catches every later change to the same file.
+ *
+ * An ambiguous match is no match, as everywhere else here. Two runs editing the
+ * same file in overlapping windows is exactly the parallel-agent case, and
+ * picking one would put an agent's work on another's task.
+ */
+const runFor = (commit: GitCommit, runs: readonly AttributableRun[]): AttributableRun | undefined => {
+  const at = Date.parse(commit.at);
+  if (Number.isNaN(at)) return undefined;
+
+  const matched = runs.filter((run) => {
+    if (!run.taskId || !run.touched.length) return false;
+    const from = Date.parse(run.startedAt ?? "");
+    if (Number.isNaN(from) || at < from) return false;
+    // An open run has no end; it can still be producing commits right now.
+    const to = run.endedAt ? Date.parse(run.endedAt) : Number.POSITIVE_INFINITY;
+    if (at > to) return false;
+    return commit.paths.some((path) => run.touched.includes(path));
+  });
+
+  return matched.length === 1 ? matched[0] : undefined;
+};
+
+/** Only what attribution needs; the full shape lives in `run.ts`. */
+export type AttributableRun = {
+  id: string;
+  taskId?: string;
+  touched: string[];
+  startedAt?: string;
+  endedAt?: string;
+};
+
 export const attribute = (
   commits: GitCommit[],
   tasks: readonly Task[],
   features: readonly Feature[],
   branchesByCommit: Map<string, string[]>,
+  runs: readonly AttributableRun[] = [],
 ): Omit<AttributionResult, "fingerprint"> => {
   const taskIds = tasks.map((t) => t.id);
   const featureIds = features.map((f) => f.id);
@@ -156,7 +205,19 @@ export const attribute = (
       return { ...commit, touched, taskId: byRecord, featureId: featureOfTask.get(byRecord), signal: "recorded" };
     }
 
-    // 2. Trailer.
+    // 2. An agent run watched these files being written, in this window.
+    const run = runFor(commit, runs);
+    if (run?.taskId) {
+      return {
+        ...commit,
+        touched,
+        taskId: run.taskId,
+        featureId: featureOfTask.get(run.taskId),
+        signal: "run",
+      };
+    }
+
+    // 3. Trailer.
     const message = `${commit.subject}\n${commit.body}`;
     const trailer = TRAILER.exec(message)?.[1] ?? INLINE.exec(message)?.[1];
     if (trailer) {
@@ -167,7 +228,7 @@ export const attribute = (
       if (feature) return { ...commit, touched, featureId: feature, signal: "trailer" };
     }
 
-    // 3. Branch name.
+    // 4. Branch name.
     for (const branch of branchesByCommit.get(commit.sha) ?? []) {
       const task = idInBranch(branch, taskIds);
       if (task) return { ...commit, touched, taskId: task, featureId: featureOfTask.get(task), signal: "branch" };
@@ -175,7 +236,7 @@ export const attribute = (
       if (feature) return { ...commit, touched, featureId: feature, signal: "branch" };
     }
 
-    // 4. Path overlap. Feature level only, and only when exactly one feature
+    // 5. Path overlap. Feature level only, and only when exactly one feature
     // claims the commit -- an ambiguous match is no match, because presenting a
     // guess as evidence is worse than presenting nothing.
     if (touched.length === 1) {
@@ -239,6 +300,7 @@ export const linkRepository = async (
   tasks: readonly Task[],
   features: readonly Feature[],
   limit = 200,
+  runs: readonly AttributableRun[] = [],
 ): Promise<AttributionResult> => {
   const [commits, membership, fingerprint] = await Promise.all([
     // Every branch, not just the one checked out -- work in progress on a
@@ -248,5 +310,5 @@ export const linkRepository = async (
     repoFingerprint(root),
   ]);
 
-  return { ...attribute(commits, tasks, features, membership), fingerprint };
+  return { ...attribute(commits, tasks, features, membership, runs), fingerprint };
 };

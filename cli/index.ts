@@ -8,7 +8,8 @@
  * there is one source of truth and no second implementation to drift.
  */
 
-import { basename, dirname, join, resolve } from "node:path";
+import { basename, dirname, join, relative, resolve } from "node:path";
+import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 import {
@@ -34,7 +35,71 @@ import {
   tasksForFeature,
   updateTask,
   writeDiagram,
+  createComponent,
+  deleteComponent,
+  readRun,
+  readRuns,
+  recordVerification,
+  reportRun,
+  resolvePolicy,
+  runForSession,
+  setRunState,
+  startRun,
+  declaredEdges,
+  readComponent,
+  readBundleWip,
+  setWipLimit,
+  wipRoom,
+  readComponents,
+  updateComponent,
+  blockTask,
+  unblockTask,
+  linkPullRequest,
 } from "../lib/project/store";
+import {
+  ancestorsOf,
+  catalogWarnings,
+  componentTree,
+  coverage,
+  resolveComponent,
+  withDescendants,
+  COMPONENT_LIFECYCLES,
+  type ComponentLifecycle,
+  type ComponentNode,
+} from "../lib/project/component";
+import { readEvents } from "../lib/project/events";
+import { componentContext } from "../lib/project/component-context";
+import { parseHook } from "../lib/project/ingest";
+import { recordSpawnRequest, runForAgent, startSubagentRun, stopSubagentRun } from "../lib/project/subagent";
+import { burnup, foldSprints, sprintTasks } from "../lib/project/sprint";
+import { foldCards, foldUpdates, isHealth, weekId } from "../lib/project/decisions";
+import { agentLane, gateMetrics, humanLane } from "../lib/project/metrics";
+import { readCockpit } from "../lib/project/cockpit";
+import { appendEvent } from "../lib/project/events";
+import { randomUUID } from "node:crypto";
+import { mergeBundles } from "../lib/project/merge";
+import { runCheck } from "../lib/project/verify";
+import { dependencyGraph, drift, sourceFiles } from "../lib/project/deps";
+import { packet, route, type PacketInput } from "../lib/project/review";
+import { attention, checkWip, summarise as summariseFlow, taskFlow } from "../lib/project/flow";
+import { RUN_STATES, type RunState } from "../lib/project/run";
+import {
+  approveGate,
+  checkWork,
+  confirmTrack,
+  GateError,
+  isGateKind,
+  isStage,
+  isTrack,
+  listGates,
+  readGates,
+  refuseGate,
+  requestGate,
+  STAGES,
+  TRACKS,
+  GATE_KINDS,
+  type Stage,
+} from "../lib/project/gate";
 import {
   editPrd,
   readRoadmap,
@@ -42,12 +107,16 @@ import {
   setPhase,
   setPrdSource,
 } from "../lib/project/roadmap";
-import { gitRoot, readCommits, readStatus, GitError } from "../lib/project/git";
+import { gitRoot, readCommits, readDiffHunks, readStatus, GitError } from "../lib/project/git";
 import { branchNameFor, createBranch, addWorktree } from "../lib/project/git-write";
 import { linkRepository } from "../lib/project/git-link";
 import {
+  BLOCK_CAUSES,
   PHASE_STATUSES,
+  TASK_KINDS,
   TASK_STATUSES,
+  type BlockCause,
+  type TaskKind,
   type DiagramFile,
   type TaskStatus,
 } from "../lib/project/types";
@@ -62,11 +131,35 @@ import {
 } from "../lib/project/registry";
 import type { DiagramType } from "../types/arch";
 
+/**
+ * The CLI's version and what it can do.
+ *
+ * devolps checks `capabilities` before it relies on a command, so an older
+ * install fails loudly with "upgrade" instead of quietly lacking a gate.
+ */
+const VERSION = "0.2.0";
+const CAPABILITIES = ["gate", "json", "task-show"] as const;
+
 const HELP = `
 project-companion - architecture and task boards that live in your repo
 
-  project-companion init [name]              create .arch/ in this directory
+  project-companion init [name]              create a .project file here
   project-companion status                   summarise the project
+
+  project-companion component list           the architecture's components
+  project-companion component show <id>      owner, paths, tasks, children
+  project-companion component add <title> [--paths "a/**,b/**"] [--owner WHO]
+                                             [--parent ID] [--node ID] [--diagram ID]
+  project-companion component set <id> [--paths P] [--owner W] [--parent ID]
+                                             [--lifecycle proposed|active|deprecated]
+  project-companion component rm <id>        delete it; children are promoted
+  project-companion component doctor         what is wrong with the catalog
+  project-companion whose <path>             which component owns a file
+  project-companion drift                    the canvas, against what the code does
+  project-companion review [sha]             write a review packet for your agent
+  project-companion flow                     where work is piling up
+  project-companion wip [status] [n]         limit a column; starting is refused when full
+  project-companion next                     what to look at first
 
   project-companion diagram list             list diagrams
   project-companion diagram show <id>        print a diagram as text
@@ -81,22 +174,71 @@ project-companion - architecture and task boards that live in your repo
 
   project-companion prd sync                 re-read the PRD into the roadmap
   project-companion prd path <file>          point at a different PRD
-  project-companion feature list [--phase P] [--status S]
-  project-companion feature show <id>        criteria, tasks and commits
+  project-companion feature list [--phase P] [--status S] [--json]
+  project-companion feature show <id> [--json]   criteria, tasks and commits
   project-companion feature add <title> [--phase P] [--summary S]
   project-companion feature check <id> <criterion>   tick an acceptance criterion
   project-companion feature pin <id> <status>        override the derived status
-  project-companion phase list               phases, in document order
+  project-companion verify [featureId]       run the PRD's Verify: commands
+  project-companion phase list [--json]      phases, in document order
   project-companion phase add <name> [--goal G]
   project-companion phase set <id> [--status S] [--starts D] [--ends D]
 
-  project-companion task list [--status S] [--feature F]
+  project-companion gate request <kind> <subject> [--artifact FILE]... [--prd-section EPIC]
+                                     [--head SHA] [--tasks ID,ID]   ask the PM for a gate
+  project-companion gate approve <kind> <subject> --via CHANNEL [--override REASON] [--head SHA]
+  project-companion gate refuse <kind> <subject> --via CHANNEL --reason R [--remedy R]
+  project-companion gate track <subject> <${"full|quick|bugfix"}> --via CHANNEL
+  project-companion gate status [--subject S] [--json]
+  project-companion gate check (--task ID | --epic ID) [--stage STAGE] [--json]
+                                     exit 3 and name the fix when work may not start
+  project-companion gate log [--json]        every gate decision, with its channel
+                                     kinds: ${"prd|design|sprint|merge|release"}
+
+  project-companion task list [--status S] [--feature F] [--component C] [--json]
+  project-companion task show <id> [--json]
+  project-companion task set <id> [--kind story|task|bug] [--parent ID] [--points N] [--role R] [--assignee A]
+  project-companion task block <id> --reason R --cause decision|outside|agent [--unblocker WHO]
+  project-companion task unblock <id>
+
+  project-companion sprint add <id> --start D --end D [--goal G] [--tasks A,B]
+  project-companion sprint commit <id> --tasks A,B
+  project-companion sprint add-task <id> <task>      added scope, shown apart on the burn-up
+  project-companion sprint close <id>
+  project-companion sprint list | show <id> | burnup <id>   [--json]
+
+  project-companion card open --subject S --ask Q [--options "a|b"] [--recommend R] [--kind question|track]
+  project-companion card answer <id> <answer> --via CHANNEL   the PM's answer
+  project-companion card list [--open] [--json]
+  project-companion update draft [<week>] --health on-track|at-risk|off-track --reason R [--file F] [--epic E]
+  project-companion update publish <week> --via CHANNEL      the PM publishes
+  project-companion update list | show <week>   [--json]
+
+  project-companion pr link <task> <number>  record a task's pull request (via gh)
+  project-companion pr sync                  refresh every linked pull request
+  project-companion cockpit [--json]         the PM's view: decisions, health, progress
+  project-companion flow --lane agent|human [--json]   metrics for one lane only
+  project-companion gate metrics [--json]    wait and override share per gate
   project-companion task add <title> [--status S] [--node ID] [--feature F]
+                                             [--component C]
   project-companion task move <id> <status>  ${TASK_STATUSES.join(" | ")}
   project-companion task start <id> [--branch] [--worktree]
                                      open a branch for a task
   project-companion task done <id> [--commit SHA]
   project-companion task rm <id>
+
+  project-companion merge-driver <base> <ours> <theirs>
+                                             git calls this; init registers it
+  project-companion run start [taskId] [--component C] [--model M] [--session S]
+                                             open a run, with that work's budget
+  project-companion run list [--all]         runs still in flight
+  project-companion run show <id>            spend, boundary, files touched
+  project-companion run <state> <id> [reason]
+                                             ${RUN_STATES.join(" | ")}
+  project-companion ingest                   a harness hook payload, on stdin
+
+  project-companion log [--limit N] [--component ID]
+                                             the event log: what happened, in order
 
   project-companion git status               branch, ahead/behind, working tree
   project-companion git log [--limit N]      recent commits and what they are linked to
@@ -106,10 +248,11 @@ project-companion - architecture and task boards that live in your repo
   project-companion reindex          rebuild the diagram index from disk
   project-companion migrate          convert a split store into one .project file
 
+  project-companion version [--json]         version and capabilities
   project-companion projects                 every project on this machine
   project-companion projects forget <path>   drop one from the global index
 
-Run inside a repo containing .arch/, or any directory below it.
+Run inside a repo containing a .project file, or any directory below it.
 `;
 
 /* -------------------------------- helpers --------------------------------- */
@@ -134,6 +277,15 @@ const flag = (name: string): string | undefined => {
 
 const has = (name: string): boolean => argv.includes(`--${name}`);
 
+/** Every value of a repeatable flag: `--artifact a --artifact b`. */
+const flagAll = (name: string): string[] => {
+  const out: string[] = [];
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === `--${name}` && argv[i + 1] && !argv[i + 1].startsWith("--")) out.push(argv[i + 1]);
+  }
+  return out;
+};
+
 /** Positional arguments, with flags and their values removed. */
 const positional = (): string[] => {
   const out: string[] = [];
@@ -156,6 +308,170 @@ const die = (message: string): never => {
 };
 
 const fmtStatus = (value: string) => value.replace("_", " ");
+
+/**
+ * Stops starting when the queue in front of the bottleneck is full.
+ *
+ * Theory of constraints, applied literally: the useful action when review is
+ * backed up is to go and finish something, not to add a fifth thing to it. The
+ * message names the column and the numbers, because a refusal somebody cannot
+ * argue with is a refusal they route around.
+ */
+const requireWipRoom = (root: string) => {
+  const verdict = wipRoom(root);
+  if (verdict.ok) return;
+  die(
+    `${fmtStatus(verdict.status!)} is full: ${verdict.count} of ${verdict.limit}.\n` +
+      `Finish something there before starting more, or raise the limit with ` +
+      `\`project-companion wip ${verdict.status} <n>\`.`,
+  );
+};
+
+const asDays = (ms: number) =>
+    ms < 3_600_000 ? `${Math.round(ms / 60_000)}m` : ms < 86_400_000 ? `${Math.round(ms / 3_600_000)}h` : `${Math.round(ms / 86_400_000)}d`;
+
+/**
+ * Which agent directory the skill belongs in.
+ *
+ * An existing one wins, so a Codex or Cursor user is not handed a `.claude/`
+ * they never asked for. Otherwise `.claude/`, which is the common case and the
+ * one the README documents.
+ */
+const AGENT_DIRS = [".claude", ".codex", ".cursor", ".gemini"] as const;
+
+const agentDirFor = (root: string): string =>
+  AGENT_DIRS.find((dir) => existsSync(join(root, dir))) ?? AGENT_DIRS[0];
+
+/**
+ * Teaches this clone to merge `.project` structurally.
+ *
+ * Two halves, because git needs both: `.gitattributes` says which driver a path
+ * uses and is committed, so everybody gets it; `.git/config` says what the
+ * driver actually runs and is local, because a repository that could ship
+ * executable commands to whoever clones it would be a supply-chain problem.
+ *
+ * That split is why this is idempotent and why a clone that never runs `init`
+ * simply falls back to git's line merge -- degraded, not broken.
+ */
+const installMergeDriver = (root: string): "added" | "present" => {
+  const attributes = join(root, ".gitattributes");
+  const line = ".project merge=project-companion";
+  const existing = existsSync(attributes) ? readFileSync(attributes, "utf8") : "";
+
+  let added: "added" | "present" = "present";
+  if (!existing.includes(line)) {
+    writeFileSync(
+      attributes,
+      `${existing}${existing && !existing.endsWith("\n") ? "\n" : ""}${line}\n`,
+      "utf8",
+    );
+    added = "added";
+  }
+
+  try {
+    const git = (...args: string[]) =>
+      execFileSync("git", args, { cwd: root, stdio: "pipe" }).toString();
+    git("config", "merge.project-companion.name", "project-companion structural merge");
+    git("config", "merge.project-companion.driver", "npx project-companion merge-driver %O %A %B");
+  } catch {
+    // Not a repository, or git is unavailable. The attribute is still correct
+    // for whenever it becomes one.
+  }
+  return added;
+};
+
+/**
+ * Hook events, and the matcher each one needs. PreToolUse is hooked only for a
+ * spawn, so the tracker learns which task a subagent is working on without
+ * running on every other tool call.
+ */
+const HOOK_EVENTS: { event: string; matcher?: string }[] = [
+  { event: "SessionStart" },
+  { event: "PostToolUse" },
+  { event: "SessionEnd" },
+  { event: "PreToolUse", matcher: "Agent|Task" },
+  { event: "SubagentStart" },
+  { event: "SubagentStop" },
+];
+/**
+ * Run from the PATH, never through `npx`.
+ *
+ * The package is not on the npm registry. `npx project-companion` in any other
+ * repository therefore did nothing -- or, if somebody ever published that
+ * name, would download and run their code on every tool call. `npm link`
+ * puts the real binary on the PATH instead.
+ */
+const HOOK_COMMAND = "project-companion ingest";
+const LEGACY_HOOK_COMMAND = "npx project-companion ingest";
+
+/**
+ * Wires the agent's hooks so runs record themselves.
+ *
+ * Merged into whatever is already in `settings.json` rather than written over
+ * it. Somebody's formatter, their linter, their notification -- all of those
+ * live in the same file, and a tool that installs itself by deleting them is a
+ * tool that gets uninstalled. An existing entry for this command is left alone,
+ * so running `init` twice does not stack three copies.
+ */
+const installHooks = (root: string, agentDir: string): "added" | "present" | "skipped" => {
+  const path = join(root, agentDir, "settings.json");
+  let settings: Record<string, unknown> = {};
+
+  if (existsSync(path)) {
+    try {
+      settings = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
+    } catch {
+      // Refusing to touch a file we cannot parse: rewriting it would lose
+      // whatever is in there, and that is worse than not installing a hook.
+      return "skipped";
+    }
+  }
+
+  const hooks = (settings.hooks ?? {}) as Record<string, unknown[]>;
+  let added = false;
+
+  for (const { event, matcher } of HOOK_EVENTS) {
+    const matchers = Array.isArray(hooks[event]) ? (hooks[event] as Record<string, unknown>[]) : [];
+    // Upgrade the old `npx` entry in place rather than adding a second one.
+    for (const m of matchers) {
+      for (const h of Array.isArray(m.hooks) ? (m.hooks as Record<string, unknown>[]) : []) {
+        if (h.command === LEGACY_HOOK_COMMAND) {
+          h.command = HOOK_COMMAND;
+          added = true;
+        }
+      }
+    }
+    const already = matchers.some((m) =>
+      (Array.isArray(m.hooks) ? (m.hooks as Record<string, unknown>[]) : []).some(
+        (h) => h.command === HOOK_COMMAND,
+      ),
+    );
+    if (already) continue;
+
+    matchers.push({ ...(matcher ? { matcher } : {}), hooks: [{ type: "command", command: HOOK_COMMAND }] });
+    hooks[event] = matchers;
+    added = true;
+  }
+
+  if (!added) return "present";
+
+  settings.hooks = hooks;
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+  return "added";
+};
+
+/** `--paths "a/**,b/**"` -- comma or whitespace separated, both are natural to type. */
+const splitList = (value: string | undefined): string[] | undefined =>
+  value === undefined ? undefined : value.split(/[,\s]+/).filter(Boolean);
+
+/** One line of an event's payload, for `log`. */
+const summarise = (data: Record<string, unknown>): string =>
+  Object.entries(data)
+    .filter(([, v]) => v !== undefined && v !== null)
+    .map(([k, v]) => `${k}=${Array.isArray(v) ? v.join("|") : String(v)}`)
+    .join(" ")
+    .slice(0, 90);
 
 const PRD_TEMPLATE = `# Product requirements
 
@@ -269,7 +585,7 @@ const runTaskGit = async (root: string, sub: string, id: string) => {
 
 const requireRoot = (): string =>
   findProjectRoot() ??
-  die("No .arch/ found. Run `project-companion init` at your project root.");
+  die("No project here. Run `project-companion init` at your project root.");
 
 const describeDiagram = (diagram: DiagramFile): string => {
   const lines: string[] = [
@@ -302,6 +618,15 @@ const main = () => {
 
   if (!command || command === "help" || command === "--help") {
     process.stdout.write(HELP);
+    return;
+  }
+
+  if (command === "version" || command === "--version") {
+    process.stdout.write(
+      has("json")
+        ? `${JSON.stringify({ version: VERSION, capabilities: CAPABILITIES })}\n`
+        : `project-companion ${VERSION} (${CAPABILITIES.join(", ")})\n`,
+    );
     return;
   }
 
@@ -349,26 +674,72 @@ const main = () => {
     return;
   }
 
+  /**
+   * Git's merge driver for `.project`.
+   *
+   * Registered by `init`, invoked by git with three temporary files. Exits 0
+   * when it merged cleanly and 1 when it could not, which is the contract --
+   * a non-zero exit leaves git's conflict markers in place rather than
+   * pretending the merge worked.
+   */
+  if (command === "merge-driver") {
+    const [base, ours, theirs] = [sub, rest[0], rest[1]];
+    if (!base || !ours || !theirs) die("Usage: project-companion merge-driver <base> <ours> <theirs>");
+
+    const read = (path: string) => {
+      try {
+        return readFileSync(path, "utf8");
+      } catch {
+        return "";
+      }
+    };
+
+    const result = mergeBundles(read(base!), read(ours!), read(theirs!));
+    if (!result.merged || result.conflicts.length) {
+      process.stderr.write(
+        `project-companion: cannot merge ${result.conflicts.join(", ")} automatically.\n`,
+      );
+      process.exit(1);
+    }
+
+    // Git reads the result back out of `ours`.
+    writeFileSync(ours!, `${JSON.stringify(result.merged, null, 2)}\n`, "utf8");
+    return;
+  }
+
   if (command === "init") {
     const root = process.cwd();
     const name = sub ?? basename(root);
     const project = initProject(root, name);
     registerProject(root);
 
-    // Write the skill next to the store so the agent picks the tool up from
-    // the repository, with no MCP setup required.
-    const storeDir = findProject(root)?.storeDir ?? "";
-    const agentDir = storeDir.split("/")[0];
-    if (agentDir && agentDir !== ".arch") {
-      const skill = join(root, agentDir, "skills", "project-companion", "SKILL.md");
-      if (!existsSync(skill)) {
-        mkdirSync(dirname(skill), { recursive: true });
-        writeFileSync(skill, SKILL_MD, "utf8");
-      }
+    // Write the skill into the agent's own directory so the tool is picked up
+    // from the repository, with no MCP setup required.
+    //
+    // This used to derive the directory from the store path, which worked while
+    // the store WAS an agent directory (`.claude/project-companion/`). Since the
+    // single-file format it is `.project` -- a file -- so that derivation asked
+    // for `mkdir .project/skills/...` and `init` died with ENOTDIR on every new
+    // project. The agent directory is a separate question from where the data
+    // lives, and is now asked separately.
+    const skill = join(root, agentDirFor(root), "skills", "project-companion", "SKILL.md");
+    if (!existsSync(skill)) {
+      mkdirSync(dirname(skill), { recursive: true });
+      writeFileSync(skill, SKILL_MD, "utf8");
     }
+    const hooks = installHooks(root, agentDirFor(root));
+    const merge = installMergeDriver(root);
     process.stdout.write(
       `Initialised "${project.name}" in ${root}/${findProject(root)?.storeDir}\n` +
-        `Wrote the project-companion skill so your agent can use it directly.\n` +
+        `Wrote ${relative(root, skill)} so your agent can use it directly.\n` +
+        (merge === "added"
+          ? `Registered a merge driver for .project, so two people's boards merge.\n`
+          : "") +
+        (hooks === "added"
+          ? `Hooked ${agentDirFor(root)}/settings.json so agent runs record themselves.\n`
+          : hooks === "skipped"
+            ? `Left ${agentDirFor(root)}/settings.json alone -- it is not valid JSON. Add the ingest hook by hand to track runs.\n`
+            : "") +
         `Next: project-companion diagram new "System architecture"\n`,
     );
     return;
@@ -474,6 +845,737 @@ const main = () => {
     return die(HELP);
   }
 
+  /* ------------------------------- components ------------------------------- */
+
+  if (command === "component") {
+    const components = readComponents(root);
+
+    if (sub === "add") {
+      const title = rest[0] ?? die("Usage: project-companion component add <title>");
+      const lifecycle = flag("lifecycle");
+      if (lifecycle && !COMPONENT_LIFECYCLES.includes(lifecycle as never)) {
+        die(`Unknown lifecycle "${lifecycle}" (${COMPONENT_LIFECYCLES.join(" | ")})`);
+      }
+      const parent = flag("parent");
+      if (parent && !components.some((c) => c.id === parent)) {
+        // Same rule as `task add --feature`: refuse a dangling link rather than
+        // storing one that puts the component nowhere in the tree.
+        die(`No component "${parent}". Run \`project-companion component list\`.`);
+      }
+
+      const component = createComponent(root, {
+        title,
+        owner: flag("owner"),
+        paths: splitList(flag("paths")),
+        parentId: parent,
+        nodeId: flag("node"),
+        diagramId: flag("diagram"),
+        drilldownDiagramId: flag("drilldown"),
+        lifecycle: lifecycle as ComponentLifecycle | undefined,
+      });
+      process.stdout.write(`Created ${component.id}  ${component.title}\n`);
+      if (!component.paths?.length) {
+        process.stdout.write(
+          `\nNo paths yet, so nothing will attribute here. Add them:\n` +
+            `  project-companion component set ${component.id} --paths "lib/${component.id}/**"\n`,
+        );
+      }
+      return;
+    }
+
+    if (sub === "set") {
+      const id = rest[0] ?? die("Usage: project-companion component set <id> [--owner W] [--paths P]");
+      const lifecycle = flag("lifecycle");
+      if (lifecycle && !COMPONENT_LIFECYCLES.includes(lifecycle as never)) {
+        die(`Unknown lifecycle "${lifecycle}" (${COMPONENT_LIFECYCLES.join(" | ")})`);
+      }
+      const paths = splitList(flag("paths"));
+      const updated =
+        updateComponent(root, id, {
+          ...(flag("owner") ? { owner: flag("owner") } : {}),
+          ...(paths ? { paths } : {}),
+          ...(flag("parent") ? { parentId: flag("parent") } : {}),
+          ...(flag("drilldown") ? { drilldownDiagramId: flag("drilldown") } : {}),
+          ...(lifecycle ? { lifecycle: lifecycle as ComponentLifecycle } : {}),
+        }) ?? die(`No component "${id}"`);
+      process.stdout.write(
+        `${updated.id}  ${updated.lifecycle}  ${updated.owner ?? "(unowned)"}  ${(updated.paths ?? []).join(", ")}\n`,
+      );
+      return;
+    }
+
+    if (sub === "rm" || sub === "delete") {
+      const id = rest[0] ?? die("Usage: project-companion component rm <id>");
+      if (!deleteComponent(root, id)) die(`No component "${id}"`);
+      process.stdout.write(`Deleted ${id}  (children were promoted, not deleted)\n`);
+      return;
+    }
+
+    if (sub === "show") {
+      const id = rest[0] ?? die("Usage: project-companion component show <id>");
+      const component = readComponent(root, id) ?? die(`No component "${id}"`);
+      const family = withDescendants(id, components);
+      const tasks = readTasks(root).tasks.filter((t) => family.includes(t.componentId ?? ""));
+      const trail = ancestorsOf(id, components).map((c) => c.id);
+
+      const lines = [
+        `${component.title}  [${component.lifecycle}]  id=${component.id}`,
+        trail.length ? `path:  ${[...trail, component.id].join(" / ")}` : "",
+        `owner: ${component.owner ?? "(unowned)"}`,
+        `paths: ${(component.paths ?? []).join(", ") || "(none declared)"}`,
+        component.orphaned ? "orphaned: the canvas node is gone" : "",
+        "",
+      ].filter((l) => l !== "");
+
+      const children = components.filter((c) => c.parentId === id);
+      if (children.length) {
+        lines.push("children:");
+        for (const c of children) lines.push(`  ${c.id.padEnd(24)} ${c.title}`);
+        lines.push("");
+      }
+
+      if (tasks.length) {
+        lines.push(`tasks (${tasks.length}, including children):`);
+        for (const t of tasks) {
+          lines.push(`  ${t.id}  ${fmtStatus(t.status).padEnd(12)} ${t.title}`);
+        }
+      } else {
+        lines.push("No tasks on this component yet.");
+      }
+
+      process.stdout.write(`${lines.join("\n")}\n`);
+      return;
+    }
+
+    if (sub === "doctor") {
+      const warnings = catalogWarnings(components);
+      for (const w of warnings) {
+        process.stdout.write(`${w.componentId.padEnd(24)} ${w.kind.padEnd(17)} ${w.detail}\n`);
+      }
+      if (warnings.length) {
+        process.stdout.write(
+          `\n${warnings.length} problems. A component with no paths attributes nothing, ` +
+            `and two claiming the same paths attribute nothing either.\n\n`,
+        );
+      }
+
+      // Coverage, which is the check every other one assumes. A catalog of
+      // three tidy components over a tenth of the codebase used to report
+      // nothing wrong at all.
+      const files = sourceFiles(root);
+      const cover = coverage(files, components);
+      const percent = cover.total ? Math.round((cover.owned / cover.total) * 100) : 100;
+      process.stdout.write(
+        `${cover.owned}/${cover.total} source files owned (${percent}%)\n`,
+      );
+
+      if (cover.gaps.length) {
+        process.stdout.write(`\nUnclaimed, worst first:\n`);
+        for (const gap of cover.gaps.slice(0, 8)) {
+          process.stdout.write(
+            `  ${gap.directory.padEnd(28)} ${String(gap.files).padStart(4)} files   ${gap.examples[0]}\n`,
+          );
+        }
+        process.stdout.write(
+          `\nA file no component claims attributes nothing, and a finding against it ` +
+            `has no page to appear on.\n`,
+        );
+      } else if (!warnings.length) {
+        process.stdout.write("\nNothing wrong, and nothing unclaimed.\n");
+      }
+      return;
+    }
+
+    if (!components.length) {
+      process.stdout.write("No components yet. `project-companion component add <title>`\n");
+      return;
+    }
+
+    // Listed as the tree, because containment is how the architecture reads.
+    const render = (nodes: ComponentNode[], depth: number) => {
+      for (const node of nodes) {
+        const indent = "  ".repeat(depth);
+        const owner = node.owner ?? "(unowned)";
+        process.stdout.write(
+          `${(indent + node.id).padEnd(30)} ${owner.padEnd(22)} ${(node.paths ?? []).join(", ")}\n`,
+        );
+        render(node.children, depth + 1);
+      }
+    };
+    render(componentTree(components), 0);
+    return;
+  }
+
+  if (command === "whose") {
+    const path = sub ?? die("Usage: project-companion whose <path>");
+    const owner = resolveComponent(path, readComponents(root));
+    if (!owner) {
+      process.stdout.write(
+        `${path} belongs to no component.\n` +
+          `Either nothing claims it, or two things claim it equally -- ` +
+          `\`project-companion component doctor\` says which.\n`,
+      );
+      return;
+    }
+    const component = readComponent(root, owner.componentId)!;
+    process.stdout.write(
+      `${owner.componentId}  ${component.owner ?? "(unowned)"}\n  matched ${owner.glob}\n`,
+    );
+    return;
+  }
+
+  if (command === "log") {
+    const limit = Number(flag("limit")) || 40;
+    const component = flag("component");
+    const events = readEvents(root)
+      .filter((e) => e.kind !== "actor.identified")
+      .filter((e) => !component || e.componentId === component)
+      .slice(-limit);
+
+    if (!events.length) {
+      process.stdout.write("Nothing logged yet.\n");
+      return;
+    }
+
+    // Actor ids are hashes; the log states each one's identity in its own first
+    // event, so resolve them back to something a person recognises.
+    const names = new Map<string, string>();
+    for (const e of readEvents(root)) {
+      if (e.kind === "actor.identified") names.set(e.actor, String(e.data.name ?? e.actor));
+    }
+
+    for (const e of events) {
+      const when = new Date(e.ts).toISOString().replace("T", " ").slice(0, 19);
+      const who = (names.get(e.actor) ?? e.actor).slice(0, 14);
+      const scope = e.componentId ? `[${e.componentId}] ` : "";
+      process.stdout.write(
+        `${when}  ${who.padEnd(14)} ${e.kind.padEnd(20)} ${scope}${summarise(e.data)}\n`,
+      );
+    }
+    return;
+  }
+
+  /* ---------------------------------- runs ---------------------------------- */
+
+  if (command === "run") {
+    if (sub === "start") {
+      const taskId = rest[0];
+      if (taskId && !readTasks(root).tasks.some((t) => t.id === taskId)) {
+        die(`No task "${taskId}".`);
+      }
+      requireWipRoom(root);
+      const run = startRun(root, {
+        taskId,
+        componentId: flag("component"),
+        sessionId: flag("session"),
+        actor: { model: flag("model"), harness: flag("harness") },
+      });
+
+      const policy = [
+        run.componentId ? `component ${run.componentId}` : "no component",
+        `autonomy ${run.autonomy}`,
+        run.budget.tokens ? `${run.budget.tokens} tokens` : "no token ceiling",
+      ].join("  ");
+
+      process.stdout.write(
+        `Run ${run.id}  ${policy}\n` +
+          (run.writeGlobs?.length
+            ? `May write: ${run.writeGlobs.join(", ")}\n`
+            : `May write: anywhere (this run is not scoped to a component)\n`),
+      );
+      return;
+    }
+
+    if (sub === "show") {
+      const id = rest[0] ?? die("Usage: project-companion run show <id>");
+      const run = readRun(root, id) ?? die(`No run "${id}"`);
+      const spent = run.spent;
+      process.stdout.write(
+        [
+          `${run.id}  ${run.state}${run.reason ? `  (${run.reason})` : ""}`,
+          `actor:    ${run.actor.model ?? "?"}${run.actor.harness ? ` via ${run.actor.harness}` : ""}`,
+          run.componentId ? `component: ${run.componentId}` : "",
+          run.taskId ? `task:     ${run.taskId}` : "",
+          `spent:    ${spent.inputTokens + spent.outputTokens} tokens, ${spent.toolCalls} tool calls, ${Math.round(spent.wallClockMs / 1000)}s`,
+          `boundary: ${run.writeGlobs?.join(", ") || "anywhere"}`,
+          run.touched.length ? `touched:\n${run.touched.map((f) => `  ${f}`).join("\n")}` : "touched: nothing yet",
+        ].filter(Boolean).join("\n") + "\n",
+      );
+      return;
+    }
+
+    if (sub && (RUN_STATES as readonly string[]).includes(sub)) {
+      const id = rest[0] ?? die(`Usage: project-companion run ${sub} <id>`);
+      try {
+        const run = setRunState(root, id, sub as RunState, rest.slice(1).join(" ") || undefined);
+        if (!run) die(`No run "${id}"`);
+        process.stdout.write(`${id} -> ${run!.state}\n`);
+      } catch (error) {
+        die(error instanceof Error ? error.message : String(error));
+      }
+      return;
+    }
+
+    // `run list`, and the default.
+    const runs = readRuns(root).filter(
+      (r) => has("all") || (r.state !== "merged" && r.state !== "abandoned"),
+    );
+    if (has("json")) {
+      process.stdout.write(`${JSON.stringify(runs)}\n`);
+      return;
+    }
+    if (!runs.length) {
+      process.stdout.write(
+        has("all") ? "No runs yet.\n" : "Nothing in flight. `project-companion run list --all` for finished ones.\n",
+      );
+      return;
+    }
+    for (const r of runs) {
+      const tokens = r.spent.inputTokens + r.spent.outputTokens;
+      process.stdout.write(
+        `${r.id}  ${r.state.padEnd(16)} ${(r.componentId ?? "-").padEnd(18)} ` +
+          `${String(tokens).padStart(7)} tok  ${String(r.touched.length).padStart(3)} files  ${r.actor.model ?? ""}\n`,
+      );
+    }
+    return;
+  }
+
+  /**
+   * A harness hook, on stdin.
+   *
+   * Silent on anything it does not recognise, and never non-zero: this runs
+   * inside somebody's coding session, and a tracking tool that can break the
+   * session it is tracking will be removed from the settings within a day.
+   */
+  if (command === "ingest") {
+    let raw = "";
+    process.stdin.setEncoding("utf8");
+    process.stdin.on("data", (chunk) => (raw += chunk));
+    process.stdin.on("end", () => {
+      try {
+        const event = parseHook(JSON.parse(raw));
+        if (event.kind === "unknown") return;
+
+        // Subagents get their own runs (TR-03).
+        if (event.kind === "spawn.requested") return recordSpawnRequest(root, event);
+        if (event.kind === "subagent.start") return void startSubagentRun(root, event);
+        if (event.kind === "subagent.stop") return void stopSubagentRun(root, event.agentId);
+
+        if (event.kind === "session.start") {
+          if (runForSession(root, event.sessionId)) return; // A resume, not a new run.
+          startRun(root, {
+            sessionId: event.sessionId,
+            actor: { model: event.model, harness: event.harness },
+          });
+          return;
+        }
+
+        const run =
+          event.kind === "tool.use" && event.agentId
+            ? runForAgent(root, event.agentId)
+            : runForSession(root, event.sessionId);
+        if (!run) return;
+
+        if (event.kind === "tool.use") {
+          const result = reportRun(root, run.id, {
+            inputTokens: event.inputTokens,
+            outputTokens: event.outputTokens,
+            toolCalls: 1,
+            touched: event.touched,
+          });
+          // The one thing worth interrupting for: the agent is about to keep
+          // going past a ceiling somebody set, or outside a boundary.
+          if (result && !result.verdict.ok) {
+            process.stderr.write(
+              `project-companion: run ${run.id} is over budget (${result.verdict.detail}) and is now blocked.\n`,
+            );
+          }
+          if (result?.refused.length) {
+            process.stderr.write(
+              `project-companion: ${result.refused.join(", ")} is outside ${run.componentId ?? "this run"}'s boundary.\n`,
+            );
+          }
+          return;
+        }
+
+        if (event.kind === "session.end" && run.state === "running") {
+          setRunState(root, run.id, "awaiting_review", event.reason);
+        }
+      } catch {
+        // See above: a hook must not fail the session it is observing.
+      }
+    });
+    return;
+  }
+
+  /**
+   * Gates. See `lib/project/gate.ts`.
+   *
+   * There is deliberately no MCP tool for approve, refuse or track: an agent
+   * has no structured way to make the PM's decision. devolps also denies these
+   * subcommands to Claude's Bash tool, and records the PM's typed command.
+   */
+  if (command === "gate") {
+    const prdPath = readRoadmap(root).source;
+    const json = has("json");
+    const say = (value: unknown, text: string) =>
+      process.stdout.write(json ? `${JSON.stringify(value)}\n` : text);
+    const kindArg = (value: string | undefined) => {
+      if (!value || !isGateKind(value)) return die(`Unknown gate "${value ?? ""}". One of: ${GATE_KINDS.join(", ")}`);
+      return value;
+    };
+    try {
+      if (sub === "request") {
+        const kind = kindArg(rest[0]);
+        const subject = rest[1] ?? die("Usage: project-companion gate request <kind> <subject> --artifact FILE");
+        const artifacts = flagAll("artifact");
+        if (flag("prd-section")) artifacts.push(`prd-section:${flag("prd-section")}`);
+        if (flag("head")) artifacts.push(`head:${flag("head")}`);
+        if (!artifacts.length) {
+          die("Name what the PM approves: --artifact <file>, --prd-section <epic> or --head <sha>.");
+        }
+        // A sprint gate covers the sprint's own tasks unless --tasks says otherwise.
+        const sprint = kind === "sprint" ? foldSprints(readEvents(root)).get(subject) : undefined;
+        const tasks = splitList(flag("tasks")) ?? (sprint ? sprintTasks(sprint) : undefined);
+        const gate = requestGate(root, { kind, subject, artifacts, tasks }, prdPath);
+        say(gate, `Requested the ${kind} gate for ${subject}. The PM approves with /devolps:approve ${kind} ${subject}\n`);
+        return;
+      }
+      if (sub === "approve") {
+        const kind = kindArg(rest[0]);
+        const subject = rest[1] ?? die("Usage: project-companion gate approve <kind> <subject> --via CHANNEL");
+        const gate = approveGate(
+          root,
+          { kind, subject, via: flag("via"), override: flag("override"), head: flag("head") },
+          prdPath,
+        );
+        say(gate, `${gate.state === "overridden" ? "Approved with an override" : "Approved"}: ${kind} gate for ${subject}.\n`);
+        return;
+      }
+      if (sub === "refuse") {
+        const kind = kindArg(rest[0]);
+        const subject = rest[1] ?? die("Usage: project-companion gate refuse <kind> <subject> --via CHANNEL --reason R");
+        const gate = refuseGate(
+          root,
+          { kind, subject, via: flag("via"), reason: flag("reason") ?? "", remedy: flag("remedy") },
+          prdPath,
+        );
+        say(gate, `Refused: ${kind} gate for ${subject}.\n`);
+        return;
+      }
+      if (sub === "track") {
+        const subject = rest[0] ?? die(`Usage: project-companion gate track <subject> <${TRACKS.join("|")}> --via CHANNEL`);
+        const track = rest[1];
+        if (!track || !isTrack(track)) die(`Unknown track "${track ?? ""}". One of: ${TRACKS.join(", ")}`);
+        const decision = confirmTrack(root, { subject, track: track as (typeof TRACKS)[number], via: flag("via") });
+        say(decision, `Track for ${subject}: ${decision.track}.\n`);
+        return;
+      }
+      if (sub === "status") {
+        const book = readGates(root, prdPath);
+        const subject = flag("subject");
+        const gates = listGates(book).filter((g) => !subject || g.subject === subject);
+        const tracks = Array.from(book.tracks.values()).filter((t) => !subject || t.subject === subject);
+        if (json) {
+          process.stdout.write(`${JSON.stringify({ gates, tracks })}\n`);
+          return;
+        }
+        if (!gates.length && !tracks.length) {
+          process.stdout.write("No gates yet.\n");
+          return;
+        }
+        for (const t of tracks) process.stdout.write(`track   ${t.subject.padEnd(24)} ${t.track}\n`);
+        for (const g of gates) {
+          const why = g.state === "stale" ? `  changed: ${g.changed.join(", ")}` : g.reason ? `  ${g.reason}` : "";
+          process.stdout.write(`${g.kind.padEnd(7)} ${g.subject.padEnd(24)} ${g.state}${why}\n`);
+        }
+        return;
+      }
+      if (sub === "check") {
+        const taskId = flag("task");
+        const epicId = flag("epic");
+        if (!taskId && !epicId) die("Usage: project-companion gate check (--task ID | --epic ID) [--stage STAGE]");
+        const stageArg = flag("stage") ?? (taskId ? "build" : undefined);
+        if (!stageArg || !isStage(stageArg)) die(`Unknown stage "${stageArg ?? ""}". One of: ${STAGES.join(", ")}`);
+        const task = taskId ? readTasks(root).tasks.find((t) => t.id === taskId) : undefined;
+        const epic =
+          epicId ??
+          task?.phaseId ??
+          readRoadmap(root).features.find((f) => f.id === task?.featureId)?.phaseId;
+        const result = checkWork(
+          readGates(root, prdPath),
+          {
+            stage: stageArg as Stage,
+            epic,
+            taskId,
+            task: task ? { id: task.id, epic } : taskId ? null : undefined,
+          },
+          (path) => existsSync(join(root, path)),
+        );
+        say(
+          result,
+          result.ok
+            ? `May start: ${result.stage}${result.track ? ` (${result.track} track)` : ""}.\n`
+            : `May not start ${result.stage}:\n${result.missing.map((m) => `  - ${m.what} ${m.subject}: ${m.remedy}`).join("\n")}\n`,
+        );
+        if (!result.ok) process.exit(3);
+        return;
+      }
+      if (sub === "metrics") {
+        const metrics = gateMetrics(readEvents(root));
+        if (json) {
+          process.stdout.write(`${JSON.stringify(metrics)}\n`);
+          return;
+        }
+        if (!metrics.length) process.stdout.write("No gate decisions yet.\n");
+        for (const m of metrics) {
+          process.stdout.write(
+            `${m.kind.padEnd(8)} ${m.decided} decided  median wait ${m.medianWaitMs === null ? "-" : asDays(m.medianWaitMs)}  overrides ${m.overrides}${m.overrideShare === null ? "" : ` (${Math.round(m.overrideShare * 100)}%)`}\n`,
+          );
+        }
+        return;
+      }
+      if (sub === "log") {
+        // Every decision that is the PM's to make: gates, tracks, card answers and
+        // published updates. devolps reconciles each against a typed command.
+        const decisions = readEvents(root)
+          .filter((e) => e.kind.startsWith("gate.") || ["track.confirmed", "card.answered", "update.published"].includes(e.kind))
+          .map((e) => ({ event: e.kind, ts: e.ts, actor: e.actor, ...e.data }));
+        if (json) {
+          process.stdout.write(`${JSON.stringify(decisions)}\n`);
+          return;
+        }
+        for (const d of decisions) {
+          const data = d as Record<string, unknown>;
+          process.stdout.write(
+            `${new Date(d.ts).toISOString()}  ${d.event.padEnd(16)} ${String(data.kind ?? data.track ?? "").padEnd(8)} ${String(data.subject ?? "")}  via ${String(data.via ?? "-")}\n`,
+          );
+        }
+        return;
+      }
+      die(HELP);
+    } catch (error) {
+      if (error instanceof GateError) die(error.message);
+      throw error;
+    }
+  }
+
+  /* ------------------------------ sprints (TR-05) ----------------------------- */
+
+  if (command === "sprint") {
+    const json = has("json");
+    const sprints = foldSprints(readEvents(root));
+    const get = (id: string | undefined) =>
+      (id && sprints.get(id)) || die(`No sprint "${id ?? ""}". Run \`project-companion sprint list\`.`);
+    const taskIds = new Set(readTasks(root).tasks.map((t) => t.id));
+    const checkTasks = (ids: string[]) => {
+      const unknown = ids.filter((id) => !taskIds.has(id));
+      if (unknown.length) die(`No task ${unknown.join(", ")}. Check the ids with \`project-companion task list\`.`);
+    };
+
+    if (sub === "add") {
+      const id = rest[0] ?? die("Usage: project-companion sprint add <id> --start YYYY-MM-DD --end YYYY-MM-DD [--goal G] [--tasks A,B]");
+      if (sprints.has(id)) die(`Sprint "${id}" already exists.`);
+      const start = flag("start") ?? die("A sprint needs --start YYYY-MM-DD.");
+      const end = flag("end") ?? die("A sprint needs --end YYYY-MM-DD.");
+      appendEvent(root, {
+        kind: "sprint.created",
+        data: { sprintId: id, name: flag("name") ?? id, goal: flag("goal"), start, end, capacity: flag("capacity") ? Number(flag("capacity")) : undefined },
+      });
+      const tasks = splitList(flag("tasks"));
+      if (tasks?.length) {
+        checkTasks(tasks);
+        appendEvent(root, { kind: "sprint.committed", data: { sprintId: id, tasks } });
+      }
+      process.stdout.write(`Created sprint ${id} (${start} to ${end})${tasks?.length ? ` with ${tasks.length} task(s)` : ""}.\n`);
+      return;
+    }
+    if (sub === "commit") {
+      const s = get(rest[0]);
+      const tasks = splitList(flag("tasks")) ?? die("Usage: project-companion sprint commit <id> --tasks A,B");
+      checkTasks(tasks);
+      if (s.committedAt) die(`Sprint ${s.id} is already committed. Add work with \`project-companion sprint add-task ${s.id} <task>\` (it counts as added scope).`);
+      appendEvent(root, { kind: "sprint.committed", data: { sprintId: s.id, tasks } });
+      process.stdout.write(`Committed ${tasks.length} task(s) to ${s.id}.\n`);
+      return;
+    }
+    if (sub === "add-task") {
+      const s = get(rest[0]);
+      const task = rest[1] ?? die("Usage: project-companion sprint add-task <sprint> <task>");
+      checkTasks([task]);
+      appendEvent(root, { kind: "sprint.scope_added", data: { sprintId: s.id, taskId: task } });
+      process.stdout.write(`Added ${task} to ${s.id} as added scope.\n`);
+      return;
+    }
+    if (sub === "close") {
+      const s = get(rest[0]);
+      appendEvent(root, { kind: "sprint.closed", data: { sprintId: s.id } });
+      process.stdout.write(`Closed sprint ${s.id}.\n`);
+      return;
+    }
+    if (sub === "show" || sub === "burnup") {
+      const s = get(rest[0]);
+      const b = burnup(s, readTasks(root).tasks, readEvents(root));
+      if (json) {
+        process.stdout.write(`${JSON.stringify(sub === "burnup" ? b : { ...s, burnup: b })}\n`);
+        return;
+      }
+      process.stdout.write(
+        `${s.id}  ${s.status}  ${s.start} to ${s.end}${s.goal ? `\n  goal: ${s.goal}` : ""}\n` +
+          `  committed ${b.committed} ${b.unit}, added ${b.added}, done ${b.done}\n` +
+          b.points.map((p) => `  ${p.date}  scope ${p.scope}  done ${p.done}`).join("\n") + "\n",
+      );
+      return;
+    }
+    const list = Array.from(sprints.values()).sort((a, b) => a.start.localeCompare(b.start));
+    if (json) {
+      process.stdout.write(`${JSON.stringify(list)}\n`);
+      return;
+    }
+    if (!list.length) {
+      process.stdout.write("No sprints.\n");
+      return;
+    }
+    for (const s of list) process.stdout.write(`${s.id.padEnd(16)} ${s.status.padEnd(8)} ${s.start} to ${s.end}  ${sprintTasks(s).length} task(s)  ${s.goal ?? ""}\n`);
+    return;
+  }
+
+  /* ------------------------- decision cards (TR-14) ------------------------- */
+
+  if (command === "card") {
+    const cards = foldCards(readEvents(root));
+    if (sub === "open") {
+      const subject = flag("subject") ?? die("Usage: project-companion card open --subject <epic|task> --ask \"<question>\" [--options \"a|b\"] [--recommend R] [--why W] [--cost C] [--deadline YYYY-MM-DD] [--kind question|track]");
+      const ask = flag("ask") ?? die("A card needs --ask \"<question>\".");
+      const kind = flag("kind") === "track" ? "track" : "question";
+      const options = kind === "track" ? ["full", "quick", "bugfix"] : (flag("options") ?? "").split("|").map((o) => o.trim()).filter(Boolean);
+      const id = `c-${randomUUID().slice(0, 6)}`;
+      appendEvent(root, {
+        kind: "card.opened",
+        data: { cardId: id, kind, subject, ask, why: flag("why"), options, recommendation: flag("recommend"), costOfWaiting: flag("cost"), deadline: flag("deadline") },
+      });
+      process.stdout.write(has("json") ? `${JSON.stringify({ id })}\n` : `Opened card ${id}. The PM answers it with /devolps:answer ${id} "<answer>".\n`);
+      return;
+    }
+    if (sub === "answer") {
+      const id = rest[0] ?? die("Usage: project-companion card answer <id> <answer> --via CHANNEL");
+      const card = cards.get(id) ?? die(`No card "${id}".`);
+      if (card.answer !== undefined) die(`Card ${id} is already answered: ${card.answer}`);
+      const via = flag("via") ?? die("An answer must say how it arrived (--via). The PM answers by typing /devolps:answer.");
+      const answer = rest.slice(1).join(" ").trim() || die("An answer cannot be empty.");
+      appendEvent(root, { kind: "card.answered", data: { cardId: id, answer, via } });
+      process.stdout.write(`Answered ${id}: ${answer}\n`);
+      return;
+    }
+    const list = Array.from(cards.values()).filter((c) => !has("open") || c.answer === undefined);
+    if (has("json")) {
+      process.stdout.write(`${JSON.stringify(list)}\n`);
+      return;
+    }
+    if (!list.length) {
+      process.stdout.write("No cards.\n");
+      return;
+    }
+    for (const c of list) process.stdout.write(`${c.id}  ${c.answer === undefined ? "open    " : "answered"}  ${c.subject.padEnd(16)} ${c.ask}\n`);
+    return;
+  }
+
+  /* ------------------------- weekly updates (TR-14) ------------------------- */
+
+  if (command === "update") {
+    const updates = foldUpdates(readEvents(root));
+    if (sub === "draft") {
+      const id = rest[0] ?? weekId(Date.now());
+      const health = flag("health") ?? die("An update needs --health on-track|at-risk|off-track.");
+      if (!isHealth(health)) die(`Unknown health "${health}". One of: on-track, at-risk, off-track.`);
+      const reason = flag("reason") ?? die("An update needs --reason \"<one line>\".");
+      const file = flag("file");
+      const body = file ? readFileSync(resolve(file), "utf8") : flag("body") ?? "";
+      if (updates.get(id)?.publishedAt) die(`Update ${id} is already published.`);
+      appendEvent(root, { kind: "update.drafted", data: { updateId: id, epic: flag("epic"), health, reason, body } });
+      process.stdout.write(`Drafted update ${id}. The PM publishes it with /devolps:publish-update ${id}.\n`);
+      return;
+    }
+    if (sub === "publish") {
+      const id = rest[0] ?? die("Usage: project-companion update publish <id> --via CHANNEL");
+      const u = updates.get(id) ?? die(`No update "${id}". Draft it first.`);
+      if (u.publishedAt) die(`Update ${id} is already published.`);
+      const via = flag("via") ?? die("Publishing must say how it arrived (--via). The PM publishes by typing /devolps:publish-update.");
+      appendEvent(root, { kind: "update.published", data: { updateId: id, via } });
+      process.stdout.write(`Published update ${id}.\n`);
+      return;
+    }
+    if (sub === "show") {
+      const u = updates.get(rest[0] ?? "") ?? die(`No update "${rest[0] ?? ""}".`);
+      process.stdout.write(has("json") ? `${JSON.stringify(u)}\n` : `${u.id}  ${u.health}  ${u.publishedAt ? "published" : "draft"}\n${u.reason}\n\n${u.body}\n`);
+      return;
+    }
+    const list = Array.from(updates.values()).sort((a, b) => b.draftedAt - a.draftedAt);
+    if (has("json")) {
+      process.stdout.write(`${JSON.stringify(list)}\n`);
+      return;
+    }
+    for (const u of list) process.stdout.write(`${u.id}  ${u.health.padEnd(9)} ${u.publishedAt ? "published" : "draft    "}  ${u.reason}\n`);
+    if (!list.length) process.stdout.write("No updates.\n");
+    return;
+  }
+
+  /* ------------------------------ pull requests (TR-06) ------------------------- */
+
+  if (command === "pr") {
+    const view = (n: string) => {
+      const out = execFileSync("gh", ["pr", "view", n, "--json", "number,url,state,headRefOid"], { cwd: root, encoding: "utf8" });
+      return JSON.parse(out) as { number: number; url: string; state: string; headRefOid: string };
+    };
+    if (sub === "link") {
+      const [taskId, n] = rest;
+      if (!taskId || !n || !/^\d+$/.test(n)) die("Usage: project-companion pr link <task> <pr number>");
+      let pr;
+      try {
+        pr = view(n);
+      } catch (error) {
+        die(`Could not read pull request #${n} with gh: ${error instanceof Error ? error.message.split("\n")[0] : error}`);
+      }
+      const task = linkPullRequest(root, taskId, { number: pr!.number, url: pr!.url, state: pr!.state, headSha: pr!.headRefOid }) ?? die(`No task "${taskId}"`);
+      process.stdout.write(`Linked ${task.id} to pull request #${pr!.number} (${pr!.state}).\n`);
+      return;
+    }
+    if (sub === "sync") {
+      const linked = readTasks(root).tasks.filter((t) => t.pr);
+      let changed = 0;
+      for (const t of linked) {
+        try {
+          const pr = view(String(t.pr!.number));
+          if (pr.state !== t.pr!.state || pr.headRefOid !== t.pr!.headSha) changed++;
+          linkPullRequest(root, t.id, { number: pr.number, url: pr.url, state: pr.state, headSha: pr.headRefOid });
+        } catch {
+          process.stderr.write(`Could not read pull request #${t.pr!.number}; left as it was.\n`);
+        }
+      }
+      process.stdout.write(`Synced ${linked.length} pull request(s); ${changed} changed.\n`);
+      return;
+    }
+    die("Usage: project-companion pr link <task> <number> | pr sync");
+  }
+
+  /* ------------------------------- cockpit (PC) ------------------------------- */
+
+  if (command === "cockpit") {
+    const model = readCockpit(root);
+    if (has("json")) {
+      process.stdout.write(`${JSON.stringify(model)}\n`);
+      return;
+    }
+    const lines = [`${model.project}`, ""];
+    lines.push(model.needsYou.length ? `Needs you now (${model.needsYou.length}):` : "Nothing needs your decision now.");
+    for (const n of model.needsYou) lines.push(`  - ${n.title}${n.overdue ? " (overdue)" : ""}\n      type: ${n.command}`);
+    for (const e of model.epics) lines.push(`${e.name}: ${e.health.value.replace("-", " ")}. ${e.health.reason} Stage: ${e.stage}.`);
+    if (model.blocked.length) lines.push(`Blocked: ${model.blocked.map((b) => `${b.title} (${b.cause})`).join("; ")}`);
+    if (model.update.late) lines.push(model.update.lateReason!);
+    process.stdout.write(`${lines.join("\n")}\n`);
+    return;
+  }
+
   if (command === "task") {
     if (sub === "list") {
       const status = flag("status");
@@ -481,9 +1583,21 @@ const main = () => {
         die(`Unknown status "${status}" (${TASK_STATUSES.join(" | ")})`);
       }
       const feature = flag("feature");
+      // A component's board includes its children's, because that is what
+      // "everything happening inside this part of the system" means.
+      const scope = flag("component")
+        ? withDescendants(flag("component")!, readComponents(root))
+        : undefined;
       const tasks = readTasks(root).tasks.filter(
-        (t) => (!status || t.status === status) && (!feature || t.featureId === feature),
+        (t) =>
+          (!status || t.status === status) &&
+          (!feature || t.featureId === feature) &&
+          (!scope || scope.includes(t.componentId ?? "")),
       );
+      if (has("json")) {
+        process.stdout.write(`${JSON.stringify(tasks)}\n`);
+        return;
+      }
       if (!tasks.length) {
         process.stdout.write("No tasks.\n");
         return;
@@ -491,10 +1605,71 @@ const main = () => {
       for (const t of tasks) {
         const nodes = t.nodeIds?.length ? `  -> ${t.nodeIds.join(",")}` : "";
         const linked = t.featureId ? `  [${t.featureId}]` : "";
+        const owner = t.componentId ? `  @${t.componentId}` : "";
         process.stdout.write(
-          `${t.id}  ${t.status.padEnd(12)} ${t.title}${linked}${nodes}\n`,
+          `${t.id}  ${t.status.padEnd(12)} ${t.title}${owner}${linked}${nodes}\n`,
         );
       }
+      return;
+    }
+
+    if (sub === "set") {
+      const id = rest[0] ?? die("Usage: project-companion task set <id> [--kind K] [--parent ID] [--points N] [--role R] [--assignee A] [--title T]");
+      const kind = flag("kind");
+      if (kind && !TASK_KINDS.includes(kind as never)) die(`Unknown kind "${kind}". One of: ${TASK_KINDS.join(", ")}`);
+      const patchTask: Record<string, unknown> = {};
+      if (kind) patchTask.kind = kind;
+      if (flag("parent")) patchTask.parentId = flag("parent");
+      if (flag("points") !== undefined) patchTask.points = Number(flag("points"));
+      if (flag("role")) patchTask.role = flag("role");
+      if (flag("assignee")) patchTask.assignee = flag("assignee");
+      if (flag("title")) patchTask.title = flag("title");
+      const task = updateTask(root, id, patchTask) ?? die(`No task "${id}"`);
+      process.stdout.write(`Updated ${task.id}.
+`);
+      return;
+    }
+
+    if (sub === "block") {
+      const id = rest[0] ?? die("Usage: project-companion task block <id> --reason R --cause decision|outside|agent --unblocker WHO");
+      const cause = flag("cause") ?? "agent";
+      if (!BLOCK_CAUSES.includes(cause as never)) die(`Unknown cause "${cause}". One of: ${BLOCK_CAUSES.join(", ")}`);
+      const task = blockTask(root, id, {
+        reason: flag("reason") ?? die("A block needs --reason \"<what is in the way>\"."),
+        cause: cause as BlockCause,
+        unblocker: flag("unblocker") ?? (cause === "decision" ? "PM" : "Engineering Manager"),
+      }) ?? die(`No task "${id}"`);
+      process.stdout.write(`${task.id} is blocked: ${task.blocked!.reason}
+`);
+      return;
+    }
+
+    if (sub === "unblock") {
+      const id = rest[0] ?? die("Usage: project-companion task unblock <id>");
+      const task = unblockTask(root, id) ?? die(`No task "${id}"`);
+      process.stdout.write(`${task.id} is no longer blocked.
+`);
+      return;
+    }
+
+    if (sub === "show") {
+      const id = rest[0] ?? die("Usage: project-companion task show <id>");
+      const task = readTasks(root).tasks.find((t) => t.id === id) ?? die(`No task "${id}"`);
+      const epic = task.phaseId ?? readRoadmap(root).features.find((f) => f.id === task.featureId)?.phaseId;
+      if (has("json")) {
+        const book = readGates(root, readRoadmap(root).source);
+        const track = book.tracks.get(task.id)?.track ?? (epic ? book.tracks.get(epic)?.track : undefined) ?? null;
+        process.stdout.write(`${JSON.stringify({ ...task, epic: epic ?? null, track })}\n`);
+        return;
+      }
+      process.stdout.write(
+        `${task.id}  ${task.status}  ${task.title}\n` +
+          (epic ? `  epic:      ${epic}\n` : "") +
+          (task.featureId ? `  feature:   ${task.featureId}\n` : "") +
+          (task.componentId ? `  component: ${task.componentId}\n` : "") +
+          (task.branch ? `  branch:    ${task.branch}\n` : "") +
+          (task.commits?.length ? `  commits:   ${task.commits.join(", ")}\n` : ""),
+      );
       return;
     }
 
@@ -506,6 +1681,10 @@ const main = () => {
       }
       const status: TaskStatus | undefined = raw;
       const node = flag("node");
+      const component = flag("component");
+      if (component && !readComponent(root, component)) {
+        die(`No component "${component}". Run \`project-companion component list\`.`);
+      }
       const feature = flag("feature");
       if (feature && !readRoadmap(root).features.some((f) => f.id === feature)) {
         // Fail rather than silently storing a dangling id: an unresolvable
@@ -513,11 +1692,21 @@ const main = () => {
         die(`No feature "${feature}". Run \`project-companion feature list\`.`);
       }
 
+      const kind = flag("kind");
+      if (kind && !TASK_KINDS.includes(kind as never)) die(`Unknown kind "${kind}". One of: ${TASK_KINDS.join(", ")}`);
+      const points = flag("points") !== undefined ? Number(flag("points")) : undefined;
+      if (points !== undefined && !Number.isFinite(points)) die("--points must be a number.");
       const task = createTask(root, {
         title,
         status,
+        kind: kind as TaskKind | undefined,
+        parentId: flag("parent"),
+        points,
+        role: flag("role"),
+        assignee: flag("assignee"),
         description: flag("description"),
         nodeIds: node ? [node] : undefined,
+        componentId: component,
         diagramId: flag("diagram"),
         featureId: feature,
         phaseId: flag("phase"),
@@ -528,6 +1717,7 @@ const main = () => {
 
     if (sub === "start" || sub === "done") {
       const id = rest[0] ?? die(`Usage: project-companion task ${sub} <id>`);
+      if (sub === "start") requireWipRoom(root);
       void runTaskGit(root, sub, id);
       return;
     }
@@ -602,6 +1792,10 @@ const main = () => {
       const id = rest[0] ?? die("Usage: project-companion feature show <id>");
       const feature =
         roadmap.features.find((f) => f.id === id) ?? die(`No feature "${id}"`);
+      if (has("json")) {
+        process.stdout.write(`${JSON.stringify({ ...feature, tasks: tasksForFeature(root, feature.id) })}\n`);
+        return;
+      }
       const lines = [
         `${feature.title}  [${fmtStatus(feature.status)}]  id=${feature.id}`,
         feature.phaseId ? `phase: ${feature.phaseId}` : "",
@@ -660,6 +1854,10 @@ const main = () => {
     const rows = roadmap.features.filter(
       (f) => (!phase || f.phaseId === phase) && (!status || f.status === status),
     );
+    if (has("json")) {
+      process.stdout.write(`${JSON.stringify(rows)}\n`);
+      return;
+    }
     if (!rows.length) {
       process.stdout.write("No features.\n");
       return;
@@ -670,6 +1868,249 @@ const main = () => {
         `${f.id.padEnd(26)} ${fmtStatus(f.status).padEnd(12)} ${String(done).padStart(2)}/${f.acceptance.length}  ${f.title}\n`,
       );
     }
+    return;
+  }
+
+    if (command === "wip") {
+    if (!sub) {
+      const limits = readBundleWip(root);
+      const set = Object.entries(limits);
+      process.stdout.write(
+        set.length
+          ? set.map(([status, n]) => `${fmtStatus(status).padEnd(14)} ${n}\n`).join("")
+          : "No limits set. `project-companion wip review 3` caps how much can wait on a person.\n",
+      );
+      return;
+    }
+    if (!isTaskStatus(sub)) return die(`Unknown status "${sub}" (${TASK_STATUSES.join(" | ")})`);
+    const raw = rest[0];
+    const limit = raw === undefined || raw === "none" ? null : Number(raw);
+    if (limit !== null && (!Number.isFinite(limit) || limit < 0)) die(`"${raw}" is not a limit.`);
+    setWipLimit(root, sub, limit);
+    process.stdout.write(
+      limit === null ? `${fmtStatus(sub)} is no longer limited\n` : `${fmtStatus(sub)} limited to ${limit}\n`,
+    );
+    return;
+  }
+
+  if (command === "flow" && flag("lane")) {
+    const lane = flag("lane");
+    const events = readEvents(root);
+    const tasks = readTasks(root).tasks;
+    const runs = readRuns(root);
+    if (lane === "agent") {
+      const m = agentLane(events, tasks, runs);
+      process.stdout.write(has("json") ? `${JSON.stringify(m)}\n` :
+        `Agent lane: ${m.tasksDone} task(s) done\n` +
+        `  median cycle time: ${m.medianCycleTimeMs === null ? "no data" : asDays(m.medianCycleTimeMs)}\n` +
+        `  attempts per accepted change: ${m.attemptsPerAcceptedChange === null ? "no data" : m.attemptsPerAcceptedChange.toFixed(2)}\n` +
+        `  median wait on the PM: ${m.medianWaitOnPmMs === null ? "no data" : asDays(m.medianWaitOnPmMs)}\n`);
+      return;
+    }
+    if (lane === "human") {
+      const m = humanLane(Array.from(foldSprints(events).values()), events, tasks, runs);
+      process.stdout.write(has("json") ? `${JSON.stringify(m)}\n` :
+        `Human lane velocity:\n${m.velocity.map((v) => `  ${v.sprint}: ${v.delivered} ${v.unit}`).join("\n") || "  no closed sprints"}\n`);
+      return;
+    }
+    die("Unknown lane. One of: agent, human.");
+  }
+
+  if (command === "flow" || command === "next") {
+    const tasks = readTasks(root).tasks;
+    const flows = taskFlow(readEvents(root), tasks);
+
+    if (!flows.length) {
+      process.stdout.write(
+        "Nothing to measure yet. The log records a task's journey from the moment it is created.\n",
+      );
+      return;
+    }
+
+    if (command === "next") {
+      // Fan-in from the dependency graph: how many components import this one.
+      const components = readComponents(root);
+      const fanIn: Record<string, number> = {};
+      for (const edge of dependencyGraph(root, components)) {
+        fanIn[edge.to] = (fanIn[edge.to] ?? 0) + 1;
+      }
+      const componentOf = Object.fromEntries(
+        tasks.filter((t) => t.componentId).map((t) => [t.id, t.componentId!]),
+      );
+      const titles = new Map(tasks.map((t) => [t.id, t.title]));
+
+      const ranked = attention(flows, { fanIn, componentOf }).slice(0, 10);
+      if (!ranked.length) {
+        process.stdout.write("Nothing waiting. Everything is either done or not started.\n");
+        return;
+      }
+      for (const item of ranked) {
+        process.stdout.write(
+          `${item.taskId}  ${(titles.get(item.taskId) ?? "").slice(0, 46).padEnd(46)} ${item.why.join("; ")}\n`,
+        );
+      }
+      return;
+    }
+
+    const summary = summariseFlow(flows);
+    process.stdout.write(
+      `${summary.inFlight} in flight, ${summary.finished} finished` +
+        (summary.cycleMs ? `, median ${asDays(summary.cycleMs)} to done` : "") +
+        (summary.reworked ? `, ${summary.reworked} sent back from review` : "") +
+        "\n\n",
+    );
+    for (const queue of summary.queues) {
+      process.stdout.write(
+        `${fmtStatus(queue.status).padEnd(14)} ${String(queue.count).padStart(3)}  ` +
+          `oldest ${asDays(queue.oldestMs).padStart(5)}  median ${asDays(queue.medianAgeMs)}\n`,
+      );
+    }
+    process.stdout.write("\nThe oldest thing in a queue says more than the average; the average hides it.\n");
+    return;
+  }
+
+  if (command === "review") {
+    void (async () => {
+      const repo = await gitRoot(root);
+      if (!repo) die("Not inside a git repository.");
+
+      const ref = sub ?? "HEAD";
+      const [commit] = await readCommits(repo!, { ref: ref === "HEAD" ? undefined : ref, limit: 1 });
+      if (!commit) die(`No commit "${ref}".`);
+
+      const components = readComponents(root);
+      const routed = route(commit, components);
+      const roadmap = readRoadmap(root);
+      const touched = new Set(routed.map((f) => f.componentId).filter(Boolean) as string[]);
+
+      // Only the spec the touched components are responsible for. A reviewer
+      // given the whole PRD reads none of it.
+      const spec: PacketInput["spec"] = [];
+      for (const componentId of Array.from(touched)) {
+        const context = await componentContext(root, { componentId, includeEvidence: false });
+        for (const feature of context.spec) {
+          spec.push({
+            componentId,
+            featureId: feature.id,
+            title: feature.title,
+            criteria: feature.criteria.map((c) => ({ text: c.text, done: c.done })),
+          });
+        }
+      }
+
+      const checks = roadmap.features
+        .filter((f) => f.verify && spec.some((s) => s.featureId === f.id))
+        .map((f) => ({ featureId: f.id, ok: true, command: f.verify! }));
+
+      // Only crossings THIS change is part of. Filtering by component instead
+      // lists every boundary the two touched components have ever crossed --
+      // fourteen of them on a commit that crossed none, which buries the
+      // finding that matters under a standing report of the codebase.
+      const changed = new Set(routed.map((f) => f.path));
+      const crossings = drift(declaredEdges(root), dependencyGraph(root, components))
+        .undeclared.filter((e) => e.examples.some((x) => changed.has(x.from) || changed.has(x.to)))
+        .map((e) => ({ from: e.from, to: e.to }));
+
+      const text = packet({ commit, routed, components, spec, checks, drift: crossings });
+      const dir = join(root, ".project-cache", "review", commit.short);
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(join(dir, "packet.md"), text, "utf8");
+
+      const hunks = await readDiffHunks(repo!, commit.sha);
+      writeFileSync(join(dir, "hunks.json"), JSON.stringify(hunks), "utf8");
+
+      const logic = routed.filter((f) => f.kind === "logic").length;
+      process.stdout.write(
+        `${relative(root, join(dir, "packet.md"))}\n\n` +
+          `${logic} of ${routed.length} files need reading, across ${touched.size || "no"} component${touched.size === 1 ? "" : "s"}.\n` +
+          `Hand the packet to your agent; findings come back through report_findings.\n`,
+      );
+    })();
+    return;
+  }
+
+  if (command === "drift") {
+    const components = readComponents(root);
+    if (components.length < 2) {
+      process.stdout.write("Drift needs at least two components with paths.\n");
+      return;
+    }
+
+    const actual = dependencyGraph(root, components);
+    const result = drift(declaredEdges(root), actual);
+
+    if (result.undeclared.length) {
+      process.stdout.write(`${result.undeclared.length} undeclared dependencies:\n\n`);
+      for (const edge of result.undeclared) {
+        process.stdout.write(`  ${edge.from} -> ${edge.to}  (${edge.count} imports)\n`);
+        for (const example of edge.examples) {
+          process.stdout.write(`      ${example.from} imports ${example.to}\n`);
+        }
+      }
+      process.stdout.write("\nEither the canvas is missing an edge, or the code should not cross there.\n");
+    } else {
+      process.stdout.write("No undeclared dependencies. The canvas covers what the code does.\n");
+    }
+
+    if (result.unverifiable.length) {
+      process.stdout.write(
+        `\n${result.unverifiable.length} declared relations no import backs:\n` +
+          result.unverifiable.map((e) => `  ${e.from} -> ${e.to}`).join("\n") +
+          `\n\nNot necessarily wrong -- an import graph cannot see an HTTP call or a queue.\n`,
+      );
+    }
+    return;
+  }
+
+  if (command === "verify") {
+    const roadmap = readRoadmap(root);
+    if (!roadmap.present) die(`No PRD at ${roadmap.source}.`);
+
+    const targets = roadmap.features.filter(
+      (f) => f.verify && (!sub || f.id === sub),
+    );
+    if (!targets.length) {
+      process.stdout.write(
+        sub
+          ? `"${sub}" declares no Verify: command.\n`
+          : "No feature declares a Verify: command.\n\n" +
+            "Add one under a feature in the PRD:\n  Verify: npm test -- auth\n",
+      );
+      return;
+    }
+
+    void (async () => {
+      let failed = 0;
+      for (const feature of targets) {
+        const result = await runCheck(root, feature.id, feature.verify!);
+        process.stdout.write(
+          `${result.ok ? "ok  " : "FAIL"} ${feature.id.padEnd(26)} ${result.command}  (${Math.round(result.ms / 1000)}s)\n`,
+        );
+
+        if (!result.ok) {
+          failed++;
+          process.stdout.write(`${result.output.split("\n").map((l) => `       ${l}`).join("\n")}\n`);
+
+          // The consequence, and the whole point: a claim the repository just
+          // refused cannot stay standing.
+          const untick = feature.acceptance.filter((c) => c.done);
+          if (untick.length) {
+            editPrd(root, undefined, untick.map((c) => ({
+              op: "setCriterion" as const,
+              featureId: feature.id,
+              criterionId: c.id,
+              done: false,
+            })));
+            process.stdout.write(
+              `       unticked ${untick.length} criteri${untick.length === 1 ? "on" : "a"} -- the check does not pass\n`,
+            );
+          }
+        }
+        recordVerification(root, feature.id, result);
+      }
+      process.stdout.write(`\n${targets.length - failed}/${targets.length} verified\n`);
+      if (failed) process.exit(1);
+    })();
     return;
   }
 
@@ -702,6 +2143,10 @@ const main = () => {
       return;
     }
 
+    if (has("json")) {
+      process.stdout.write(`${JSON.stringify(roadmap.phases)}\n`);
+      return;
+    }
     if (!roadmap.phases.length) {
       process.stdout.write("No phases. Add `## Phase: <name>` to the PRD.\n");
       return;

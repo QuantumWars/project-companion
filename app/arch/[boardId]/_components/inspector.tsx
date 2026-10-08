@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { getTech } from "@/lib/arch/tech-catalog";
 import { TechIcon, iconLicense } from "@/lib/arch/icons/resolve";
 import { cn } from "@/lib/utils";
+import { C4Inspector, NoteInspector } from "./c4-inspector";
 import { TableInspector } from "./table-inspector";
+import { UmlClassInspector } from "./uml-class-inspector";
 import {
   DIAGRAM_TYPE_IDS,
   DIAGRAM_TYPE_LABELS,
@@ -16,8 +18,11 @@ import {
   type GroupData,
   type ServiceData,
   type ShapeData,
+  type C4Data,
+  type NoteData,
   type ShapeTone,
   type TableData,
+  type UmlClassData,
 } from "@/types/arch";
 import { GEOMETRIES, getGeometry } from "@/lib/arch/shapes";
 
@@ -28,7 +33,10 @@ interface InspectorProps {
       | Partial<ServiceData>
       | Partial<GroupData>
       | Partial<ShapeData>
-      | Partial<TableData>,
+      | Partial<TableData>
+      | Partial<UmlClassData>
+      | Partial<C4Data>
+      | Partial<NoteData>,
   ) => void;
   onChangeTech: () => void;
 }
@@ -55,6 +63,18 @@ export const Inspector = ({ node, onChange, onChangeTech }: InspectorProps) => {
     return <GroupInspector data={node.data} onChange={onChange} />;
   }
 
+  if (node.data.kind === "umlclass") {
+    return <UmlClassInspector data={node.data} onChange={onChange} />;
+  }
+
+  if (node.data.kind === "c4") {
+    return <C4Inspector data={node.data} onChange={onChange} />;
+  }
+
+  if (node.data.kind === "note") {
+    return <NoteInspector data={node.data} onChange={onChange} />;
+  }
+
   if (node.data.kind !== "service") {
     return null;
   }
@@ -64,7 +84,7 @@ export const Inspector = ({ node, onChange, onChangeTech }: InspectorProps) => {
   const restricted = tech && iconLicense(tech.id) === "vendor-restricted";
 
   return (
-    <aside className="absolute right-2 top-2 z-20 w-[268px] rounded-lg border border-line bg-panel p-3 shadow-lg">
+    <aside className="absolute right-2 top-16 z-20 w-[268px] rounded-lg border border-line bg-panel p-3 shadow-lg">
       <p className="mb-3 text-[11px] font-medium uppercase tracking-wide text-fg-subtle">
         Node
       </p>
@@ -119,7 +139,7 @@ const GroupInspector = ({
   data: GroupData;
   onChange: (patch: Partial<GroupData>) => void;
 }) => (
-  <aside className="absolute right-2 top-2 z-20 w-[268px] rounded-lg border border-line bg-panel p-3 shadow-lg">
+  <aside className="absolute right-2 top-16 z-20 w-[268px] rounded-lg border border-line bg-panel p-3 shadow-lg">
     <p className="mb-3 text-[11px] font-medium uppercase tracking-wide text-fg-subtle">
       Container
     </p>
@@ -200,7 +220,7 @@ const ShapeInspector = ({
   const current = getGeometry(data.geometry);
 
   return (
-    <aside className="absolute right-2 top-2 z-20 max-h-[80vh] w-[268px] overflow-y-auto rounded-lg border border-line bg-panel p-3 shadow-lg">
+    <aside className="absolute right-2 top-16 z-20 max-h-[80vh] w-[268px] overflow-y-auto rounded-lg border border-line bg-panel p-3 shadow-lg">
       <p className="mb-3 text-[11px] font-medium uppercase tracking-wide text-fg-subtle">
         Shape
       </p>

@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { BUNDLE_FILE, BundleConflictError, readBundle, writeBundle } from "@/lib/project/bundle";
 import {
   createDiagram, createTask, createWhiteboard, deleteDiagram, deleteProject,
+  deleteWhiteboard,
   findProject, initProject, listDiagrams, migrateProject, readDiagram,
   readProject, readTasks, writeDiagram,
 } from "@/lib/project/store";
@@ -159,6 +160,22 @@ test("migrating an already-bundled project is a no-op", () => {
   try {
     initProject(dir, "Modern");
     eq(migrateProject(dir), null);
+  } finally { cleanup(); }
+});
+
+test("deleting a whiteboard unlinks its tasks, exactly as a diagram does", () => {
+  const { dir, cleanup } = repo();
+  try {
+    initProject(dir, "Symmetry");
+    const board = createWhiteboard(dir, "Sketches");
+    const task = createTask(dir, { title: "Sketch the flow", status: "todo", diagramId: board.id });
+
+    eq(readTasks(dir).tasks[0].diagramId, board.id);
+    ok(deleteWhiteboard(dir, board.id), "the board is gone");
+
+    const after = readTasks(dir).tasks.find((t) => t.id === task.id)!;
+    eq(after.diagramId, undefined, "the dangling link is dropped");
+    eq(after.title, "Sketch the flow", "but the work survives the drawing");
   } finally { cleanup(); }
 });
 

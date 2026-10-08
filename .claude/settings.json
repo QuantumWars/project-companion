@@ -1,0 +1,101 @@
+{
+  "permissions": {
+    "deny": [
+      "Workflow",
+      "Agent(general-purpose)",
+      "Agent(fork)",
+      "Agent(isolation:remote)",
+      "Bash(gh pr merge *)",
+      "Bash(gh pr review --approve *)",
+      "Bash(gh release create *)",
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(npm publish *)",
+      "Bash(project-companion gate approve *)",
+      "Bash(project-companion gate refuse *)",
+      "Bash(project-companion gate track *)",
+      "Bash(project-companion card answer *)",
+      "Bash(project-companion update publish *)",
+      "Bash(project-companion run merged *)",
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Read(**/id_rsa*)",
+      "Read(**/id_ed25519*)",
+      "Read(**/.npmrc)"
+    ]
+  },
+  "env": {
+    "CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH": "1",
+    "CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS": "2",
+    "CLAUDE_CODE_FORK_SUBAGENT": "0"
+  },
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "project-companion ingest"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "project-companion ingest"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "project-companion ingest"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "project-companion ingest"
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "project-companion ingest"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "project-companion ingest"
+          }
+        ]
+      }
+    ]
+  }
+}

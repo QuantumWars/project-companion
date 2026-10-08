@@ -1,11 +1,15 @@
 {
-  "name": "board-video-tutorial",
-  "version": "0.1.0",
+  "name": "project-companion",
+  "version": "0.2.0",
   "private": true,
+  "bin": {
+    "project-companion": "./dist/project-companion.mjs",
+    "project-companion-mcp": "./dist/project-companion-mcp.mjs"
+  },
   "scripts": {
-    "dev": "npm run build:icons && next dev",
+    "dev": "npm run build:icons && next dev -H 127.0.0.1",
     "build": "npm run build:icons && npm run build:tools && next build",
-    "start": "next start",
+    "start": "next start -H 127.0.0.1",
     "lint": "next lint",
     "build:icons": "node scripts/build-icon-set.mjs",
     "build:tools": "node scripts/build-tools.mjs",
@@ -62,9 +66,5 @@
     "postcss": "^8",
     "tailwindcss": "^3.3.0",
     "typescript": "^5"
-  },
-  "bin": {
-    "project-companion": "./dist/project-companion.mjs",
-    "project-companion-mcp": "./dist/project-companion-mcp.mjs"
   }
 }

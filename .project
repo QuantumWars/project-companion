@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-08-29T17:17:15.383Z",
-  "revision": 22,
+  "updatedAt": "2026-09-06T00:55:51.332Z",
+  "revision": 182,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -11,7 +11,7 @@
       "id": "archboard-architecture",
       "title": "Project Companion architecture",
       "type": "architecture",
-      "updatedAt": "2026-08-29T16:32:59.409Z",
+      "updatedAt": "2026-09-06T00:55:51.331Z",
       "nodes": [
         {
           "id": "db683a06",
@@ -589,9 +589,9 @@
         }
       ],
       "viewport": {
-        "x": 108.2637695205006,
-        "y": 119.73919737108417,
-        "zoom": 0.34245824499139155
+        "x": 0,
+        "y": 0,
+        "zoom": 1
       }
     },
     "ticketing-schema": {
@@ -599,7 +599,7 @@
       "id": "ticketing-schema",
       "title": "Ticketing schema",
       "type": "erd",
-      "updatedAt": "2026-08-29T17:17:15.383Z",
+      "updatedAt": "2026-09-05T14:18:15.619Z",
       "nodes": [
         {
           "id": "venues",
@@ -1118,10 +1118,126 @@
         }
       ],
       "viewport": {
-        "x": -7.848078534079946,
-        "y": -142.87795900683534,
-        "zoom": 0.8952953722662572
+        "x": 12.417267728733748,
+        "y": 274.73697245752874,
+        "zoom": 0.423565148570699
       }
+    },
+    "containers": {
+      "version": 1,
+      "id": "containers",
+      "title": "Containers",
+      "type": "architecture",
+      "updatedAt": "2026-09-05T12:27:13.694Z",
+      "nodes": [
+        {
+          "id": "5ffc391a",
+          "type": "c4",
+          "position": {
+            "x": 40,
+            "y": 40
+          },
+          "data": {
+            "kind": "c4",
+            "label": "Next.js app",
+            "element": "container",
+            "technology": "Next 14"
+          },
+          "measured": {
+            "width": 180,
+            "height": 60
+          }
+        },
+        {
+          "id": "524dea9d",
+          "type": "c4",
+          "position": {
+            "x": 320,
+            "y": 40
+          },
+          "data": {
+            "kind": "c4",
+            "label": "CLI and MCP",
+            "element": "container",
+            "technology": "Node"
+          },
+          "measured": {
+            "width": 180,
+            "height": 60
+          }
+        }
+      ],
+      "edges": [],
+      "viewport": {
+        "x": 30.28898312590934,
+        "y": 12.620409635795568,
+        "zoom": 0.921122439776278
+      }
+    },
+    "system-context": {
+      "version": 1,
+      "id": "system-context",
+      "title": "System context",
+      "type": "architecture",
+      "updatedAt": "2026-09-05T11:45:28.028Z",
+      "nodes": [
+        {
+          "id": "48735e3e",
+          "type": "c4",
+          "position": {
+            "x": 40,
+            "y": 40
+          },
+          "data": {
+            "kind": "c4",
+            "label": "Developer",
+            "element": "person",
+            "description": "Writes code with a coding agent."
+          }
+        },
+        {
+          "id": "4bae0d58",
+          "type": "c4",
+          "position": {
+            "x": 40,
+            "y": 220
+          },
+          "data": {
+            "kind": "c4",
+            "label": "Project Companion",
+            "element": "system",
+            "description": "Tracks work against the repository that proves it.",
+            "drilldownDiagramId": "containers"
+          }
+        },
+        {
+          "id": "50f84431",
+          "type": "c4",
+          "position": {
+            "x": 330,
+            "y": 220
+          },
+          "data": {
+            "kind": "c4",
+            "label": "Git repository",
+            "element": "external",
+            "technology": "git"
+          }
+        },
+        {
+          "id": "79dc0633",
+          "type": "note",
+          "position": {
+            "x": 330,
+            "y": 40
+          },
+          "data": {
+            "kind": "note",
+            "label": "Status is derived, never reported."
+          }
+        }
+      ],
+      "edges": []
     }
   },
   "boards": {
@@ -1134,29 +1250,184 @@
       "layers": []
     }
   },
+  "components": {
+    "data-layer": {
+      "id": "data-layer",
+      "title": "Data layer",
+      "owner": "subhapattnaik@theboringpeople.in",
+      "paths": [
+        "lib/project/bundle.ts",
+        "lib/project/store.ts",
+        "lib/project/types.ts",
+        "lib/project/merge.ts",
+        "lib/project/registry.ts",
+        "lib/project/request-root.ts",
+        "lib/project/summary.ts",
+        "lib/project/flow.ts",
+        "tests/bundle.test.ts",
+        "tests/sync.test.ts",
+        "tests/delete.test.ts",
+        "tests/merge.test.ts",
+        "tests/flow.test.ts"
+      ],
+      "lifecycle": "active",
+      "createdAt": "2026-09-05T09:16:12.798Z",
+      "updatedAt": "2026-09-05T14:40:48.936Z"
+    },
+    "spec-engine": {
+      "id": "spec-engine",
+      "title": "Spec engine",
+      "owner": "subhapattnaik@theboringpeople.in",
+      "paths": [
+        "lib/project/prd.ts",
+        "lib/project/roadmap.ts",
+        "lib/project/verify.ts",
+        "tests/prd.test.ts",
+        "tests/prd-edit.test.ts",
+        "tests/roadmap.test.ts",
+        "tests/verify.test.ts"
+      ],
+      "lifecycle": "active",
+      "createdAt": "2026-09-05T09:16:12.871Z",
+      "updatedAt": "2026-09-05T14:40:49.212Z"
+    },
+    "evidence-engine": {
+      "id": "evidence-engine",
+      "title": "Evidence engine",
+      "owner": "subhapattnaik@theboringpeople.in",
+      "paths": [
+        "lib/project/git.ts",
+        "lib/project/git-link.ts",
+        "lib/project/git-view.ts",
+        "lib/project/git-write.ts",
+        "lib/project/commit-graph.ts",
+        "lib/project/deps.ts",
+        "lib/project/review.ts",
+        "tests/git.test.ts",
+        "tests/deps.test.ts",
+        "tests/review.test.ts"
+      ],
+      "lifecycle": "active",
+      "createdAt": "2026-09-05T09:16:12.944Z",
+      "updatedAt": "2026-09-05T14:40:49.144Z"
+    },
+    "component-model": {
+      "id": "component-model",
+      "title": "Component model",
+      "owner": "subhapattnaik@theboringpeople.in",
+      "paths": [
+        "lib/project/component.ts",
+        "lib/project/events.ts",
+        "lib/project/component-context.ts",
+        "tests/component.test.ts",
+        "tests/events.test.ts",
+        "tests/catalog.test.ts"
+      ],
+      "lifecycle": "active",
+      "createdAt": "2026-09-05T09:16:13.015Z",
+      "updatedAt": "2026-09-05T14:40:49.005Z"
+    },
+    "canvas": {
+      "id": "canvas",
+      "title": "Canvas",
+      "owner": "subhapattnaik@theboringpeople.in",
+      "paths": [
+        "lib/arch/**",
+        "types/arch.ts",
+        "types/canvas.ts",
+        "app/arch/**",
+        "app/project/diagram/**",
+        "app/project/board/**",
+        "app/board/**",
+        "lib/board/**",
+        "lib/local-boards.ts",
+        "lib/project/drilldown.ts",
+        "hooks/**",
+        "liveblocks.config.tsx",
+        "tests/drilldown.test.ts"
+      ],
+      "lifecycle": "active",
+      "createdAt": "2026-09-05T09:16:13.087Z",
+      "updatedAt": "2026-09-05T14:41:01.378Z"
+    },
+    "surfaces": {
+      "id": "surfaces",
+      "title": "Surfaces",
+      "owner": "subhapattnaik@theboringpeople.in",
+      "paths": [
+        "app/project/**",
+        "components/**",
+        "app/api/**",
+        "app/_components/**",
+        "app/page.tsx",
+        "app/layout.tsx",
+        "providers/**",
+        "store/**",
+        "lib/utils.ts",
+        "lib/project/use-roadmap.ts",
+        "lib/project/use-tasks.ts",
+        "lib/project/use-stream.ts",
+        "lib/project/task-context.tsx"
+      ],
+      "lifecycle": "active",
+      "createdAt": "2026-09-05T09:16:13.161Z",
+      "updatedAt": "2026-09-05T14:41:01.452Z"
+    },
+    "agent-tooling": {
+      "id": "agent-tooling",
+      "title": "Agent tooling",
+      "owner": "subhapattnaik@theboringpeople.in",
+      "paths": [
+        "cli/**",
+        "mcp/**",
+        "lib/project/skill-template.ts",
+        "scripts/**",
+        "tests/cli.test.ts",
+        "tests/harness.ts"
+      ],
+      "lifecycle": "active",
+      "createdAt": "2026-09-05T09:16:13.234Z",
+      "updatedAt": "2026-09-05T14:40:49.422Z"
+    },
+    "agent-plane": {
+      "id": "agent-plane",
+      "title": "Agent plane",
+      "owner": "subhapattnaik@theboringpeople.in",
+      "paths": [
+        "lib/project/run.ts",
+        "lib/project/ingest.ts",
+        "tests/agent-run.test.ts",
+        "tests/run.test.ts"
+      ],
+      "parentId": "component-model",
+      "lifecycle": "active",
+      "createdAt": "2026-09-05T12:53:36.519Z",
+      "updatedAt": "2026-09-05T14:41:01.308Z"
+    }
+  },
   "tasks": [
     {
       "id": "978ce4d6",
       "title": "Wire the whiteboard canvas to .arch/ as well",
-      "status": "in_progress",
+      "status": "done",
       "nodeIds": [
         "950905ed",
         "5b8c8a96"
       ],
       "createdAt": "2026-08-28T02:31:01.325Z",
-      "updatedAt": "2026-08-28T20:34:36.222Z",
-      "order": 1
+      "updatedAt": "2026-09-05T09:17:02.591Z",
+      "order": 7
     },
     {
       "id": "40874c61",
       "title": "Kanban UI: tasks are agent- and CLI-only today",
-      "status": "in_progress",
+      "status": "done",
       "nodeIds": [
         "1089c363"
       ],
       "createdAt": "2026-08-28T02:31:01.326Z",
-      "updatedAt": "2026-08-28T15:29:43.722Z",
-      "order": 0
+      "updatedAt": "2026-09-05T09:17:02.519Z",
+      "order": 6
     },
     {
       "id": "798960cd",
@@ -1220,37 +1491,37 @@
     {
       "id": "d5a69221",
       "title": "Build and register the c4 and note node components",
-      "status": "todo",
+      "status": "done",
       "createdAt": "2026-08-28T21:23:35.941Z",
-      "updatedAt": "2026-08-29T16:01:47.476Z",
-      "order": 0,
+      "updatedAt": "2026-09-05T11:46:34.038Z",
+      "order": 14,
       "featureId": "drill-down"
     },
     {
       "id": "cfe8ce06",
       "title": "Drilldown navigation with a breadcrumb back",
-      "status": "todo",
+      "status": "done",
       "createdAt": "2026-08-28T21:23:36.012Z",
-      "updatedAt": "2026-08-28T21:23:36.012Z",
-      "order": 1,
+      "updatedAt": "2026-09-05T11:46:34.109Z",
+      "order": 15,
       "featureId": "drill-down"
     },
     {
       "id": "a50534b2",
       "title": "UML class inspector for attributes and methods",
-      "status": "todo",
+      "status": "done",
       "createdAt": "2026-08-28T21:23:36.080Z",
-      "updatedAt": "2026-08-28T21:23:36.080Z",
-      "order": 2,
+      "updatedAt": "2026-09-05T11:46:34.180Z",
+      "order": 16,
       "featureId": "drill-down"
     },
     {
       "id": "bcef9484",
       "title": "One-click linking for unattributed commits",
-      "status": "todo",
+      "status": "done",
       "createdAt": "2026-08-28T21:23:36.153Z",
-      "updatedAt": "2026-08-28T21:23:36.153Z",
-      "order": 3,
+      "updatedAt": "2026-09-05T12:42:28.359Z",
+      "order": 22,
       "featureId": "commit-attribution"
     },
     {
@@ -1263,6 +1534,306 @@
       "commits": [
         "d75b04a341d18a183df49e483b0c5697b6e000d1"
       ]
+    },
+    {
+      "id": "4b0ae9b8",
+      "title": "Stamp component ids onto canvas nodes, and orphan removed ones",
+      "status": "done",
+      "componentId": "canvas",
+      "featureId": "component-catalog",
+      "createdAt": "2026-09-05T09:16:48.321Z",
+      "updatedAt": "2026-09-05T11:38:51.395Z",
+      "order": 11
+    },
+    {
+      "id": "efdcbd42",
+      "title": "Component workspace: board, spec and evidence on one surface",
+      "status": "done",
+      "componentId": "surfaces",
+      "featureId": "component-catalog",
+      "createdAt": "2026-09-05T09:16:48.408Z",
+      "updatedAt": "2026-09-05T12:27:58.443Z",
+      "order": 20
+    },
+    {
+      "id": "302d624c",
+      "title": "Validate the bundle on read instead of degrading to defaults",
+      "status": "done",
+      "componentId": "data-layer",
+      "createdAt": "2026-09-05T09:16:48.481Z",
+      "updatedAt": "2026-09-05T14:01:23.677Z",
+      "order": 25
+    },
+    {
+      "id": "a777c062",
+      "title": "Memoise the project root and cache the parsed bundle",
+      "status": "done",
+      "componentId": "data-layer",
+      "createdAt": "2026-09-05T09:16:48.552Z",
+      "updatedAt": "2026-09-05T14:01:23.748Z",
+      "order": 26,
+      "commits": []
+    },
+    {
+      "id": "690214e1",
+      "title": "MCP tools for components, and get_component_context",
+      "status": "done",
+      "componentId": "agent-tooling",
+      "createdAt": "2026-09-05T09:16:48.625Z",
+      "updatedAt": "2026-09-05T11:38:51.471Z",
+      "order": 12
+    },
+    {
+      "id": "e5070b8a",
+      "title": "Teach the agent skill about components and the log",
+      "status": "done",
+      "componentId": "agent-tooling",
+      "createdAt": "2026-09-05T09:16:48.697Z",
+      "updatedAt": "2026-09-05T11:38:51.540Z",
+      "order": 13
+    },
+    {
+      "id": "45d15ff1",
+      "title": "Fix the init crash and add a CLI suite",
+      "status": "done",
+      "createdAt": "2026-09-05T10:08:51.574Z",
+      "updatedAt": "2026-09-05T10:11:30.198Z",
+      "order": 8,
+      "commits": [
+        "ae2207a51bdf1713dcd2fd0bed3bde2b8daaaab8"
+      ]
+    },
+    {
+      "id": "417ec0e9",
+      "title": "Hold the project lock across a PRD edit",
+      "status": "done",
+      "featureId": "prd-lock",
+      "createdAt": "2026-09-05T10:09:57.796Z",
+      "updatedAt": "2026-09-05T10:11:38.785Z",
+      "order": 9,
+      "commits": [
+        "688d3f9cf7cb5b0dd5bc933a244ded8baf976145"
+      ]
+    },
+    {
+      "id": "aa6b6b4f",
+      "title": "Component model and the append-only event log",
+      "status": "done",
+      "featureId": "component-catalog",
+      "createdAt": "2026-09-05T10:09:57.889Z",
+      "updatedAt": "2026-09-05T10:11:38.864Z",
+      "order": 10,
+      "commits": [
+        "c12b8ad3503b264f2abb39a5ed466e4009970e2d"
+      ]
+    },
+    {
+      "id": "ed0d5554",
+      "title": "Wire the canvas to the catalog, and give agents reach",
+      "status": "done",
+      "componentId": "component-model",
+      "featureId": "component-catalog",
+      "createdAt": "2026-09-05T11:39:12.398Z",
+      "updatedAt": "2026-09-05T11:46:40.864Z",
+      "order": 17
+    },
+    {
+      "id": "265d45d9",
+      "title": "Drill-down: c4 and note nodes, a breadcrumb, and a class inspector",
+      "status": "done",
+      "componentId": "canvas",
+      "featureId": "drill-down",
+      "createdAt": "2026-09-05T11:46:40.950Z",
+      "updatedAt": "2026-09-05T11:47:02.978Z",
+      "order": 18,
+      "commits": [
+        "1d3e612a95487cb7f43e037759cc37b30ae777dd"
+      ]
+    },
+    {
+      "id": "43028bbe",
+      "title": "Fix what only showed up in a browser",
+      "status": "done",
+      "componentId": "canvas",
+      "featureId": "drill-down",
+      "createdAt": "2026-09-05T11:58:28.614Z",
+      "updatedAt": "2026-09-05T11:58:28.814Z",
+      "order": 19,
+      "commits": [
+        "373f2fcaa4e1cb34cb39535b84f9fc7b0427d39c"
+      ]
+    },
+    {
+      "id": "16a744ff",
+      "title": "Component workspace: board, spec, evidence and health",
+      "status": "done",
+      "componentId": "surfaces",
+      "featureId": "component-catalog",
+      "createdAt": "2026-09-05T12:28:53.186Z",
+      "updatedAt": "2026-09-05T12:28:53.410Z",
+      "order": 21,
+      "commits": [
+        "c97d03ee4bfecca2fbbba20e21e42dcff9a962a5"
+      ]
+    },
+    {
+      "id": "ab35cf79",
+      "title": "One-click linking, and the whole PRD to done",
+      "status": "done",
+      "componentId": "surfaces",
+      "featureId": "commit-attribution",
+      "createdAt": "2026-09-05T12:43:08.258Z",
+      "updatedAt": "2026-09-05T12:43:08.473Z",
+      "order": 23,
+      "commits": [
+        "0a0a6b209aac3965298ae08330459f13bd349495"
+      ]
+    },
+    {
+      "id": "0914c01f",
+      "title": "The agent plane: runs, budgets, boundaries and ingestion",
+      "status": "done",
+      "componentId": "agent-plane",
+      "featureId": "agent-runs",
+      "createdAt": "2026-09-05T12:53:36.610Z",
+      "updatedAt": "2026-09-05T12:53:36.911Z",
+      "order": 24,
+      "commits": [
+        "5f239b907575d8697114947345ad122c732254f8"
+      ]
+    },
+    {
+      "id": "72323b78",
+      "title": "Mission control: what is in flight and what it is spending",
+      "status": "done",
+      "componentId": "surfaces",
+      "featureId": "agent-runs",
+      "createdAt": "2026-09-05T12:53:36.705Z",
+      "updatedAt": "2026-09-05T14:05:58.231Z",
+      "order": 28
+    },
+    {
+      "id": "9c66c872",
+      "title": "Structural merge for .project, and two P0 debts",
+      "status": "done",
+      "componentId": "data-layer",
+      "featureId": "shared-board",
+      "createdAt": "2026-09-05T14:01:23.607Z",
+      "updatedAt": "2026-09-05T14:01:23.924Z",
+      "order": 27,
+      "commits": [
+        "b41810e0d5c522931da686e896800e04915f6984"
+      ]
+    },
+    {
+      "id": "8d779cea",
+      "title": "Mission control, and the autonomy dial",
+      "status": "done",
+      "componentId": "surfaces",
+      "featureId": "agent-runs",
+      "createdAt": "2026-09-05T14:05:58.320Z",
+      "updatedAt": "2026-09-05T14:05:58.497Z",
+      "order": 29,
+      "commits": [
+        "656824f5a56c618349fa25a39f56def241a65521"
+      ]
+    },
+    {
+      "id": "214c32b3",
+      "title": "Executable acceptance criteria",
+      "status": "done",
+      "componentId": "spec-engine",
+      "featureId": "executable-criteria",
+      "createdAt": "2026-09-05T14:10:14.266Z",
+      "updatedAt": "2026-09-05T14:10:14.533Z",
+      "order": 30,
+      "commits": [
+        "ac6d5220cf8cc1c1c177edf750f50002fae97875"
+      ]
+    },
+    {
+      "id": "0249640f",
+      "title": "Show claimed-but-unverified on the roadmap",
+      "status": "done",
+      "componentId": "surfaces",
+      "featureId": "executable-criteria",
+      "createdAt": "2026-09-05T14:10:14.358Z",
+      "updatedAt": "2026-09-05T14:30:12.263Z",
+      "order": 35
+    },
+    {
+      "id": "68bce6b7",
+      "title": "Dependency graph and architecture drift",
+      "status": "done",
+      "componentId": "evidence-engine",
+      "featureId": "architecture-drift",
+      "createdAt": "2026-09-05T14:14:07.649Z",
+      "updatedAt": "2026-09-05T14:14:07.821Z",
+      "order": 31,
+      "commits": [
+        "b54f9c0e2174772de3137038cddb42737032637e"
+      ]
+    },
+    {
+      "id": "fe5e97d2",
+      "title": "Review packets and grounded findings",
+      "status": "done",
+      "componentId": "evidence-engine",
+      "featureId": "review-packets",
+      "createdAt": "2026-09-05T14:19:42.343Z",
+      "updatedAt": "2026-09-05T14:19:42.516Z",
+      "order": 32,
+      "commits": [
+        "9984b0ac031558ede5620b10083abfff25203774"
+      ]
+    },
+    {
+      "id": "a400c600",
+      "title": "Flow metrics, WIP limits and the attention router",
+      "status": "done",
+      "componentId": "data-layer",
+      "featureId": "flow-metrics",
+      "createdAt": "2026-09-05T14:24:45.829Z",
+      "updatedAt": "2026-09-05T14:24:46.021Z",
+      "order": 33,
+      "commits": [
+        "4a215fafe46a14b1b59a7bfcc71e2f2c0dee6183"
+      ]
+    },
+    {
+      "id": "4db568ad",
+      "title": "Surface flow on the overview",
+      "status": "done",
+      "componentId": "surfaces",
+      "createdAt": "2026-09-05T14:26:10.143Z",
+      "updatedAt": "2026-09-05T14:28:20.819Z",
+      "order": 34,
+      "commits": [
+        "3018e5be2f10f26ff7ce890d4fc71d60f008e8ad"
+      ]
+    },
+    {
+      "id": "1e53a9ff",
+      "title": "Wire SSE so the app stops polling",
+      "status": "done",
+      "componentId": "surfaces",
+      "createdAt": "2026-09-05T14:26:10.225Z",
+      "updatedAt": "2026-09-05T14:33:52.077Z",
+      "order": 36
+    },
+    {
+      "id": "2e9ca350",
+      "title": "Live updates over one stream",
+      "status": "done",
+      "componentId": "surfaces",
+      "featureId": "live-updates",
+      "createdAt": "2026-09-05T14:33:51.998Z",
+      "updatedAt": "2026-09-05T15:21:50.163Z",
+      "order": 37,
+      "commits": [
+        "76bdcf59fa97f114cda99a0771c24598ae90cc70",
+        "b577c12914b74941017e10fdded3aa1bccfef913"
+      ]
     }
   ],
   "roadmap": {
@@ -1270,5 +1841,9 @@
     "overrides": {},
     "orphans": []
   },
-  "git": {}
+  "git": {},
+  "agents": {
+    "byComponent": {}
+  },
+  "wip": {}
 }

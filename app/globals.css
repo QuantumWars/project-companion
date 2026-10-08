@@ -85,6 +85,11 @@
     --done: 24 148 110;
     --danger: 205 43 78;
 
+    /* Cockpit burn-up series. Checked with the dataviz palette validator
+       (light, on white): lightness, chroma, CVD and contrast all pass. */
+    --chart-scope: 110 86 207;
+    --chart-done: 24 148 110;
+
     /*
      * Shadows: large, soft and low-opacity, layered.
      *
@@ -159,6 +164,10 @@
     --review: 186 167 255;
     --done: 61 214 158;
     --danger: 255 149 146;
+
+    /* Dark steps of the same two hues, validated against the dark panel. */
+    --chart-scope: 139 121 242;
+    --chart-done: 35 174 126;
 
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.4);
     --shadow: 0 1px 2px -1px rgb(0 0 0 / 0.5), 0 2px 6px -1px rgb(0 0 0 / 0.4);

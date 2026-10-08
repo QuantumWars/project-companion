@@ -4,6 +4,7 @@ import { memo } from "react";
 import { NodeResizer, type NodeProps } from "@xyflow/react";
 
 import { cn } from "@/lib/utils";
+import { DrilldownBadge } from "./drilldown-badge";
 import { TechIcon } from "@/lib/arch/icons/resolve";
 import { DIAGRAM_TYPE_LABELS, type ArchNode, type GroupData } from "@/types/arch";
 
@@ -87,6 +88,7 @@ export const GroupNode = memo(({ data, selected }: NodeProps<ArchNode>) => {
               {DIAGRAM_TYPE_LABELS[data.diagramType] ?? data.diagramType}
             </span>
           ) : null}
+          <DrilldownBadge diagramId={data.drilldownDiagramId} variant="inline" />
         </div>
       </div>
     </>

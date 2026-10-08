@@ -158,14 +158,38 @@ export type ShapeTone =
   | "violet"
   | "cyan";
 
-export type ArchNodeData =
+/**
+ * What every node carries regardless of what it draws.
+ *
+ * A node is how a component is DRAWN; the component itself lives in `.project`
+ * and outlives any particular drawing of it. So the node holds only the id, and
+ * the owner, paths, lifecycle and board hang off the component record.
+ *
+ * Deliberately opt-in. Stamping every node on creation would give a two hundred
+ * node estate two hundred empty boards, and a catalog that looks like coverage
+ * without being it. A node becomes a component when somebody says it is one.
+ */
+export type NodeOwnership = {
+  /**
+   * The component this node draws.
+   *
+   * Stamped once and never rewritten -- React Flow ids do not survive a
+   * delete-and-recreate, so the thing work attaches to cannot be one. Removing
+   * the node orphans the component rather than deleting it.
+   */
+  componentId?: string;
+};
+
+export type ArchNodeData = (
   | ServiceData
   | GroupData
   | TableData
   | C4Data
   | NoteData
   | ShapeData
-  | UmlClassData;
+  | UmlClassData
+) &
+  NodeOwnership;
 
 export type ArchNode = Node<ArchNodeData, ArchNodeKind>;
 

@@ -670,4 +670,16 @@ test("real repository history lays out without crossings", async () => {
   }
 });
 
+test("the refs people actually type are accepted", () => {
+  for (const ref of ["HEAD~1", "main^", "HEAD@{2}", "v1.0.0", "feat/thing", "abc123"]) {
+    eq(assertRef(ref), ref, ref);
+  }
+});
+
+test("and the ones that are not refs are still refused", () => {
+  for (const bad of ["-f", "--upload-pack=x", "a..b", "main.lock", "", "-"]) {
+    throws(() => assertRef(bad), /Not a valid git ref/, bad || "(empty)");
+  }
+});
+
 runAll().then((failed) => process.exit(failed ? 1 : 0));

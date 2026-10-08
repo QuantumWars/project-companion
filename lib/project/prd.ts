@@ -56,6 +56,8 @@ export type ParsedFeature = {
   title: string;
   summary?: string;
   paths?: string[];
+  /** A command that proves this feature works. See `VERIFY_LINE`. */
+  verify?: string;
   acceptance: ParsedCriterion[];
   phaseId?: string;
   /** Document order across the whole PRD. */
@@ -73,6 +75,7 @@ export type ParsedFeature = {
   /** Where a summary paragraph would go when the feature has none. */
   summaryInsertAt: number;
   pathsRange?: Range;
+  verifyRange?: Range;
   acceptanceRange?: Range;
   /** Where a new criterion is appended. */
   acceptanceInsertAt: number;
@@ -128,6 +131,15 @@ export const slug = (text: string): string =>
 const ID_MARKER = /^<!--\s*id:\s*([a-z0-9][a-z0-9-]*)\s*-->$/;
 const PHASE_HEADING = /^phase\s*:\s*(.+)$/i;
 const PATHS_LINE = /^paths\s*:\s*(.+)$/i;
+/**
+ * The command that proves this feature works.
+ *
+ * `Verify: npm test -- auth` beside `Paths:`, because they answer the same
+ * shape of question -- where the feature lives, and how you know it is done.
+ * A criterion may carry its own, so a feature with ten boxes is not one
+ * all-or-nothing check.
+ */
+const VERIFY_LINE = /^verify\s*:\s*(.+)$/i;
 const GOAL_LINE = /^goal\s*:\s*(.+)$/i;
 
 type Node = {
@@ -315,6 +327,8 @@ const readFeature = (
   let summaryRange: Range | undefined;
   let paths: string[] | undefined;
   let pathsRange: Range | undefined;
+  let verifyCommand: string | undefined;
+  let verifyRange: Range | undefined;
   let acceptance: ParsedCriterion[] = [];
   let acceptanceRange: Range | undefined;
 
@@ -344,7 +358,13 @@ const readFeature = (
         pathsRange = span(block);
         continue;
       }
-      if (!pathsMatch && summary === undefined) {
+      const verifyMatch = VERIFY_LINE.exec(body);
+      if (verifyMatch && !verifyRange) {
+        verifyCommand = verifyMatch[1].trim();
+        verifyRange = span(block);
+        continue;
+      }
+      if (!pathsMatch && !verifyMatch && summary === undefined) {
         summary = body;
         summaryRange = span(block);
       }
@@ -382,6 +402,8 @@ const readFeature = (
     summaryRange,
     summaryInsertAt: markerRange ? markerRange.end : headingEnd,
     pathsRange,
+    verify: verifyCommand,
+    verifyRange,
     acceptanceRange,
     acceptanceInsertAt: acceptanceRange
       ? acceptanceRange.end
@@ -432,6 +454,7 @@ export type PrdOp =
   | { op: "setTitle"; featureId: string; value: string }
   | { op: "setSummary"; featureId: string; value: string }
   | { op: "setPaths"; featureId: string; value: string[] }
+  | { op: "setVerify"; featureId: string; value: string | null }
   | { op: "setCriterion"; featureId: string; criterionId: string; done?: boolean; text?: string }
   | { op: "addCriterion"; featureId: string; text: string }
   | { op: "removeCriterion"; featureId: string; criterionId: string }
@@ -526,6 +549,35 @@ export const applyOps = (source: string, ops: PrdOp[]): string => {
         } else {
           const at = feature.summaryRange?.end ?? feature.summaryInsertAt;
           edits.push({ range: { start: at, end: at }, replacement: `${eol}${eol}${line}`, what: `paths+ ${feature.id}` });
+        }
+        break;
+      }
+
+      case "setVerify": {
+        const feature = featureById(prd, op.featureId);
+        stamp(feature);
+        if (op.value === null) {
+          // Removing takes the blank line before it too, or the document grows
+          // a gap every time somebody clears a command.
+          if (feature.verifyRange) {
+            edits.push({
+              range: { start: feature.verifyRange.start, end: feature.verifyRange.end },
+              replacement: "",
+              what: `verify- ${feature.id}`,
+            });
+          }
+          break;
+        }
+        const line = `Verify: ${op.value}`;
+        if (feature.verifyRange) {
+          edits.push({ range: feature.verifyRange, replacement: line, what: `verify ${feature.id}` });
+        } else {
+          const at = feature.pathsRange?.end ?? feature.summaryRange?.end ?? feature.summaryInsertAt;
+          edits.push({
+            range: { start: at, end: at },
+            replacement: `${eol}${eol}${line}`,
+            what: `verify+ ${feature.id}`,
+          });
         }
         break;
       }
@@ -680,6 +732,7 @@ const verify = (before: string, after: string, prd: ParsedPrd, ops: PrdOp[]) => 
     o.op === "setTitle" ||
     o.op === "setSummary" ||
     o.op === "setPaths" ||
+    o.op === "setVerify" ||
     o.op === "setCriterion" ||
     o.op === "addCriterion" ||
     o.op === "removeCriterion" ||
