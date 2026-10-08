@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-08T16:50:09.013Z",
-  "revision": 206,
+  "updatedAt": "2026-10-08T16:52:20.847Z",
+  "revision": 207,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2026,7 +2026,7 @@
     {
       "id": "bdcf995e",
       "title": "Notify the PM from gate request and card open",
-      "description": "da-t7. Criteria: DA-01.1 to DA-01.6; DA-03.4 (README, rule 12; tech-writer writes the paragraph at /devolps:pr step 2). Tests: one 'DA-01.n: ...' test per criterion; 'DA-03.4: README names the commands, the off switch and macOS only'. Verify: npm test -- notify. Adds 1 import and 2 calls in cli/index.ts. Lines: ~101 (cli 4 + README 12 from design 3.4; tests 85 from architect hand-off, not checked). Depends on: da-t1 merged, da-t6. Real banners start on this Mac once built here; merge da-t8 right after.",
+      "description": "da-t7. Criteria: DA-01.1 to DA-01.6; DA-03.4 (README, rule 12; tech-writer writes the paragraph at /devolps:pr step 2). Tests: one 'DA-01.n: ...' test per criterion; 'DA-03.4: README names the commands, the off switch and macOS only'. Verify: npm test -- notify. Adds 1 import and 2 calls in cli/index.ts. Lines: ~101 (cli 4 + README 12 from design 3.4; tests 85 from architect hand-off, not checked). Over 100 because rule 12 puts the README paragraph in this change. Depends on: da-t1 merged, da-t6. Real banners start on this Mac once built here; merge da-t8 right after.",
       "status": "backlog",
       "componentId": "agent-tooling",
       "featureId": "decision-notify",
@@ -2036,7 +2036,7 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:13.087Z",
-      "updatedAt": "2026-10-08T16:50:01.127Z",
+      "updatedAt": "2026-10-08T16:52:20.847Z",
       "order": 12
     },
     {
