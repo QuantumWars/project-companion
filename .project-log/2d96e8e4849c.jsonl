@@ -894,3 +894,8 @@
 {"id":"2d96e8e4849c:889","ts":1791495970201,"seq":889,"actor":"2d96e8e4849c","prev":"c50139e91e690e53","kind":"run.progress","data":{"runId":"48b010d7","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
 {"id":"2d96e8e4849c:890","ts":1791495972964,"seq":890,"actor":"2d96e8e4849c","prev":"387eb12b1b94f114","kind":"run.progress","data":{"runId":"48b010d7","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
 {"id":"2d96e8e4849c:891","ts":1791495982054,"seq":891,"actor":"2d96e8e4849c","prev":"d82d1f544a9c9b9c","kind":"task.moved","data":{"taskId":"5bf8eb1b","from":"review","to":"done"}}
+{"id":"2d96e8e4849c:892","ts":1791495982328,"seq":892,"actor":"2d96e8e4849c","prev":"b21dc49e1852374b","kind":"run.progress","data":{"runId":"48b010d7","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
+{"id":"2d96e8e4849c:893","ts":1791495988581,"seq":893,"actor":"2d96e8e4849c","prev":"a78649df78b9d0ff","kind":"run.progress","data":{"runId":"48b010d7","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
+{"id":"2d96e8e4849c:894","ts":1791495991705,"seq":894,"actor":"2d96e8e4849c","prev":"3c471c32bf0c74e2","kind":"run.progress","data":{"runId":"48b010d7","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
+{"id":"2d96e8e4849c:895","ts":1791495998555,"seq":895,"actor":"2d96e8e4849c","prev":"673511c4f78c59fa","kind":"run.progress","data":{"runId":"48b010d7","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
+{"id":"2d96e8e4849c:896","ts":1791496001764,"seq":896,"actor":"2d96e8e4849c","prev":"8f0e9d2d2a869826","componentId":"agent-tooling","kind":"task.moved","data":{"taskId":"cc05f85e","from":"backlog","to":"in_progress"}}
