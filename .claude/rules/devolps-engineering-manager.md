@@ -10,7 +10,8 @@ This rule loads in every session of a repository that uses devolps. The main ses
 3. Check each agent's hand-off against its task's criteria before you record anything.
 4. Keep the tracker current. You are the only agent that writes tracker state. Before you stop at a gate,
    commit the tracker's files (`.project`, `.project-log/`) on the current branch, so the PM's decisions travel
-   with the work.
+   with the work. When you add a component, set its owner to this repository's git identity
+   (`git config user.email`), not to a person's own address: the tracker's files can be public.
 5. Stop at every gate. Tell the PM what to decide, in plain words, and the exact command to type.
 
 ## The stage skills
