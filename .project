@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-08T20:34:22.920Z",
-  "revision": 220,
+  "updatedAt": "2026-10-08T20:52:59.167Z",
+  "revision": 222,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2072,17 +2072,6 @@
       "order": 14
     },
     {
-      "id": "66d4d591",
-      "title": "Run CI on every pull request: npm ci, typecheck, npm test, build:tools",
-      "status": "backlog",
-      "createdAt": "2026-10-08T20:33:57.511Z",
-      "updatedAt": "2026-10-08T20:34:04.389Z",
-      "order": 15,
-      "kind": "task",
-      "role": "devops-sre",
-      "description": "Proposed track: Quick (epic `ci`). Not ready to build: the track and a Quick spec need PM approval first (constitution rule 4).\n\nOrder: sprint 2026-w42, order 0 — before da-t1 (cc05f85e). It must merge before the first build pull request, so every build PR runs CI.\n\nScope (from the PM, 2026-10-09): a GitHub Actions workflow that runs on every pull request: `npm ci`, typecheck, `npm test`, `npm run build:tools`.\n\nKnown facts (checked by the EM on 2026-10-09 on master 904dfdf):\n- There is no `.github/workflows/` folder and no `typecheck` script in package.json. The task adds `\"typecheck\": \"tsc --noEmit\"`, or runs tsc directly.\n- `npx tsc --noEmit` exit 0. `PROJECT_COMPANION_NOTIFY=off npm test` exit 0. `npm run build:tools`: not checked.\n- devops-sre may write `.github/workflows/**` and `package.json` (.claude/harness.json).\n- No component owns `.github/workflows/` or `package.json`.\n\nVerify: written in the Quick spec (specs/ci/quick.md)."
-    },
-    {
       "id": "15753492",
       "title": "Bug: run records store touched files as full paths, not paths relative to the project root",
       "status": "backlog",
@@ -2116,6 +2105,18 @@
       "kind": "bug",
       "role": "backend-engineer",
       "description": "Proposed track: Bugfix. Plan: after decision-alerts (sprint 2026-w43). It must come after the feature: design section 3 (`specs/decision-alerts/design.md:453`) says the SR-8 fix changes how `hashArtifact` reads files, and must update a decision-alerts test. Not ready to build: needs the PM's track confirmation, then `specs/bugs/d5ebde85/bugfix.md` and a failing regression test from the qa-engineer.\n\nSource: security review SR-8 (`specs/decision-alerts/reviews/security.md:108`), design section 6 step 5 (`specs/decision-alerts/design.md:513`), both approved at the design gate.\nObserved: the text lookup re-hashes every approved artifact. An artifact path from a merged log can name a very large file or a device such as `/dev/zero` (`join(root, ref)` accepts `..`). Then `gate request` (`lib/project/gate.ts:257`), and after da-t7 also `card open`, are slow without limit or never end.\nFix (from SR-8): accept only artifact paths and a PRD source that are regular files inside the project root.\nNote: `lib/project/gate.ts` belongs to no component."
+    },
+    {
+      "id": "5bf8eb1b",
+      "title": "Run CI on every pull request: npm ci, typecheck, npm test, build:tools",
+      "description": "Track: Quick (epic ci), confirmed by the PM on 2026-10-09. Not ready to build until the PM signs off specs/ci/quick.md (constitution rule 4).\n\nOrder: sprint 2026-w42, order 0, before da-t1 (cc05f85e). It must merge before the first build pull request, so every build PR runs CI.\n\nScope (from the PM, 2026-10-09): a GitHub Actions workflow that runs on every pull request: npm ci, typecheck, npm test, npm run build:tools.\n\nKnown facts (checked by the EM on 2026-10-09 on master 904dfdf):\n- There is no .github/workflows/ folder and no typecheck script in package.json.\n- npx tsc --noEmit: exit 0. PROJECT_COMPANION_NOTIFY=off npm test: exit 0. npm run build:tools: not checked.\n- devops-sre may write .github/workflows/** and package.json (.claude/harness.json).\n- No component owns .github/workflows/ or package.json.\n\nVerify: written in the Quick spec (specs/ci/quick.md). Replaces task 66d4d591, which had no epic.",
+      "status": "backlog",
+      "phaseId": "ci",
+      "kind": "task",
+      "role": "devops-sre",
+      "createdAt": "2026-10-08T20:52:59.167Z",
+      "updatedAt": "2026-10-08T20:52:59.167Z",
+      "order": 18
     }
   ],
   "roadmap": {
