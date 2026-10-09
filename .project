@@ -2,8 +2,6 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-09T16:47:49.013Z",
-  "revision": 286,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1952,14 +1950,14 @@
       "points": 1,
       "role": "devops-sre",
       "createdAt": "2026-10-08T16:42:12.477Z",
-      "updatedAt": "2026-10-09T16:24:27.758Z",
+      "updatedAt": "2026-10-09T18:19:35.421Z",
       "order": 39,
       "pr": {
         "number": 10,
         "url": "https://github.com/QuantumWars/project-companion/pull/10",
         "state": "MERGED",
         "headSha": "9f0d1accc72ef0b42722a4c4444528a449e96615",
-        "syncedAt": "2026-10-09T16:24:27.757Z"
+        "syncedAt": "2026-10-09T18:19:35.419Z"
       }
     },
     {
@@ -1975,14 +1973,14 @@
       "points": 1,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.579Z",
-      "updatedAt": "2026-10-09T16:24:28.396Z",
+      "updatedAt": "2026-10-09T18:19:35.995Z",
       "order": 40,
       "pr": {
         "number": 11,
         "url": "https://github.com/QuantumWars/project-companion/pull/11",
         "state": "MERGED",
         "headSha": "a7018441c070d605e6372bef65b2079ac2ccd4eb",
-        "syncedAt": "2026-10-09T16:24:28.395Z"
+        "syncedAt": "2026-10-09T18:19:35.993Z"
       }
     },
     {
@@ -1998,14 +1996,14 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.680Z",
-      "updatedAt": "2026-10-09T16:24:28.964Z",
+      "updatedAt": "2026-10-09T18:19:36.777Z",
       "order": 41,
       "pr": {
         "number": 12,
         "url": "https://github.com/QuantumWars/project-companion/pull/12",
         "state": "MERGED",
         "headSha": "d40d5237e42c6e109a809950bffa6dac50831dd7",
-        "syncedAt": "2026-10-09T16:24:28.962Z"
+        "syncedAt": "2026-10-09T18:19:36.776Z"
       }
     },
     {
@@ -2021,21 +2019,21 @@
       "points": 2,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.781Z",
-      "updatedAt": "2026-10-09T16:24:30.565Z",
+      "updatedAt": "2026-10-09T18:19:37.368Z",
       "order": 42,
       "pr": {
         "number": 14,
         "url": "https://github.com/QuantumWars/project-companion/pull/14",
         "state": "MERGED",
         "headSha": "c83bd383f8aee3f5555e7e14e428c38a676a9ef5",
-        "syncedAt": "2026-10-09T16:24:30.564Z"
+        "syncedAt": "2026-10-09T18:19:37.366Z"
       }
     },
     {
       "id": "108eb782",
       "title": "Add notifyDecision with the off switch and platform check",
       "description": "da-t5. Criteria: DA-03.1, DA-03.3 (in-process half). Tests: 'DA-03.1: off passes no notification'; 'DA-03.3: linux and win32 pass no notification'. Verify: npm test -- notify. Adds decisionText, notifyDecision (precedence rows 1, 2, 6), catch that records failed, 'record not written' line. Lines: ~95 (source: architect hand-off; not checked). Depends on: da-t3, da-t4.\n\nRule from the PR #12 reviews (code review note, security N2; EM, 2026-10-09): appendRecord throws only RecordError, with fields code and target. Build the \"record not written\" reason as `${e.code} ${e.target}`, never from e.message, then replace control characters as the reason table says (U+0000-U+001F, U+007F-U+009F). The target holds the project root path, which can contain the folder name. readRecord must not get a non-test caller until it has appendRecord's checks (security F2).\n\nNotes from the da-t4 build and the PR #14 reviews (EM, 2026-10-09): (1) dispatch(program, args) returns the pid (outcome sent) or throws DispatchError with step \"path\" | \"access\" | \"spawn\" | \"pid\" and code (never error.message). Map: path -> `not an absolute path: <value>`, access -> `<code> <path>`, spawn -> `<code>`, pid -> `did not start <path>` (design reason table). (2) Since PR #14, dispatch itself refuses a program path that is not absolute (TH-3). notifyDecision still applies design row 4 (isAbsolute(notifierPath(env))) first. Test the bare-name case with a name that is not on PATH (for example pc-no-such-notifier), never with osascript, so a regression starts nothing; that is the one allowed exception to the stubEnv rule and needs a one-line comment. (3) notifierPath takes Partial<NodeJS.ProcessEnv> because Next.js types make NODE_ENV required. (4) In-process tests of notifyDecision use the returned outcome and the record line as the witness, and never STUB's output (dispatch takes no env, so the child inherits process.env, which has no STUB_OUT). Since PR #15, a stub whose witness path is written into its own script text and not read from the environment (SENT_STUB) is also an allowed in-process witness; the sent test uses it to prove that the stub, not another notifier, started.",
-      "status": "review",
+      "status": "done",
       "componentId": "notifier",
       "featureId": "notify-switch",
       "phaseId": "decision-alerts",
@@ -2044,14 +2042,14 @@
       "points": 2,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.883Z",
-      "updatedAt": "2026-10-09T16:47:49.013Z",
-      "order": 0,
+      "updatedAt": "2026-10-09T18:19:37.971Z",
+      "order": 43,
       "pr": {
         "number": 15,
         "url": "https://github.com/QuantumWars/project-companion/pull/15",
-        "state": "OPEN",
-        "headSha": "cb1182c22dfa0678f1420ccc2d2a0c6f80fedb08",
-        "syncedAt": "2026-10-09T16:36:38.183Z"
+        "state": "MERGED",
+        "headSha": "24563c227b039384a5d0060c3c48a44f3ce3cd15",
+        "syncedAt": "2026-10-09T18:19:37.970Z"
       }
     },
     {
@@ -2150,7 +2148,7 @@
       "kind": "task",
       "role": "devops-sre",
       "createdAt": "2026-10-08T20:52:59.167Z",
-      "updatedAt": "2026-10-09T16:24:31.126Z",
+      "updatedAt": "2026-10-09T18:19:39.074Z",
       "order": 38,
       "points": 2,
       "pr": {
@@ -2158,7 +2156,7 @@
         "url": "https://github.com/QuantumWars/project-companion/pull/8",
         "state": "MERGED",
         "headSha": "cc56648aef8271a40b192db026d10063d68d1bbb",
-        "syncedAt": "2026-10-09T16:24:31.126Z"
+        "syncedAt": "2026-10-09T18:19:39.072Z"
       }
     }
   ],
@@ -2171,5 +2169,7 @@
   "agents": {
     "byComponent": {}
   },
-  "wip": {}
+  "wip": {},
+  "revision": 294,
+  "updatedAt": "2026-10-09T18:19:44.655Z"
 }
