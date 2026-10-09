@@ -96,7 +96,7 @@ export const decisionText = (root: string, id: string): NotifyText => {
 };
 
 /** Design 3.3, reason table. It uses the step, the code and the paths this code passed, never `error.message`. */
-const failureReason = (error: unknown, program: string): string => {
+export const failureReason = (error: unknown, program: string): string => {
   if (!(error instanceof DispatchError)) return codeOf(error);
   const reasons = {
     path: `not an absolute path: ${program}`,
@@ -119,8 +119,8 @@ const record = (root: string, line: RecordLine): void => {
 
 /**
  * Design 3.3, "Entry point" and "Outcome precedence" (the first match wins). It never throws and never writes to
- * standard output, and the decision text never reaches a reason. Each failure records `failed` with its reason; the
- * "notification not sent" line on standard error (DA-02.2) is not written yet.
+ * standard output, and the decision text never reaches a reason. Each failure writes one "notification not sent" line
+ * to standard error (DA-02.2), then records `failed` with the same reason (design flow 2).
  */
 export const notifyDecision = (root: string, decisionId: string, env: NodeJS.ProcessEnv = process.env): NotifyOutcome => {
   let text: NotifyText | null = null;
@@ -143,6 +143,10 @@ export const notifyDecision = (root: string, decisionId: string, env: NodeJS.Pro
     reason = failureReason(error, notifierPath(env));
   }
   const base = { id: decisionId, at: new Date().toISOString(), title: text?.title ?? null, command: text?.command ?? null };
-  record(root, outcome === "failed" ? { ...base, outcome, reason: controlsToSpaces(reason) } : { ...base, outcome });
+  if (outcome === "failed") {
+    const clean = controlsToSpaces(reason); // once, so the standard error line and the record hold the same reason
+    process.stderr.write(`project-companion: notification not sent: ${clean}\n`); // DA-02.2, before the record (flow 2)
+    record(root, { ...base, outcome, reason: clean });
+  } else record(root, { ...base, outcome });
   return outcome;
 };
