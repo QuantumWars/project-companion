@@ -6,10 +6,13 @@ import {
 import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 
+import { requestGate } from "@/lib/project/gate";
 import {
-  dispatch, DispatchError, NOTIFIER, NOTIFIER_ENV, notifierArgs, notifierPath, NOTIFY_ENV, NOTIFY_SCRIPT, type NotifyText, osascriptArgs, PLATFORM_ENV,
+  controlsToSpaces, dispatch, DispatchError, NOTIFIER, NOTIFIER_ENV, notifierArgs, notifierPath, notifyDecision, NOTIFY_ENV, NOTIFY_SCRIPT, type NotifyText,
+  osascriptArgs, PLATFORM_ENV,
 } from "@/lib/project/notify";
 import { appendRecord, codeOf, NOTIFY_DIR, NOTIFY_RECORD, readRecord, RecordError, recordPath, type RecordLine } from "@/lib/project/notify-record";
+import { initProject } from "@/lib/project/store";
 
 import { eq, ok, runAll, test, throws } from "./harness";
 
@@ -51,11 +54,24 @@ writeFileSync(STUB, [
 ].join("\n"));
 chmodSync(STUB, 0o755);
 
-const stubEnv = (notifier: string): NodeJS.ProcessEnv => {
+/** Writes its argument count to SENT_WITNESS. The path is in the script, not the environment, so it works in process. */
+const SENT_STUB = join(TMP, "sent-stub");
+const SENT_WITNESS = join(TMP, "sent-witness");
+writeFileSync(SENT_STUB, `#!/bin/sh\nprintf '%s' "$#" > '${SENT_WITNESS}.tmp' && mv '${SENT_WITNESS}.tmp' '${SENT_WITNESS}'\n`);
+chmodSync(SENT_STUB, 0o755);
+
+/**
+ * The overrides can set only the switch to "off" and the platform. They are never spread, so they cannot change the
+ * notifier: a regression that ignores the switch or the platform starts only the stub.
+ */
+type StubOverrides = { notify?: "off"; platform?: string };
+const stubEnv = (notifier: string, overrides: StubOverrides = {}): NodeJS.ProcessEnv => {
   if (!notifier || !isAbsolute(notifier) || dirname(resolve(notifier)) !== TMP) {
     throw new Error(`stubEnv: the notifier must be an absolute path inside the suite's temporary folder, got ${JSON.stringify(notifier)}`);
   }
-  return { ...process.env, PROJECT_COMPANION_NOTIFY: "on", PROJECT_COMPANION_PLATFORM: "darwin", PROJECT_COMPANION_NOTIFIER: notifier, STUB_OUT, STUB_HOLD };
+  const notify = overrides.notify === "off" ? "off" : "on";
+  const platform = typeof overrides.platform === "string" ? overrides.platform : "darwin";
+  return { ...process.env, PROJECT_COMPANION_NOTIFY: notify, PROJECT_COMPANION_PLATFORM: platform, PROJECT_COMPANION_NOTIFIER: notifier, STUB_OUT, STUB_HOLD };
 };
 
 /* ------------------------------ the off switch ----------------------------- */
@@ -64,7 +80,7 @@ test("DA-03.2: the runner sets PROJECT_COMPANION_NOTIFY=off", () => {
   eq(process.env.PROJECT_COMPANION_NOTIFY, "off", "run this suite with `npm test -- notify`");
 });
 
-test("TH-19: stubEnv refuses an empty or relative path", () => {
+test("TH-19: stubEnv refuses an empty or relative path; its overrides set only the switch and the platform", () => {
   const before = { ...process.env };
   throws(() => stubEnv(""), /absolute path/);
   throws(() => stubEnv("relative/x"), /absolute path/);
@@ -77,6 +93,12 @@ test("TH-19: stubEnv refuses an empty or relative path", () => {
     ["on", "darwin", STUB, STUB_OUT, STUB_HOLD],
   );
   eq(env.PATH, process.env.PATH, "the rest of the environment is kept");
+  const pick = (e: NodeJS.ProcessEnv) => [e.PROJECT_COMPANION_NOTIFY, e.PROJECT_COMPANION_PLATFORM, e.PROJECT_COMPANION_NOTIFIER];
+  eq(pick(stubEnv(STUB, { notify: "off", platform: "linux" })), ["off", "linux", STUB]);
+  eq(pick(stubEnv(STUB, { platform: "win32" })), ["on", "win32", STUB]);
+  // A cast cannot turn an override into another switch value or a notifier.
+  const forced = { notify: "yes", notifier: NOTIFIER, PROJECT_COMPANION_NOTIFIER: NOTIFIER } as unknown as StubOverrides;
+  eq(pick(stubEnv(STUB, forced)), ["on", "darwin", STUB]);
   eq(process.env, before, "stubEnv must not change process.env");
 });
 
@@ -297,6 +319,94 @@ test("dispatch: the stub starts, and dispatch returns its pid", () => {
   // process.env has no STUB_OUT, so the stub exits at once and writes nothing.
   const pid = dispatch(notifierPath(stubEnv(STUB)), notifierArgs(HOSTILE));
   ok(Number.isInteger(pid) && pid > 0, `not a pid: ${pid}`);
+});
+
+/* ------------------------------ notifyDecision ----------------------------- */
+// Every notifyDecision call passes a stubEnv(...) env, never process.env or the default env (TH-19).
+
+const GATE = "gate:prd:alerts";
+const GATE_LINE = { id: GATE, title: 'Approve the requirements for "alerts"', command: "/devolps:approve prd alerts" };
+const LOST_LINE = { id: "c-000000", title: null, command: null }; // an id that is not in the cockpit
+
+/** A project in TMP whose cockpit holds one requested gate, GATE. */
+const gateProject = (): string => {
+  const root = project();
+  initProject(root, "Demo");
+  requestGate(root, { kind: "prd", subject: "alerts", artifacts: [] });
+  return root;
+};
+/** The record's lines without the time, which changes on each run. */
+const lines = (root: string) => readRecord(root).map(({ at: _at, ...rest }) => rest);
+
+/** Runs `run` with stdout and stderr captured, then restores both. It does not change process.env. */
+const captured = <T>(run: () => T): [T, string, string] => {
+  const { stdout, stderr } = process;
+  const [outWrite, errWrite] = [stdout.write, stderr.write];
+  let [out, err] = ["", ""];
+  stdout.write = ((chunk: unknown) => { out += String(chunk); return true; }) as typeof stdout.write;
+  stderr.write = ((chunk: unknown) => { err += String(chunk); return true; }) as typeof stderr.write;
+  try {
+    const value = run();
+    return [value, out, err];
+  } finally { stdout.write = outWrite; stderr.write = errWrite; }
+};
+
+test("DA-03.1: off passes no notification", () => {
+  const root = gateProject();
+  eq(captured(() => notifyDecision(root, GATE, stubEnv(STUB, { notify: "off" }))), ["off", "", ""]);
+  // Row 1 comes before rows 2 and 3: a failed lookup on linux with the switch off is still "off".
+  eq(captured(() => notifyDecision(root, LOST_LINE.id, stubEnv(STUB, { notify: "off", platform: "linux" }))), ["off", "", ""]);
+  eq(lines(root), [{ ...GATE_LINE, outcome: "off" }, { ...LOST_LINE, outcome: "off" }]);
+});
+
+test("DA-03.3: linux and win32 pass no notification", () => {
+  for (const platform of ["linux", "win32"]) {
+    const root = gateProject();
+    eq(captured(() => notifyDecision(root, GATE, stubEnv(STUB, { platform }))), ["unsupported", "", ""], platform);
+    eq(captured(() => notifyDecision(root, LOST_LINE.id, stubEnv(STUB, { platform }))), ["unsupported", "", ""], platform); // row 2 before row 3
+    eq(lines(root), [{ ...GATE_LINE, outcome: "unsupported" }, { ...LOST_LINE, outcome: "unsupported" }], platform);
+  }
+});
+
+test("notifyDecision: the stub starts with 10 arguments, and one line records sent", async () => {
+  // SENT_STUB writes the witness, so a change that starts another notifier fails here (TH-19).
+  const root = gateProject();
+  try {
+    eq(captured(() => notifyDecision(root, GATE, stubEnv(SENT_STUB))), ["sent", "", ""]);
+    let polls = 0; // 250 polls of 20 ms: about 5 s, a failure guard, not a requirement
+    while (!existsSync(SENT_WITNESS) && polls++ < 250) await new Promise((done) => setTimeout(done, 20));
+    eq(existsSync(SENT_WITNESS) ? readFileSync(SENT_WITNESS, "utf8") : "no witness after 5 s", "10", "the stub's argument count");
+    eq(lines(root), [{ ...GATE_LINE, outcome: "sent" }]);
+    const [line] = readRecord(root);
+    eq([Object.keys(line).join(), new Date(line.at).toISOString()], ["id,at,title,command,outcome", line.at]);
+  } finally { rmSync(SENT_WITNESS, { force: true }); }
+});
+
+test("notifyDecision: a failure records failed and a reason without decision text, writes no stdout, and does not throw", () => {
+  const root = gateProject();
+  const missing = join(TMP, "missing");
+  const runs = [captured(() => notifyDecision(root, "c-000000", stubEnv(STUB))), captured(() => notifyDecision(root, GATE, stubEnv(missing)))];
+  for (const [outcome, out, err] of runs) {
+    eq([outcome, out], ["failed", ""]);
+    ok(![GATE_LINE.title, GATE_LINE.command, "Demo"].some((t) => err.includes(t)), `decision text on stderr: ${err}`);
+  }
+  // A failed lookup gives null text. A dispatch failure keeps the text, and its reason is the code and the path.
+  eq(lines(root), [
+    { id: "c-000000", title: null, command: null, outcome: "failed", reason: "not in the cockpit: c-000000" },
+    { ...GATE_LINE, outcome: "failed", reason: `ENOENT ${missing}` },
+  ]);
+});
+
+test("notifyDecision: a file at .project-notify gives one 'record not written' line, and the outcome", () => {
+  eq(controlsToSpaces("a\u0000b\u001fc\u007fd\u009fe\u00a0f"), "a b c d e\u00a0f");
+  const root = gateProject();
+  writeFileSync(join(root, NOTIFY_DIR), "");
+  const line = `project-companion: notification record not written: ENOTDIR ${root}/.project-notify\n`;
+  eq(captured(() => notifyDecision(root, GATE, stubEnv(STUB, { notify: "off" }))), ["off", "", line]);
+  const odd = project("line\nbreak\u0085-"); // control characters in the path become spaces, so stderr gets one line
+  writeFileSync(join(odd, NOTIFY_DIR), "");
+  const [, , err] = captured(() => notifyDecision(odd, GATE, stubEnv(STUB, { notify: "off" })));
+  eq(err, `project-companion: notification record not written: ENOTDIR ${odd.replace(/[\n\u0085]/g, " ")}/.project-notify\n`);
 });
 
 runAll().then((failed) => {
