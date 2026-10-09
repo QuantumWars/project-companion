@@ -204,11 +204,16 @@ the same text the cockpit shows. Nothing else sends one. Decision alerts
 are macOS only: on any other system nothing is sent, and the command
 runs the same either way. Turn alerts off for a shell with
 `PROJECT_COMPANION_NOTIFY=off`; the value must be exactly `off`. macOS
-Focus still decides when a banner shows on screen. A notifier problem
-never changes the command's exit code or its output; it writes one
-line to standard error instead. Each attempt adds one line to
-`.project-notify/record.jsonl`, a local record of what happened —
-sent, off, unsupported or failed — that is not checked in.
+Focus still decides when a banner shows on screen. A notifier problem is
+not meant to change the command's exit code or its output. It can
+write up to two lines to standard error: one when no notification was
+sent, and one when the local record could not be written. Each
+attempt adds one line to `.project-notify/record.jsonl`, a local
+record of what happened — sent, off, unsupported or failed — that is
+not checked in. Each banner, and each line in that record, holds the
+decision's title and its command, which can come from agent text, so
+anyone at a shared screen or the lock screen can read it; the macOS
+notification setting "Show previews" controls that.
 
 ## How a project is stored
 
