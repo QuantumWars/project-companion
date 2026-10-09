@@ -2,8 +2,6 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-09T13:23:32.484Z",
-  "revision": 271,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1952,14 +1950,14 @@
       "points": 1,
       "role": "devops-sre",
       "createdAt": "2026-10-08T16:42:12.477Z",
-      "updatedAt": "2026-10-09T13:01:42.220Z",
+      "updatedAt": "2026-10-09T16:24:27.758Z",
       "order": 39,
       "pr": {
         "number": 10,
         "url": "https://github.com/QuantumWars/project-companion/pull/10",
         "state": "MERGED",
         "headSha": "9f0d1accc72ef0b42722a4c4444528a449e96615",
-        "syncedAt": "2026-10-09T13:01:42.219Z"
+        "syncedAt": "2026-10-09T16:24:27.757Z"
       }
     },
     {
@@ -1975,14 +1973,14 @@
       "points": 1,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.579Z",
-      "updatedAt": "2026-10-09T13:01:42.839Z",
+      "updatedAt": "2026-10-09T16:24:28.396Z",
       "order": 40,
       "pr": {
         "number": 11,
         "url": "https://github.com/QuantumWars/project-companion/pull/11",
         "state": "MERGED",
         "headSha": "a7018441c070d605e6372bef65b2079ac2ccd4eb",
-        "syncedAt": "2026-10-09T13:01:42.838Z"
+        "syncedAt": "2026-10-09T16:24:28.395Z"
       }
     },
     {
@@ -1998,21 +1996,21 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.680Z",
-      "updatedAt": "2026-10-09T13:01:43.419Z",
+      "updatedAt": "2026-10-09T16:24:28.964Z",
       "order": 41,
       "pr": {
         "number": 12,
         "url": "https://github.com/QuantumWars/project-companion/pull/12",
         "state": "MERGED",
         "headSha": "d40d5237e42c6e109a809950bffa6dac50831dd7",
-        "syncedAt": "2026-10-09T13:01:43.418Z"
+        "syncedAt": "2026-10-09T16:24:28.962Z"
       }
     },
     {
       "id": "8e6e5a71",
       "title": "Pass decision text to osascript only as arguments",
       "description": "da-t4. Criteria: DA-02.4 (argument half). Tests: 'DA-02.4: osascript passes every argument after -- unchanged' (required, darwin only); 'DA-02.4: notifierArgs gives 10 items, text only after --'; 'TH-3: notifierPath defaults to /usr/bin/osascript and takes the override' (both cases from design.md:445-446: the default, and PROJECT_COMPANION_NOTIFIER \"/x\" gives \"/x\"). Verify: npm test -- notify. Creates lib/project/notify.ts (constants, notifierPath, notifierArgs, dispatch). Lines: ~90 (source: architect hand-off; not checked). Depends on: da-t2.\n\nTest rule from the PR #10 security review (finding 1, TH-19, low; EM, 2026-10-09): the off switch guards only notifyDecision, not dispatch(program, args) (design.md:287). Tests call dispatch only with notifierPath(stubEnv(...)), never with NOTIFIER or notifierPath(process.env), or a test run can show a real banner on the PM's Mac. QA check at review: grep 'dispatch(' tests/notify.test.ts and confirm every call uses a stubEnv path. CI also runs on macos-latest (card c-18a31a), so there the off switch, not the platform check, stops dispatch.\n\nTest rule from the PR #11 reviews (security F2, low; EM, 2026-10-09; applies to da-t4 to da-t9): every env in tests/notify.test.ts spreads process.env or stubEnv(...), and no test overrides or removes PROJECT_COMPANION_NOTIFIER or PROJECT_COMPANION_NOTIFY after stubEnv (an empty notifier falls back to /usr/bin/osascript). Since PR #11, stubEnv accepts only a path inside the suite's temporary folder, and the suite stops at once when the off switch is not set. QA check at review: grep -nE 'PROJECT_COMPANION_NOTIF|env: *\\{|stubEnv\\(' tests/notify.test.ts. A grep for writes to process.env must end its pattern in =[^=], so that === does not match.\n\nRule changes from the PR #14 reviews (EM, 2026-10-09; apply to da-t4 to da-t9): (1) The env rule above applies to every env given to dispatch, notifyDecision or a child process; a plain object such as {} passed to the pure notifierPath is fine. (2) Since PR #14, dispatch refuses a program path that is not absolute (DispatchError step \"path\"). The one allowed dispatch call without a stubEnv path is a name that is not on PATH (for example pc-no-such-notifier), to test that refusal; it needs a one-line comment. (3) The suite also stops at once when STUB_OUT or STUB_HOLD is set in the environment.",
-      "status": "review",
+      "status": "done",
       "componentId": "notifier",
       "featureId": "notify-safety",
       "phaseId": "decision-alerts",
@@ -2021,14 +2019,14 @@
       "points": 2,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.781Z",
-      "updatedAt": "2026-10-09T13:23:32.483Z",
-      "order": 0,
+      "updatedAt": "2026-10-09T16:24:30.565Z",
+      "order": 42,
       "pr": {
         "number": 14,
         "url": "https://github.com/QuantumWars/project-companion/pull/14",
-        "state": "OPEN",
-        "headSha": "a49638f0d1875af966db771a34034d67d2069b01",
-        "syncedAt": "2026-10-09T13:13:29.724Z"
+        "state": "MERGED",
+        "headSha": "c83bd383f8aee3f5555e7e14e428c38a676a9ef5",
+        "syncedAt": "2026-10-09T16:24:30.564Z"
       }
     },
     {
@@ -2143,7 +2141,7 @@
       "kind": "task",
       "role": "devops-sre",
       "createdAt": "2026-10-08T20:52:59.167Z",
-      "updatedAt": "2026-10-09T13:01:44.026Z",
+      "updatedAt": "2026-10-09T16:24:31.126Z",
       "order": 38,
       "points": 2,
       "pr": {
@@ -2151,7 +2149,7 @@
         "url": "https://github.com/QuantumWars/project-companion/pull/8",
         "state": "MERGED",
         "headSha": "cc56648aef8271a40b192db026d10063d68d1bbb",
-        "syncedAt": "2026-10-09T13:01:44.025Z"
+        "syncedAt": "2026-10-09T16:24:31.126Z"
       }
     }
   ],
@@ -2164,5 +2162,7 @@
   "agents": {
     "byComponent": {}
   },
-  "wip": {}
+  "wip": {},
+  "revision": 278,
+  "updatedAt": "2026-10-09T16:24:46.141Z"
 }
