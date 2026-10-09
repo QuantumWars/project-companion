@@ -2,6 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
+  "updatedAt": "2026-10-09T22:09:43.853Z",
+  "revision": 335,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2102,7 +2104,7 @@
       "id": "6042a875",
       "title": "Prove a failed or slow notifier leaves the CLI unchanged",
       "description": "da-t8. Criteria: DA-02.1, DA-02.3; finishes DA-02.4 (stub half), DA-03.3 (CLI half) and the CLI half of TH-5. Tests: 'DA-02.1: same exit code and stdout as off'; 'DA-02.3: the CLI exits while the notifier waits'; 'DA-02.4: a hostile card question reaches the stub unchanged'; 'DA-03.3: linux and win32 give the same output as off'; 'TH-5: a folder in place of an approved artifact gives one stderr line and output as with off' (design 3.4, design.md:450-454); TH-21 CLI test. Verify: npm test -- notify. Lines: ~100 tests (source: architect hand-off ~90, plus ~10 for the TH-5 CLI test; not checked). Depends on: da-t7.\n\nTest rules from the PR #11 code review (notes, not findings; EM, 2026-10-09; also apply to da-t7): (1) Wait for <pid>.done before a test ends, and delete stub files with { force: true }. The STUB_OUT folder is shared, so a detached stub's late files can otherwise make the next test flaky. (2) DA-02.3: when the CLI exits, check that <pid>.argv exists and <pid>.done does not, then release the hold. Nothing in PR #11 tests the stub's wait. (3) The \"off\" comparison runs for DA-02.1 and DA-03.3 set PROJECT_COMPANION_NOTIFY: \"off\" in their own env (use stubEnv(STUB, { notify: \"off\" }) since PR #15). (4) The stub's hold loop stops after 600 polls (about 30 s at 0.05 s each); keep the test's guard timeout below that.\n\nNotes from the PR #16 code review (EM, 2026-10-09): (5) In the DA-02.1 run with a missing notifier, also check that stderr is exactly one line `project-companion: notification not sent: ENOENT <tmp>/missing`; that closes the CLI half of DA-02.2 for the cause the requirement names. If that run also breaks .project-notify, expect 2 lines, \"not sent\" first.",
-      "status": "backlog",
+      "status": "in_progress",
       "componentId": "notifier",
       "featureId": "notify-safety",
       "phaseId": "decision-alerts",
@@ -2111,8 +2113,8 @@
       "points": 3,
       "role": "qa-engineer",
       "createdAt": "2026-10-08T16:42:13.187Z",
-      "updatedAt": "2026-10-09T18:35:18.739Z",
-      "order": 13
+      "updatedAt": "2026-10-09T22:09:43.853Z",
+      "order": 0
     },
     {
       "id": "1b3763e7",
@@ -2183,7 +2185,5 @@
   "agents": {
     "byComponent": {}
   },
-  "wip": {},
-  "revision": 334,
-  "updatedAt": "2026-10-09T22:09:36.845Z"
+  "wip": {}
 }
