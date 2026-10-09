@@ -383,12 +383,12 @@ Paths: lib/project/notify.ts
 
 Verify: npm test -- notify
 
-- [ ] DA-01.1 When `project-companion gate request` records a gate request, the CLI shall pass one notification for that gate to the system notifier. — Each new gate request makes one notification on the PM's Mac.
-- [ ] DA-01.2 When `project-companion card open` records a question card or a track card, the CLI shall pass one notification for that card to the system notifier. — Each new question card or track card makes one notification.
-- [ ] DA-01.3 The notification shall contain the decision's title, its command and the project name, with the same text that `project-companion cockpit --json` shows in its `needsYou` and `project` fields. — The notification says what the cockpit says, word for word.
-- [ ] DA-01.4 If `gate request` or `card open` refuses its input and records nothing, then the CLI shall pass no notification. — A request that failed does not alert the PM.
-- [ ] DA-01.5 The CLI shall pass notifications only from the `gate request` and `card open` commands. — Approvals, answers, status reads and the cockpit send nothing.
-- [ ] DA-01.6 When decisions are recorded one after another, the CLI shall pass one notification for each decision, with no limit, delay or quiet hours of its own. — macOS Focus decides what the PM sees.
+- [x] DA-01.1 When `project-companion gate request` records a gate request, the CLI shall pass one notification for that gate to the system notifier. — Each new gate request makes one notification on the PM's Mac.
+- [x] DA-01.2 When `project-companion card open` records a question card or a track card, the CLI shall pass one notification for that card to the system notifier. — Each new question card or track card makes one notification.
+- [x] DA-01.3 The notification shall contain the decision's title, its command and the project name, with the same text that `project-companion cockpit --json` shows in its `needsYou` and `project` fields. — The notification says what the cockpit says, word for word.
+- [x] DA-01.4 If `gate request` or `card open` refuses its input and records nothing, then the CLI shall pass no notification. — A request that failed does not alert the PM.
+- [x] DA-01.5 The CLI shall pass notifications only from the `gate request` and `card open` commands. — Approvals, answers, status reads and the cockpit send nothing.
+- [x] DA-01.6 When decisions are recorded one after another, the CLI shall pass one notification for each decision, with no limit, delay or quiet hours of its own. — macOS Focus decides what the PM sees.
 
 ### Safe delivery
 <!-- id: notify-safety -->
@@ -417,7 +417,7 @@ Verify: npm test -- notify
 - [ ] DA-03.1 While the environment variable `PROJECT_COMPANION_NOTIFY` has the value `off`, the CLI shall pass no notification. — Tests, CI or the PM can turn notifications off for one shell.
 - [x] DA-03.2 When `npm test` runs a suite, the test runner shall set `PROJECT_COMPANION_NOTIFY` to `off` for that suite. — Running the tests never shows notifications to the PM.
 - [ ] DA-03.3 If the CLI runs on a system other than macOS, then the CLI shall pass no notification and exit with the exit code and standard output that it gives with the off switch set. — On Linux or Windows, nothing is sent and nothing fails.
-- [ ] DA-03.4 The README section "Gates, sprints and the PM cockpit" shall name the commands that send a notification, the off switch and the supported systems. — The PM and the agents can find how alerts work and how to turn them off.
+- [x] DA-03.4 The README section "Gates, sprints and the PM cockpit" shall name the commands that send a notification, the off switch and the supported systems. — The PM and the agents can find how alerts work and how to turn them off.
 
 ### Notification record
 <!-- id: notify-record -->
