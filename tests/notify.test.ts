@@ -502,8 +502,8 @@ const HOME = join(TMP, "home"); // the CLI's project index goes here, not in the
 mkdirSync(HOME);
 
 /** Runs the CLI bundle in `root`. CLAUDE_PROJECT_DIR is dropped: findProject would use it, not the cwd (store.ts). */
-const cli = (root: string, args: string[], overrides: StubOverrides = {}) => {
-  const { CLAUDE_PROJECT_DIR: _dir, ...env } = stubEnv(STUB, overrides);
+const cli = (root: string, args: string[], overrides: StubOverrides = {}, notifier: string = STUB) => {
+  const { CLAUDE_PROJECT_DIR: _dir, ...env } = stubEnv(notifier, overrides);
   const run = spawnSync(process.execPath, [CLI, ...args], { cwd: root, env: { ...env, HOME }, encoding: "utf8", timeout: 20_000 });
   return { code: run.status, out: run.stdout, err: run.stderr };
 };
@@ -530,6 +530,14 @@ const calls = async (count: number): Promise<string[][]> => {
   for (const f of files) rmSync(join(STUB_OUT, f), { force: true });
   drained += argv.length;
   return argv;
+};
+
+/** Waits for at least one <pid>.argv file (same guard as `calls`), without deleting anything or waiting for .done. */
+const argvFiles = async (): Promise<string[]> => {
+  const have = () => readdirSync(STUB_OUT).filter((f) => f.endsWith(".argv"));
+  let files: string[] = [];
+  for (let polls = 0; (files = have()).length < 1 && polls < 500; polls++) await new Promise((next) => setTimeout(next, 20));
+  return files;
 };
 
 /** Each "sent" record line is one stub started, so the test waits for all of them before it ends, pass or fail. */
@@ -650,6 +658,114 @@ cliTest("DA-02.5: gate request and card open log the same events with the notifi
   // Each log grew by the 3 decisions' own events, after the identity line that a new shard starts with (events.ts).
   const grew = [on, off].map((root, i) => readEvents(root).slice(start[i]).map((e) => e.kind).join());
   eq(grew, ["on", "off"].map(() => "actor.identified,card.opened,card.opened,gate.requested"), "new events");
+});
+
+/* ---------------------- the CLI with a broken notifier --------------------- */
+
+const GATE_ARGS = ["gate", "request", "prd", "alerts", "--artifact", "docs/a.md", "--json"];
+const CARD_ARGS = ["card", "open", "--subject", "alerts", "--ask", "Ship it?", "--json"];
+/** Strips the one field that changes run to run: the request time, and a card's random id. */
+const normalizeOut = (out: string): string => out.replace(/"requestedAt":\d+,/, "").replace(/c-[0-9a-f]{6}/g, "c-x");
+
+cliTest("DA-02.1: same exit code and stdout as off", async () => {
+  const missing = join(TMP, "missing");
+  for (const args of [GATE_ARGS, CARD_ARGS]) {
+    const off = cli(cliProject(), args, { notify: "off" });
+
+    const missingRun = cli(cliProject(), args, {}, missing);
+    eq([missingRun.code, normalizeOut(missingRun.out)], [off.code, normalizeOut(off.out)], `${args[0]} missing notifier`);
+    eq(missingRun.err, `project-companion: notification not sent: ENOENT ${missing}\n`, `${args[0]} missing notifier stderr`);
+
+    const brokenRoot = cliProject();
+    writeFileSync(join(brokenRoot, NOTIFY_DIR), "");
+    const brokenRun = cli(brokenRoot, args);
+    eq([brokenRun.code, normalizeOut(brokenRun.out)], [off.code, normalizeOut(off.out)], `${args[0]} broken record`);
+    eq(brokenRun.err, `project-companion: notification record not written: ENOTDIR ${join(brokenRoot, NOTIFY_DIR)}\n`, `${args[0]} broken record stderr`);
+    await calls(1); // dispatch to the stub still succeeds; the broken record stops readRecord, so cliTest cannot drain it
+
+    const bothRoot = cliProject();
+    writeFileSync(join(bothRoot, NOTIFY_DIR), "");
+    const bothRun = cli(bothRoot, args, {}, missing);
+    eq([bothRun.code, normalizeOut(bothRun.out)], [off.code, normalizeOut(off.out)], `${args[0]} both problems`);
+    eq(
+      bothRun.err,
+      `project-companion: notification not sent: ENOENT ${missing}\nproject-companion: notification record not written: ENOTDIR ${join(bothRoot, NOTIFY_DIR)}\n`,
+      `${args[0]} both problems stderr`,
+    );
+  }
+});
+
+cliTest("DA-02.3: the CLI exits while the notifier waits", async () => {
+  const root = cliProject();
+  writeFileSync(STUB_HOLD, "");
+  try {
+    const run = cli(root, ["gate", "request", "prd", "alerts", "--artifact", "docs/a.md"]);
+    eq([run.code, run.err], [0, ""]);
+    const files = await argvFiles();
+    eq(files.length, 1, "stub .argv files");
+    ok(!existsSync(join(STUB_OUT, files[0].replace(/\.argv$/, ".done"))), "the stub finished while the hold was in place");
+  } finally { rmSync(STUB_HOLD, { force: true }); }
+  eq((await calls(1)).length, 1, "the stub finished once the hold was released");
+});
+
+cliTest("DA-02.4: a hostile card question reaches the stub unchanged", async () => {
+  const root = cliProject();
+  const question = hostile("ask");
+  const { argv } = await decide(root, ["card", "open", "--subject", "alerts", "--ask", question, "--kind", "question"]);
+  eq(argv.length, 10);
+  eq(argv.slice(0, 7), PREFIX);
+  eq(argv[7], question);
+  for (let i = 0; i < argv.length; i++) if (argv[i] === "-e") ok(!argv[i + 1].includes(question), `-e value holds the question: ${argv[i + 1]}`);
+  for (const dir of [root, TMP, process.cwd()]) ok(!existsSync(join(dir, "PWNED")), `PWNED in ${dir}`);
+});
+
+cliTest("DA-03.3: linux and win32 give the same output as off", async () => {
+  for (const platform of ["linux", "win32"]) {
+    for (const args of [GATE_ARGS, CARD_ARGS]) {
+      const off = cli(cliProject(), args, { notify: "off" });
+      const root = cliProject();
+      const on = cli(root, args, { platform });
+      eq([on.code, normalizeOut(on.out)], [off.code, normalizeOut(off.out)], `${args[0]} ${platform}`);
+      eq(readRecord(root).map((l) => l.outcome), ["unsupported"], `${args[0]} ${platform} record`);
+    }
+  }
+  eq(readdirSync(STUB_OUT), [], "the stub ran");
+});
+
+cliTest("TH-5: a folder in place of an approved artifact gives one stderr line and output as with off", async () => {
+  const root = cliProject();
+  cli(root, ["gate", "request", "design", "alerts", "--artifact", "docs/a.md"], { notify: "off" });
+  cli(root, ["gate", "approve", "design", "alerts", "--via", "prompt:test"], { notify: "off" });
+  rmSync(join(root, "docs", "a.md"));
+  mkdirSync(join(root, "docs", "a.md"));
+  const off = cli(root, CARD_ARGS, { notify: "off" });
+  const on = cli(root, CARD_ARGS);
+  eq([on.code, normalizeOut(on.out)], [off.code, normalizeOut(off.out)]);
+  eq([off.err, on.err], ["", "project-companion: notification not sent: lookup failed: EISDIR\n"]);
+});
+
+cliTest("TH-21: a symlinked record or folder gives one stderr line and output as with off", async () => {
+  const off = cli(cliProject(), CARD_ARGS, { notify: "off" });
+
+  const root1 = cliProject();
+  const target = join(project("outside-"), "target.txt");
+  writeFileSync(target, "keep\n");
+  mkdirSync(join(root1, NOTIFY_DIR), { mode: 0o700 });
+  symlinkSync(target, recordPath(root1));
+  const run1 = cli(root1, CARD_ARGS);
+  eq([run1.code, normalizeOut(run1.out)], [off.code, normalizeOut(off.out)], "record symlink");
+  eq(run1.err, `project-companion: notification record not written: ELOOP ${recordPath(root1)}\n`, "record symlink stderr");
+  eq(readFileSync(target, "utf8"), "keep\n", "the outside file changed");
+  await calls(1); // the record's own symlink stops readRecord, so cliTest cannot drain this stub call
+
+  const root2 = cliProject();
+  const outside = project("outside-");
+  symlinkSync(outside, join(root2, NOTIFY_DIR));
+  const run2 = cli(root2, CARD_ARGS);
+  eq([run2.code, normalizeOut(run2.out)], [off.code, normalizeOut(off.out)], "folder symlink");
+  eq(run2.err, `project-companion: notification record not written: ENOTDIR ${join(root2, NOTIFY_DIR)}\n`, "folder symlink stderr");
+  eq(readdirSync(outside), [], "the outside folder changed");
+  await calls(1);
 });
 
 test("DA-03.4: README names the commands, the off switch and macOS only", () => {
