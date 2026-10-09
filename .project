@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-09T13:13:00.001Z",
-  "revision": 266,
+  "updatedAt": "2026-10-09T13:13:29.726Z",
+  "revision": 267,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2021,8 +2021,15 @@
       "points": 2,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.781Z",
-      "updatedAt": "2026-10-09T13:13:00.001Z",
-      "order": 0
+      "updatedAt": "2026-10-09T13:13:29.725Z",
+      "order": 0,
+      "pr": {
+        "number": 14,
+        "url": "https://github.com/QuantumWars/project-companion/pull/14",
+        "state": "OPEN",
+        "headSha": "a49638f0d1875af966db771a34034d67d2069b01",
+        "syncedAt": "2026-10-09T13:13:29.724Z"
+      }
     },
     {
       "id": "108eb782",
