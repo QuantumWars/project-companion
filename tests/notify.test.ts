@@ -677,8 +677,10 @@ cliTest("DA-02.5: gate request and card open log the same events with the notifi
 });
 
 /* --------------------- DA-04.1: one record line per decision --------------- */
-// The mkdir EEXIST race (another process making .project-notify first) has no
-// seam to trigger in a test; design 3.3 accepts that window untested (da-t9).
+// The mkdir EEXIST race (another process making .project-notify first): the EM
+// decided in da-t9 (task 1b3763e7) to leave it untested (no seam; a failure
+// there only gives the "record not written" line). Design 3.3 step 1 defines
+// the behaviour (lstat again once).
 
 cliTest("DA-04.1: one record line per decision, once for each outcome", async () => {
   const cases: [NotifyOutcome, StubOverrides, string?][] = [
@@ -689,11 +691,12 @@ cliTest("DA-04.1: one record line per decision, once for each outcome", async ()
   ];
   for (const [outcome, overrides, notifier] of cases) {
     const root = cliProject();
+    const t0 = Date.now();
     const gate = cli(root, ["gate", "request", "prd", "alerts", "--artifact", "docs/a.md"], overrides, notifier);
     const card = cli(root, ["card", "open", "--subject", "alerts", "--ask", "Ship it?", "--kind", "question", "--json"], overrides, notifier);
     eq([gate.code, card.code], [0, 0], outcome);
     if (outcome === "sent") eq((await calls(2)).length, 2, outcome);
-    const cardId = (JSON.parse(card.out) as { id: string }).id;
+    const id = cardId(card.out);
     const model = JSON.parse(cli(root, ["cockpit", "--json"], { notify: "off" }).out) as { needsYou: { id: string; title: string; command: string }[] };
     const want = new Map(model.needsYou.map((d) => [d.id, d] as const));
     const raw = readFileSync(recordPath(root), "utf8").split("\n");
@@ -705,19 +708,22 @@ cliTest("DA-04.1: one record line per decision, once for each outcome", async ()
       eq(Object.keys(line), keys, outcome);
       eq(line.outcome, outcome);
       eq(new Date(line.at).toISOString(), line.at, `${outcome}: at is ISO`);
+      ok(t0 <= Date.parse(line.at) && Date.parse(line.at) <= Date.now(), `${outcome}: at ${line.at} out of range`);
       const expect = want.get(line.id);
       ok(expect, `${outcome}: ${line.id} not in the cockpit`);
       eq([line.title, line.command], [expect!.title, expect!.command], outcome);
     }
-    eq(raw.map((text) => (JSON.parse(text) as RecordLine).id).sort(), ["gate:prd:alerts", cardId].sort(), outcome);
+    eq(raw.map((text) => (JSON.parse(text) as RecordLine).id).sort(), ["gate:prd:alerts", id].sort(), outcome);
   }
 });
 
 cliTest("DA-04.1: a card question with a line break gives exactly one record line", async () => {
   const root = cliProject();
   eq(cli(root, ["card", "open", "--subject", "alerts", "--ask", "Ship\nit?", "--kind", "question"]).code, 0);
-  await calls(1);
-  eq(readFileSync(recordPath(root), "utf8").split("\n").length, 2, "one record line and its final line break");
+  eq((await calls(1)).length, 1, "stub calls");
+  const lines = readFileSync(recordPath(root), "utf8").split("\n");
+  eq(lines.length, 2, "one record line and its final line break");
+  eq((JSON.parse(lines[0]) as RecordLine).title, "Ship\nit?");
 });
 
 /* ---------------------- the CLI with a broken notifier --------------------- */
