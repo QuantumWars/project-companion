@@ -1131,3 +1131,10 @@
 {"id":"2d96e8e4849c:1126","ts":1791498329998,"seq":1126,"actor":"2d96e8e4849c","prev":"e07c2d5329725b1a","kind":"run.progress","data":{"runId":"2f76b4be","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
 {"id":"2d96e8e4849c:1127","ts":1791498363502,"seq":1127,"actor":"2d96e8e4849c","prev":"d4a9d419f98813bf","kind":"run.progress","data":{"runId":"2f76b4be","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
 {"id":"2d96e8e4849c:1128","ts":1791498387429,"seq":1128,"actor":"2d96e8e4849c","prev":"559cafb0bdf2e179","kind":"run.progress","data":{"runId":"2f76b4be","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
+{"id":"2d96e8e4849c:1129","ts":1791498400478,"seq":1129,"actor":"2d96e8e4849c","prev":"22ce859fb35c4d06","kind":"run.progress","data":{"runId":"2f76b4be","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
+{"id":"2d96e8e4849c:1130","ts":1791521372042,"seq":1130,"actor":"2d96e8e4849c","prev":"ca91ddf3f2809e49","kind":"run.progress","data":{"runId":"2f76b4be","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
+{"id":"2d96e8e4849c:1131","ts":1791521378426,"seq":1131,"actor":"2d96e8e4849c","prev":"992f55a621abea0b","componentId":"agent-tooling","kind":"task.moved","data":{"taskId":"cc05f85e","from":"review","to":"done"}}
+{"id":"2d96e8e4849c:1132","ts":1791521379266,"seq":1132,"actor":"2d96e8e4849c","prev":"44b936fe69f82b80","componentId":"notifier","kind":"task.moved","data":{"taskId":"0c8e6562","from":"backlog","to":"in_progress"}}
+{"id":"2d96e8e4849c:1133","ts":1791521381152,"seq":1133,"actor":"2d96e8e4849c","prev":"0521df86c17c5e4a","kind":"run.progress","data":{"runId":"2f76b4be","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
+{"id":"2d96e8e4849c:1134","ts":1791521385841,"seq":1134,"actor":"2d96e8e4849c","prev":"c1d61aae80dc6aba","kind":"run.progress","data":{"runId":"2f76b4be","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
+{"id":"2d96e8e4849c:1135","ts":1791521388354,"seq":1135,"actor":"2d96e8e4849c","prev":"f85c3f3c6e98ec62","kind":"run.progress","data":{"runId":"2f76b4be","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}

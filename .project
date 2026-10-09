@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-08T22:09:24.917Z",
-  "revision": 233,
+  "updatedAt": "2026-10-09T04:49:39.264Z",
+  "revision": 235,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1931,7 +1931,7 @@
       "id": "cc05f85e",
       "title": "Set the notify off switch in the test runner",
       "description": "da-t1. Criteria: DA-03.2 (runner half). Changes: scripts/run-tests.mjs env PROJECT_COMPANION_NOTIFY=off; .gitignore /.project-notify/ (card c-1cb9f6). Verify: npm test -> pass; git check-ignore -q .project-notify/record.jsonl -> exit 0; grep -c 'PROJECT_COMPANION_NOTIFY: \"off\"' scripts/run-tests.mjs -> 1. Lines: ~4 (design 3.4). Depends on: none. Merges first (design 6 step 1).",
-      "status": "review",
+      "status": "done",
       "componentId": "agent-tooling",
       "featureId": "notify-switch",
       "phaseId": "decision-alerts",
@@ -1940,8 +1940,8 @@
       "points": 1,
       "role": "devops-sre",
       "createdAt": "2026-10-08T16:42:12.477Z",
-      "updatedAt": "2026-10-08T21:57:56.708Z",
-      "order": 0,
+      "updatedAt": "2026-10-09T04:49:38.422Z",
+      "order": 39,
       "pr": {
         "number": 10,
         "url": "https://github.com/QuantumWars/project-companion/pull/10",
@@ -1954,7 +1954,7 @@
       "id": "0c8e6562",
       "title": "Start the notify suite with stubEnv and the runner test",
       "description": "da-t2. Criteria: DA-03.2. Tests: 'DA-03.2: the runner sets PROJECT_COMPANION_NOTIFY=off'; 'TH-19: stubEnv refuses an empty or relative path'. Verify: npm test -- notify. Stub must exit at once when STUB_OUT is not set. Lines: ~50 (source: architect hand-off; not in design 3.4; not checked). Depends on: da-t1.",
-      "status": "backlog",
+      "status": "in_progress",
       "componentId": "notifier",
       "featureId": "notify-switch",
       "phaseId": "decision-alerts",
@@ -1963,8 +1963,8 @@
       "points": 1,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.579Z",
-      "updatedAt": "2026-10-08T16:50:04.859Z",
-      "order": 7
+      "updatedAt": "2026-10-09T04:49:39.263Z",
+      "order": 0
     },
     {
       "id": "398705ee",
