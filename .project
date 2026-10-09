@@ -2,6 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
+  "updatedAt": "2026-10-09T18:19:48.002Z",
+  "revision": 295,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2056,7 +2058,7 @@
       "id": "02d2e84e",
       "title": "Report notifier failures without echoing decision text",
       "description": "da-t6. Criteria: DA-02.2, DA-02.5. Tests: 'DA-02.2: a missing notifier gives one stderr line'; 'DA-02.5: the notifier appends no event'; TH-5 NUL and EISDIR tests, in process (they call notifyDecision directly and check the one stderr line and the outcome `failed`; the CLI half of TH-5 is in da-t8, because the CLI call arrives in da-t7). Verify: npm test -- notify. Adds precedence rows 3-5, reason table, control-character cleanup, 'not sent' line. Lines: ~100 (source: architect hand-off; not checked). Depends on: da-t5.\n\nRule from the PR #12 code review (EM, 2026-10-09): build reasons with codeOf, exported from lib/project/notify-record.ts (error code, else error name), so the \"not sent\" and \"record not written\" reasons follow one rule. Do not write a second copy.\n\nWhat da-t5 (PR #15) already did (EM, 2026-10-09): notifyDecision already builds every reason in the design table (failureReason, NotInCockpitError for \"not in the cockpit: <id>\", \"lookup failed: <code>\"), applies controlsToSpaces (exported), and writes the \"record not written\" line. dispatch refuses a relative path itself (row 4). So da-t6 mainly adds the \"project-companion: notification not sent: <reason>\" stderr line for outcome failed (DA-02.2), the DA-02.5 test, and the TH-5 NUL and EISDIR tests; the TH-5 EISDIR test is also the first test of the \"lookup failed: <code>\" reason (proposal from the da-t5 build). The da-t5 failure test checks only that stderr holds no decision text, so adding the line does not break it. QA note: the PROJECT_COMPANION_NOTIF grep also matches the TH-19 forced-cast input line; it is an input to stubEnv, not an env.\n\nAlso from the PR #15 reviews (EM, 2026-10-09): (1) Add tests for the two reasons nothing tests yet (code review L2): \"did not start <folder>\" via notifyDecision(root, GATE, stubEnv(<a folder in TMP>)) in an async test that waits one setImmediate; \"not an absolute path: <value>\" via an exported failureReason(new DispatchError(\"path\", null), \"pc-no-such-notifier\") (a relative notifier is not allowed in a notifyDecision env). (2) Compute controlsToSpaces(reason) once, so the record line and the stderr line hold the same text. (3) Write the \"not sent\" line before record(...), to match design flow 2. (4) The DA-02.5 test is now the real proof of TH-16: notify.ts reaches appendEvent through readCockpit's imports, though the lookup path writes nothing (security F2).",
-      "status": "backlog",
+      "status": "in_progress",
       "componentId": "notifier",
       "featureId": "notify-safety",
       "phaseId": "decision-alerts",
@@ -2065,8 +2067,8 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.986Z",
-      "updatedAt": "2026-10-09T16:43:48.818Z",
-      "order": 11
+      "updatedAt": "2026-10-09T18:19:48.002Z",
+      "order": 0
     },
     {
       "id": "bdcf995e",
@@ -2169,7 +2171,5 @@
   "agents": {
     "byComponent": {}
   },
-  "wip": {},
-  "revision": 294,
-  "updatedAt": "2026-10-09T18:19:44.655Z"
+  "wip": {}
 }
