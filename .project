@@ -2,6 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
+  "updatedAt": "2026-10-09T23:43:14.033Z",
+  "revision": 379,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1863,79 +1865,79 @@
       "id": "d4d5b870",
       "title": "Test runs never show notifications",
       "description": "Story da-s1-quiet-tests. Criteria: DA-03.2. Shard: specs/decision-alerts/stories/da-s1-quiet-tests.md",
-      "status": "backlog",
+      "status": "done",
       "featureId": "notify-switch",
       "phaseId": "decision-alerts",
       "kind": "story",
       "points": 1,
       "createdAt": "2026-10-08T16:41:54.504Z",
-      "updatedAt": "2026-10-08T16:41:54.504Z",
-      "order": 0
+      "updatedAt": "2026-10-09T23:43:09.087Z",
+      "order": 48
     },
     {
       "id": "514a9555",
       "title": "Keep a local record of each notification",
       "description": "Story da-s2-notify-record. Criteria: DA-04.1, DA-04.2. Shard: specs/decision-alerts/stories/da-s2-notify-record.md",
-      "status": "backlog",
+      "status": "done",
       "featureId": "notify-record",
       "phaseId": "decision-alerts",
       "kind": "story",
       "points": 3,
       "createdAt": "2026-10-08T16:41:54.608Z",
-      "updatedAt": "2026-10-08T16:41:54.608Z",
-      "order": 1
+      "updatedAt": "2026-10-09T23:43:10.086Z",
+      "order": 49
     },
     {
       "id": "53017f6b",
       "title": "Decision text never runs as code",
       "description": "Story da-s3-text-stays-data. Criteria: DA-02.4. Shard: specs/decision-alerts/stories/da-s3-text-stays-data.md",
-      "status": "backlog",
+      "status": "done",
       "featureId": "notify-safety",
       "phaseId": "decision-alerts",
       "kind": "story",
       "points": 2,
       "createdAt": "2026-10-08T16:41:54.709Z",
-      "updatedAt": "2026-10-08T16:41:54.709Z",
-      "order": 2
+      "updatedAt": "2026-10-09T23:43:11.061Z",
+      "order": 50
     },
     {
       "id": "12a79a07",
       "title": "Turn alerts off, and send nothing on other systems",
       "description": "Story da-s4-off-switch. Criteria: DA-03.1, DA-03.3, DA-03.4. Shard: specs/decision-alerts/stories/da-s4-off-switch.md",
-      "status": "backlog",
+      "status": "done",
       "featureId": "notify-switch",
       "phaseId": "decision-alerts",
       "kind": "story",
       "points": 2,
       "createdAt": "2026-10-08T16:41:54.809Z",
-      "updatedAt": "2026-10-08T16:41:54.809Z",
-      "order": 3
+      "updatedAt": "2026-10-09T23:43:12.042Z",
+      "order": 51
     },
     {
       "id": "c774e56c",
       "title": "A notifier problem never fails, slows or changes the command",
       "description": "Story da-s5-safe-delivery. Criteria: DA-02.1, DA-02.2, DA-02.3, DA-02.5. Shard: specs/decision-alerts/stories/da-s5-safe-delivery.md",
-      "status": "backlog",
+      "status": "done",
       "featureId": "notify-safety",
       "phaseId": "decision-alerts",
       "kind": "story",
       "points": 5,
       "createdAt": "2026-10-08T16:41:54.910Z",
-      "updatedAt": "2026-10-08T16:41:54.910Z",
-      "order": 4
+      "updatedAt": "2026-10-09T23:43:13.042Z",
+      "order": 52
     },
     {
       "id": "b71d6ec3",
       "title": "Notify the PM of each new decision",
       "description": "Story da-s6-notify-new-decision. Criteria: DA-01.1 to DA-01.6. Shard: specs/decision-alerts/stories/da-s6-notify-new-decision.md",
-      "status": "backlog",
+      "status": "done",
       "featureId": "decision-notify",
       "phaseId": "decision-alerts",
       "kind": "story",
       "points": 5,
       "createdAt": "2026-10-08T16:41:55.007Z",
-      "updatedAt": "2026-10-08T16:41:55.007Z",
-      "order": 5
+      "updatedAt": "2026-10-09T23:43:14.033Z",
+      "order": 53
     },
     {
       "id": "cc05f85e",
@@ -2197,7 +2199,5 @@
   "agents": {
     "byComponent": {}
   },
-  "wip": {},
-  "revision": 373,
-  "updatedAt": "2026-10-09T23:42:47.214Z"
+  "wip": {}
 }

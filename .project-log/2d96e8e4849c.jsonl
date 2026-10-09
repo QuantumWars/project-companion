@@ -3252,3 +3252,11 @@
 {"id":"2d96e8e4849c:3243","ts":1791589329681,"seq":3243,"actor":"2d96e8e4849c","prev":"7c228caba41d7b0e","kind":"task.pr_linked","data":{"taskId":"5bf8eb1b","number":8,"url":"https://github.com/QuantumWars/project-companion/pull/8","state":"MERGED","headSha":"cc56648aef8271a40b192db026d10063d68d1bbb"}}
 {"id":"2d96e8e4849c:3244","ts":1791589333965,"seq":3244,"actor":"2d96e8e4849c","prev":"2de82fb7ee539515","kind":"run.progress","data":{"runId":"2f76b4be","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
 {"id":"2d96e8e4849c:3245","ts":1791589342564,"seq":3245,"actor":"2d96e8e4849c","prev":"bdc203a389405c88","kind":"run.progress","data":{"runId":"2f76b4be","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
+{"id":"2d96e8e4849c:3246","ts":1791589368947,"seq":3246,"actor":"2d96e8e4849c","prev":"843eb0c4f65ce3b8","kind":"run.progress","data":{"runId":"2f76b4be","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
+{"id":"2d96e8e4849c:3247","ts":1791589383037,"seq":3247,"actor":"2d96e8e4849c","prev":"25718fe67b4b209a","kind":"run.progress","data":{"runId":"2f76b4be","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
+{"id":"2d96e8e4849c:3248","ts":1791589389095,"seq":3248,"actor":"2d96e8e4849c","prev":"4bec82e4e178b344","kind":"task.moved","data":{"taskId":"d4d5b870","from":"backlog","to":"done"}}
+{"id":"2d96e8e4849c:3249","ts":1791589390094,"seq":3249,"actor":"2d96e8e4849c","prev":"8d128844fe00bc0b","kind":"task.moved","data":{"taskId":"514a9555","from":"backlog","to":"done"}}
+{"id":"2d96e8e4849c:3250","ts":1791589391070,"seq":3250,"actor":"2d96e8e4849c","prev":"a336b08dbc6145d0","kind":"task.moved","data":{"taskId":"53017f6b","from":"backlog","to":"done"}}
+{"id":"2d96e8e4849c:3251","ts":1791589392050,"seq":3251,"actor":"2d96e8e4849c","prev":"02145d4bf550aecb","kind":"task.moved","data":{"taskId":"12a79a07","from":"backlog","to":"done"}}
+{"id":"2d96e8e4849c:3252","ts":1791589393051,"seq":3252,"actor":"2d96e8e4849c","prev":"a5b88f25da9c804c","kind":"task.moved","data":{"taskId":"c774e56c","from":"backlog","to":"done"}}
+{"id":"2d96e8e4849c:3253","ts":1791589394041,"seq":3253,"actor":"2d96e8e4849c","prev":"e5fd68afa4c3736a","kind":"task.moved","data":{"taskId":"b71d6ec3","from":"backlog","to":"done"}}
