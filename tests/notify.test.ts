@@ -1,9 +1,12 @@
 import { spawnSync } from "node:child_process";
-import { appendFileSync, chmodSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import {
+  appendFileSync, chmodSync, closeSync, constants, existsSync, lstatSync, mkdirSync, mkdtempSync, openSync, readdirSync, readFileSync, readSync, realpathSync,
+  rmSync, symlinkSync, writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 
-import { appendRecord, NOTIFY_DIR, NOTIFY_RECORD, readRecord, RecordError, recordPath, type RecordLine } from "@/lib/project/notify-record";
+import { appendRecord, codeOf, NOTIFY_DIR, NOTIFY_RECORD, readRecord, RecordError, recordPath, type RecordLine } from "@/lib/project/notify-record";
 
 import { eq, ok, runAll, test, throws } from "./harness";
 
@@ -125,6 +128,19 @@ test("TH-13: .gitignore is written before the record is opened", () => {
   eq(readFileSync(join(root, NOTIFY_DIR, ".gitignore"), "utf8"), "*\n");
 });
 
+test("TH-13: a .gitignore error other than EEXIST stops the append (skipped as root)", () => {
+  if (process.getuid?.() === 0) return; // root ignores folder modes, so the write would not fail
+  const root = project();
+  const folder = join(root, NOTIFY_DIR);
+  mkdirSync(folder, { mode: 0o700 });
+  writeFileSync(recordPath(root), "", { mode: 0o600 });
+  chmodSync(folder, 0o500);
+  try {
+    eq(recordError(() => appendRecord(root, LINE)).message, `EACCES ${join(folder, ".gitignore")}`);
+    eq(readFileSync(recordPath(root), "utf8"), "", "a line was appended");
+  } finally { chmodSync(folder, 0o700); }
+});
+
 test("TH-13: a dangling .gitignore symlink is kept, its target is not made, and the append happens", () => {
   const root = project();
   const target = join(root, "made-through-the-link");
@@ -174,6 +190,21 @@ test("TH-21: a symlinked .project-notify gives ENOTDIR and makes nothing in its 
   const file = project(); // a regular file named .project-notify gives the same reason
   writeFileSync(join(file, NOTIFY_DIR), "");
   eq(recordError(() => appendRecord(file, LINE)).message, `ENOTDIR ${join(file, NOTIFY_DIR)}`);
+});
+
+test("TH-8: a FIFO at record.jsonl gives EFTYPE and writes nothing (skipped without mkfifo)", () => {
+  const root = project();
+  mkdirSync(join(root, NOTIFY_DIR), { mode: 0o700 });
+  const made = spawnSync("mkfifo", [recordPath(root)]);
+  if (made.error || made.status !== 0) return;
+  // Open a reader first (O_NONBLOCK, so this never waits). Then no open of the FIFO can wait: a regression fails, it does not hang.
+  const reader = openSync(recordPath(root), constants.O_RDONLY | constants.O_NONBLOCK);
+  try {
+    eq(recordError(() => appendRecord(root, LINE)).message, `EFTYPE ${recordPath(root)}`);
+    let bytes = 0;
+    try { bytes = readSync(reader, Buffer.alloc(64)); } catch (error) { if (codeOf(error) !== "EAGAIN") throw error; }
+    eq(bytes, 0, "bytes reached the FIFO");
+  } finally { closeSync(reader); }
 });
 
 runAll().then((failed) => {
