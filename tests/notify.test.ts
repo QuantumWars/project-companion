@@ -1,7 +1,12 @@
 import { spawnSync } from "node:child_process";
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import {
+  appendFileSync, chmodSync, closeSync, constants, existsSync, lstatSync, mkdirSync, mkdtempSync, openSync, readdirSync, readFileSync, readSync, realpathSync,
+  rmSync, symlinkSync, writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, resolve } from "node:path";
+
+import { appendRecord, codeOf, NOTIFY_DIR, NOTIFY_RECORD, readRecord, RecordError, recordPath, type RecordLine } from "@/lib/project/notify-record";
 
 import { eq, ok, runAll, test, throws } from "./harness";
 
@@ -88,6 +93,118 @@ test("stub: saves each argument with a NUL, then writes <pid>.done", () => {
     ok(existsSync(join(STUB_OUT, `${run.pid}.done`)), "no <pid>.done");
     eq(readdirSync(STUB_OUT).sort(), [`${run.pid}.argv`, `${run.pid}.done`]);
   } finally { for (const f of readdirSync(STUB_OUT)) rmSync(join(STUB_OUT, f)); }
+});
+
+/* ------------------------- the notification record ------------------------- */
+
+/** A new empty folder in TMP, so the suite's clean-up removes it. */
+const project = (prefix = "project-"): string => mkdtempSync(join(TMP, prefix));
+const LINE: RecordLine = { id: "gate:prd:x", at: "2026-10-09T00:00:00.000Z", title: "Approve x", command: "/devolps:approve prd x", outcome: "off" };
+const recordError = (run: () => unknown): RecordError => {
+  try { run(); } catch (error) { if (error instanceof RecordError) return error; throw error; }
+  throw new Error("expected a RecordError, but nothing was thrown");
+};
+
+test("DA-04.2: git ignores the record path, outside .project-cache/ and .project-log/", () => {
+  eq([NOTIFY_RECORD, recordPath("/r")], [".project-notify/record.jsonl", "/r/.project-notify/record.jsonl"]);
+  const run = spawnSync("git", ["check-ignore", "-v", NOTIFY_RECORD], { encoding: "utf8" });
+  eq([run.error?.message, run.status], [undefined, 0], `git check-ignore: ${run.stderr}`);
+  ok(/^\.gitignore:\d+:\/\.project-notify\/\t\.project-notify\/record\.jsonl\n$/.test(run.stdout), `not the root .gitignore rule: ${run.stdout}`);
+  ok(![".project-cache", ".project-log"].includes(NOTIFY_RECORD.split("/")[0]), "the record is inside the cache or the event log");
+});
+
+test("TH-13: the first append writes .gitignore \"*\\n\"; the folder is 0o700 and the record 0o600", () => {
+  const root = project();
+  appendRecord(root, LINE);
+  eq(readFileSync(join(root, NOTIFY_DIR, ".gitignore"), "utf8"), "*\n");
+  eq([lstatSync(join(root, NOTIFY_DIR)).mode & 0o777, lstatSync(recordPath(root)).mode & 0o777], [0o700, 0o600]);
+  eq(readRecord(root), [LINE]);
+});
+
+test("TH-13: .gitignore is written before the record is opened", () => {
+  const root = project();
+  mkdirSync(recordPath(root), { recursive: true }); // a folder at record.jsonl makes the open fail
+  eq(recordError(() => appendRecord(root, LINE)).message, `EISDIR ${recordPath(root)}`);
+  eq(readFileSync(join(root, NOTIFY_DIR, ".gitignore"), "utf8"), "*\n");
+});
+
+test("TH-13: a .gitignore error other than EEXIST stops the append (skipped as root)", () => {
+  if (process.getuid?.() === 0) return; // root ignores folder modes, so the write would not fail
+  const root = project();
+  const folder = join(root, NOTIFY_DIR);
+  mkdirSync(folder, { mode: 0o700 });
+  writeFileSync(recordPath(root), "", { mode: 0o600 });
+  chmodSync(folder, 0o500);
+  try {
+    eq(recordError(() => appendRecord(root, LINE)).message, `EACCES ${join(folder, ".gitignore")}`);
+    eq(readFileSync(recordPath(root), "utf8"), "", "a line was appended");
+  } finally { chmodSync(folder, 0o700); }
+});
+
+test("TH-13: a dangling .gitignore symlink is kept, its target is not made, and the append happens", () => {
+  const root = project();
+  const target = join(root, "made-through-the-link");
+  mkdirSync(join(root, NOTIFY_DIR), { mode: 0o700 });
+  symlinkSync(target, join(root, NOTIFY_DIR, ".gitignore"));
+  appendRecord(root, LINE);
+  eq(readRecord(root), [LINE]);
+  ok(!existsSync(target), "the symlink target was created");
+  ok(lstatSync(join(root, NOTIFY_DIR, ".gitignore")).isSymbolicLink(), "the symlink was replaced");
+});
+
+test("TH-15: a title with line breaks gives exactly one record line", () => {
+  const root = project();
+  const title = 'one\ntwo\r\n{"id":"forged","outcome":"sent"}';
+  appendRecord(root, { ...LINE, title });
+  eq(readFileSync(recordPath(root), "utf8").split("\n").length, 2, "one line and its final line break");
+  eq(readRecord(root).map((l) => l.title), [title]);
+});
+
+test("record line: keys in the design order, reason only on failed; readRecord skips bad lines", () => {
+  const root = project();
+  appendRecord(root, { outcome: "sent", command: null, title: null, at: "t", id: "c-1" });
+  appendRecord(root, { ...LINE, outcome: "failed", reason: "ENOENT /x" });
+  appendRecord(root, { ...LINE, reason: "dropped" } as RecordLine);
+  appendFileSync(recordPath(root), "not json\n");
+  eq(readRecord(root).map((l) => Object.keys(l).join()), ["id,at,title,command,outcome", "id,at,title,command,outcome,reason", "id,at,title,command,outcome"]);
+});
+
+test("TH-21: a symlinked record.jsonl gives ELOOP and writes nothing", () => {
+  const root = project();
+  const outside = join(project("outside-"), "target.txt");
+  writeFileSync(outside, "keep\n");
+  mkdirSync(join(root, NOTIFY_DIR), { mode: 0o700 });
+  symlinkSync(outside, recordPath(root));
+  const error = recordError(() => appendRecord(root, LINE));
+  eq([error.code, error.target, error.message], ["ELOOP", recordPath(root), `ELOOP ${recordPath(root)}`]);
+  eq(readFileSync(outside, "utf8"), "keep\n");
+});
+
+test("TH-21: a symlinked .project-notify gives ENOTDIR and makes nothing in its target", () => {
+  const root = project();
+  const outside = project("outside-");
+  symlinkSync(outside, join(root, NOTIFY_DIR));
+  const error = recordError(() => appendRecord(root, LINE));
+  eq([error.code, error.target, error.message], ["ENOTDIR", join(root, NOTIFY_DIR), `ENOTDIR ${join(root, NOTIFY_DIR)}`]);
+  eq(readdirSync(outside), []);
+  const file = project(); // a regular file named .project-notify gives the same reason
+  writeFileSync(join(file, NOTIFY_DIR), "");
+  eq(recordError(() => appendRecord(file, LINE)).message, `ENOTDIR ${join(file, NOTIFY_DIR)}`);
+});
+
+test("TH-8: a FIFO at record.jsonl gives EFTYPE and writes nothing (skipped without mkfifo)", () => {
+  const root = project();
+  mkdirSync(join(root, NOTIFY_DIR), { mode: 0o700 });
+  const made = spawnSync("mkfifo", [recordPath(root)]);
+  if (made.error || made.status !== 0) return;
+  // Open a reader first (O_NONBLOCK, so this never waits). Then no open of the FIFO can wait: a regression fails, it does not hang.
+  const reader = openSync(recordPath(root), constants.O_RDONLY | constants.O_NONBLOCK);
+  try {
+    eq(recordError(() => appendRecord(root, LINE)).message, `EFTYPE ${recordPath(root)}`);
+    let bytes = 0;
+    try { bytes = readSync(reader, Buffer.alloc(64)); } catch (error) { if (codeOf(error) !== "EAGAIN") throw error; }
+    eq(bytes, 0, "bytes reached the FIFO");
+  } finally { closeSync(reader); }
 });
 
 runAll().then((failed) => {
