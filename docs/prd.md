@@ -429,4 +429,4 @@ Paths: lib/project/notify-record.ts
 Verify: npm test -- notify
 
 - [ ] DA-04.1 When `gate request` or `card open` records a decision, the CLI shall add one line of JSON to the notification record with the decision id, the time, the title, the command and the outcome `sent`, `off`, `unsupported` or `failed`. — We can count which decisions were notified, and why the others were not.
-- [ ] DA-04.2 The notification record shall be a file in the project that git ignores, outside `.project-cache/` and `.project-log/`. — The record stays on this Mac, is not committed, and is not lost when the cache is cleaned.
+- [x] DA-04.2 The notification record shall be a file in the project that git ignores, outside `.project-cache/` and `.project-log/`. — The record stays on this Mac, is not committed, and is not lost when the cache is cleaned.
