@@ -198,6 +198,18 @@ command that answers it, with a copy button. The terminal gets the same model fr
 The development server listens on 127.0.0.1 only, and the cockpit's API accepts
 reads only.
 
+**Decision alerts.** A `gate request` or a `card open` sends one macOS
+notification with the decision's title, its command and the project name —
+the same text the cockpit shows. Nothing else sends one. Decision alerts
+are macOS only: on any other system nothing is sent, and the command
+runs the same either way. Turn alerts off for a shell with
+`PROJECT_COMPANION_NOTIFY=off`; the value must be exactly `off`. macOS
+Focus still decides when a banner shows on screen. A notifier problem
+never changes the command's exit code or its output; it writes one
+line to standard error instead. Each attempt adds one line to
+`.project-notify/record.jsonl`, a local record of what happened —
+sent, off, unsupported or failed — that is not checked in.
+
 ## How a project is stored
 
 ```
