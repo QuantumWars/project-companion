@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-09T22:27:25.861Z",
-  "revision": 337,
+  "updatedAt": "2026-10-09T22:48:19.791Z",
+  "revision": 339,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2113,7 +2113,7 @@
       "points": 3,
       "role": "qa-engineer",
       "createdAt": "2026-10-08T16:42:13.187Z",
-      "updatedAt": "2026-10-09T22:27:25.861Z",
+      "updatedAt": "2026-10-09T22:48:19.791Z",
       "order": 0,
       "pr": {
         "number": 18,
