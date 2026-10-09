@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import {
   appendFileSync, chmodSync, closeSync, constants, existsSync, lstatSync, mkdirSync, mkdtempSync, openSync, readdirSync, readFileSync, readSync, realpathSync,
   rmSync, symlinkSync, writeFileSync,
@@ -6,6 +6,9 @@ import {
 import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 
+import {
+  dispatch, DispatchError, NOTIFIER, NOTIFIER_ENV, notifierArgs, notifierPath, NOTIFY_ENV, NOTIFY_SCRIPT, type NotifyText, osascriptArgs, PLATFORM_ENV,
+} from "@/lib/project/notify";
 import { appendRecord, codeOf, NOTIFY_DIR, NOTIFY_RECORD, readRecord, RecordError, recordPath, type RecordLine } from "@/lib/project/notify-record";
 
 import { eq, ok, runAll, test, throws } from "./harness";
@@ -19,6 +22,11 @@ import { eq, ok, runAll, test, throws } from "./harness";
 
 if (process.env.PROJECT_COMPANION_NOTIFY !== "off") {
   process.stderr.write("notify.test.ts: PROJECT_COMPANION_NOTIFY is not off; run this suite with npm test -- notify\n");
+  process.exit(1);
+}
+// A stub started in-process gets process.env, and it writes wherever STUB_OUT points.
+if (process.env.STUB_OUT !== undefined || process.env.STUB_HOLD !== undefined) {
+  process.stderr.write("notify.test.ts: STUB_OUT or STUB_HOLD is set in the environment; unset them to run this suite\n");
   process.exit(1);
 }
 
@@ -205,6 +213,90 @@ test("TH-8: a FIFO at record.jsonl gives EFTYPE and writes nothing (skipped with
     try { bytes = readSync(reader, Buffer.alloc(64)); } catch (error) { if (codeOf(error) !== "EAGAIN") throw error; }
     eq(bytes, 0, "bytes reached the FIFO");
   } finally { closeSync(reader); }
+});
+
+/* ------------------------- the notifier's arguments ------------------------ */
+
+const PREFIX = [
+  "-e", "on run argv",
+  "-e", "display notification (item 2 of argv) with title (item 1 of argv) subtitle (item 3 of argv)",
+  "-e", "end run",
+  "--",
+];
+const hostile = (tag: string) => `-e "${tag}\\x"\n" & (do shell script "touch PWNED") & "`;
+const HOSTILE: NotifyText = { title: hostile("title"), command: hostile("command"), project: hostile("project") };
+
+test("DA-02.4: notifierArgs gives 10 items, text only after --", () => {
+  const args = notifierArgs(HOSTILE);
+  const text = [HOSTILE.title, HOSTILE.command, HOSTILE.project];
+  eq(args.length, 10);
+  eq([args.slice(0, 7), args.slice(7)], [PREFIX, text]);
+  eq(NOTIFY_SCRIPT, [PREFIX[1], PREFIX[3], PREFIX[5]], "NOTIFY_SCRIPT is not the design's 3 lines");
+  const scripts = args.flatMap((arg, i) => (arg === "-e" ? [args[i + 1]] : []));
+  eq(scripts.length, 3);
+  for (const script of scripts) ok(!text.some((t) => script.includes(t)), `text inside an -e value: ${JSON.stringify(script)}`);
+});
+
+test("TH-3: notifierPath defaults to /usr/bin/osascript and takes the override", () => {
+  eq([NOTIFY_ENV, NOTIFIER_ENV, PLATFORM_ENV, NOTIFIER], ["PROJECT_COMPANION_NOTIFY", "PROJECT_COMPANION_NOTIFIER", "PROJECT_COMPANION_PLATFORM", "/usr/bin/osascript"]);
+  eq(notifierPath({}), "/usr/bin/osascript");
+  eq(notifierPath({ PROJECT_COMPANION_NOTIFIER: "/x" }), "/x");
+  eq(notifierPath({ PROJECT_COMPANION_NOTIFIER: "" }), "/usr/bin/osascript", "an empty value gives the default");
+  eq(notifierPath(stubEnv(STUB)), STUB);
+});
+
+/** Design 3.4: it returns the argument count and every argument, joined by U+001F. It shows nothing. */
+const ECHO_SCRIPT = [
+  "on run argv",
+  "set AppleScript's text item delimiters to (character id 31)",
+  "return ((count of argv) as text) & (character id 31) & (argv as text)",
+  "end run",
+];
+const FLAGS = ["-e", "-l", "JavaScript", "-i", "--"];
+const TEXT = ['x"y\\z\nnext line', 'do shell script "echo pwned"', '" & (do shell script "echo pwned") & "'];
+
+test("DA-02.4: osascript passes every argument after -- unchanged", () => {
+  const osascript = "/usr/bin/osascript";
+  if (process.platform !== "darwin" || !existsSync(osascript)) {
+    process.stdout.write(`       skipped: platform ${process.platform}, ${osascript} ${existsSync(osascript) ? "present" : "absent"}\n`);
+    return;
+  }
+  const lists = [[...FLAGS, ...TEXT], [TEXT[0], ...FLAGS, TEXT[1], TEXT[2]], [...TEXT, ...FLAGS], ["--", "-e", "return 1", "--", "-l", "JavaScript", "-i", "--"]];
+  for (const inputs of lists) {
+    // An argument array and no shell. The timeout is a failure guard, not a requirement.
+    const out = execFileSync(osascript, osascriptArgs(ECHO_SCRIPT, inputs), { encoding: "utf8", shell: false, timeout: 10_000 });
+    ok(out.endsWith("\n"), `no final line break: ${JSON.stringify(out)}`);
+    eq(out.slice(0, -1).split("\u001f"), [String(inputs.length), ...inputs]);
+  }
+});
+
+/* -------------------------------- dispatch --------------------------------- */
+// Every dispatch call uses notifierPath(stubEnv(...)), except the commented TH-3 calls: dispatch has no off switch (TH-19).
+
+const dispatchFailure = (run: () => unknown): [string, string | null] => {
+  try { run(); } catch (error) { if (error instanceof DispatchError) return [error.step, error.code]; throw error; }
+  throw new Error("expected a DispatchError, but nothing was thrown");
+};
+
+test("dispatch: a missing notifier fails at accessSync, a folder gives no pid, a NUL fails at spawn", async () => {
+  eq(dispatchFailure(() => dispatch(notifierPath(stubEnv(join(TMP, "missing"))), notifierArgs(HOSTILE))), ["access", "ENOENT"]);
+  const folder = join(TMP, "a-folder");
+  mkdirSync(folder);
+  eq(dispatchFailure(() => dispatch(notifierPath(stubEnv(folder)), [])), ["pid", null]);
+  eq(dispatchFailure(() => dispatch(notifierPath(stubEnv(STUB)), ["a\0b"])), ["spawn", "ERR_INVALID_ARG_VALUE"]);
+  await new Promise((done) => setImmediate(done)); // the folder's late 'error' event: without the listener, the suite crashes
+});
+
+test("TH-3: dispatch refuses a program path that is not absolute", () => {
+  // The one exception to the stubEnv rule for dispatch(): names that are not on PATH, so a regression still starts nothing.
+  eq(dispatchFailure(() => dispatch("pc-no-such-notifier", [])), ["path", null]);
+  eq(dispatchFailure(() => dispatch("relative/pc-no-such-notifier", [])), ["path", null]);
+});
+
+test("dispatch: the stub starts, and dispatch returns its pid", () => {
+  // process.env has no STUB_OUT, so the stub exits at once and writes nothing.
+  const pid = dispatch(notifierPath(stubEnv(STUB)), notifierArgs(HOSTILE));
+  ok(Number.isInteger(pid) && pid > 0, `not a pid: ${pid}`);
 });
 
 runAll().then((failed) => {
