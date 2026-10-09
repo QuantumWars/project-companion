@@ -2,6 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
+  "updatedAt": "2026-10-09T16:24:49.521Z",
+  "revision": 279,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2033,7 +2035,7 @@
       "id": "108eb782",
       "title": "Add notifyDecision with the off switch and platform check",
       "description": "da-t5. Criteria: DA-03.1, DA-03.3 (in-process half). Tests: 'DA-03.1: off passes no notification'; 'DA-03.3: linux and win32 pass no notification'. Verify: npm test -- notify. Adds decisionText, notifyDecision (precedence rows 1, 2, 6), catch that records failed, 'record not written' line. Lines: ~95 (source: architect hand-off; not checked). Depends on: da-t3, da-t4.\n\nRule from the PR #12 reviews (code review note, security N2; EM, 2026-10-09): appendRecord throws only RecordError, with fields code and target. Build the \"record not written\" reason as `${e.code} ${e.target}`, never from e.message, then replace control characters as the reason table says (U+0000-U+001F, U+007F-U+009F). The target holds the project root path, which can contain the folder name. readRecord must not get a non-test caller until it has appendRecord's checks (security F2).\n\nNotes from the da-t4 build and the PR #14 reviews (EM, 2026-10-09): (1) dispatch(program, args) returns the pid (outcome sent) or throws DispatchError with step \"path\" | \"access\" | \"spawn\" | \"pid\" and code (never error.message). Map: path -> `not an absolute path: <value>`, access -> `<code> <path>`, spawn -> `<code>`, pid -> `did not start <path>` (design reason table). (2) Since PR #14, dispatch itself refuses a program path that is not absolute (TH-3). notifyDecision still applies design row 4 (isAbsolute(notifierPath(env))) first. Test the bare-name case with a name that is not on PATH (for example pc-no-such-notifier), never with osascript, so a regression starts nothing; that is the one allowed exception to the stubEnv rule and needs a one-line comment. (3) notifierPath takes Partial<NodeJS.ProcessEnv> because Next.js types make NODE_ENV required. (4) In-process tests of notifyDecision must use the returned outcome and the record line as the witness, never the stub's output: dispatch takes no env, so the child inherits process.env (no STUB_OUT) and the stub writes nothing in process.",
-      "status": "backlog",
+      "status": "in_progress",
       "componentId": "notifier",
       "featureId": "notify-switch",
       "phaseId": "decision-alerts",
@@ -2042,8 +2044,8 @@
       "points": 2,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.883Z",
-      "updatedAt": "2026-10-09T13:20:39.428Z",
-      "order": 10
+      "updatedAt": "2026-10-09T16:24:49.521Z",
+      "order": 0
     },
     {
       "id": "02d2e84e",
@@ -2162,7 +2164,5 @@
   "agents": {
     "byComponent": {}
   },
-  "wip": {},
-  "revision": 278,
-  "updatedAt": "2026-10-09T16:24:46.141Z"
+  "wip": {}
 }
