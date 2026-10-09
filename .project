@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-09T08:47:23.901Z",
-  "revision": 246,
+  "updatedAt": "2026-10-09T09:21:53.073Z",
+  "revision": 247,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2084,7 +2084,7 @@
     {
       "id": "1b3763e7",
       "title": "Prove one record line per decision for each outcome",
-      "description": "da-t9. Criteria: DA-04.1. Test: 'DA-04.1: one record line per decision, once for each outcome' (through the CLI, exact key order; a multi-line question gives one line). Verify: npm test -- notify. Lines: ~40 tests (source: architect hand-off; not checked). Depends on: da-t7.",
+      "description": "da-t9. Criteria: DA-04.1. Test: 'DA-04.1: one record line per decision, once for each outcome' (through the CLI, exact key order; a multi-line question gives one line). Verify: npm test -- notify. Lines: ~40 tests (source: architect hand-off; not checked). Depends on: da-t7.\n\nOpen paths from the da-t3 build (backend-engineer hand-off; EM, 2026-10-09): two appendRecord paths in lib/project/notify-record.ts have no test yet. (a) Writing .project-notify/.gitignore fails with an error other than EEXIST, so nothing is appended (needs a read-only folder; skip the test when running as root, which ignores the mode). (b) mkdir gives EEXIST because another process made the folder at the same time, then lstat runs once more. Decide here whether to cover (a); (b) is hard to test without a seam and may stay untested with a reason.",
       "status": "backlog",
       "componentId": "notifier",
       "featureId": "notify-record",
@@ -2094,7 +2094,7 @@
       "points": 1,
       "role": "qa-engineer",
       "createdAt": "2026-10-08T16:42:13.291Z",
-      "updatedAt": "2026-10-08T16:50:09.013Z",
+      "updatedAt": "2026-10-09T09:21:53.072Z",
       "order": 14
     },
     {
