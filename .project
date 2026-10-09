@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-09T21:32:36.326Z",
-  "revision": 315,
+  "updatedAt": "2026-10-09T21:48:44.061Z",
+  "revision": 317,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2090,7 +2090,7 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:13.087Z",
-      "updatedAt": "2026-10-09T21:32:36.325Z",
+      "updatedAt": "2026-10-09T21:48:44.061Z",
       "order": 0,
       "pr": {
         "number": 17,
