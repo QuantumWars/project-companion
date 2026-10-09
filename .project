@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-09T21:48:44.061Z",
-  "revision": 317,
+  "updatedAt": "2026-10-09T22:48:19.791Z",
+  "revision": 339,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1952,14 +1952,14 @@
       "points": 1,
       "role": "devops-sre",
       "createdAt": "2026-10-08T16:42:12.477Z",
-      "updatedAt": "2026-10-09T21:20:07.517Z",
+      "updatedAt": "2026-10-09T22:09:25.812Z",
       "order": 39,
       "pr": {
         "number": 10,
         "url": "https://github.com/QuantumWars/project-companion/pull/10",
         "state": "MERGED",
         "headSha": "9f0d1accc72ef0b42722a4c4444528a449e96615",
-        "syncedAt": "2026-10-09T21:20:07.515Z"
+        "syncedAt": "2026-10-09T22:09:25.811Z"
       }
     },
     {
@@ -1975,14 +1975,14 @@
       "points": 1,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.579Z",
-      "updatedAt": "2026-10-09T21:20:08.163Z",
+      "updatedAt": "2026-10-09T22:09:26.342Z",
       "order": 40,
       "pr": {
         "number": 11,
         "url": "https://github.com/QuantumWars/project-companion/pull/11",
         "state": "MERGED",
         "headSha": "a7018441c070d605e6372bef65b2079ac2ccd4eb",
-        "syncedAt": "2026-10-09T21:20:08.162Z"
+        "syncedAt": "2026-10-09T22:09:26.341Z"
       }
     },
     {
@@ -1998,14 +1998,14 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.680Z",
-      "updatedAt": "2026-10-09T21:20:09.094Z",
+      "updatedAt": "2026-10-09T22:09:26.961Z",
       "order": 41,
       "pr": {
         "number": 12,
         "url": "https://github.com/QuantumWars/project-companion/pull/12",
         "state": "MERGED",
         "headSha": "d40d5237e42c6e109a809950bffa6dac50831dd7",
-        "syncedAt": "2026-10-09T21:20:09.093Z"
+        "syncedAt": "2026-10-09T22:09:26.959Z"
       }
     },
     {
@@ -2021,14 +2021,14 @@
       "points": 2,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.781Z",
-      "updatedAt": "2026-10-09T21:20:09.901Z",
+      "updatedAt": "2026-10-09T22:09:27.527Z",
       "order": 42,
       "pr": {
         "number": 14,
         "url": "https://github.com/QuantumWars/project-companion/pull/14",
         "state": "MERGED",
         "headSha": "c83bd383f8aee3f5555e7e14e428c38a676a9ef5",
-        "syncedAt": "2026-10-09T21:20:09.900Z"
+        "syncedAt": "2026-10-09T22:09:27.526Z"
       }
     },
     {
@@ -2044,14 +2044,14 @@
       "points": 2,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.883Z",
-      "updatedAt": "2026-10-09T21:20:10.570Z",
+      "updatedAt": "2026-10-09T22:09:28.108Z",
       "order": 43,
       "pr": {
         "number": 15,
         "url": "https://github.com/QuantumWars/project-companion/pull/15",
         "state": "MERGED",
         "headSha": "24563c227b039384a5d0060c3c48a44f3ce3cd15",
-        "syncedAt": "2026-10-09T21:20:10.569Z"
+        "syncedAt": "2026-10-09T22:09:28.107Z"
       }
     },
     {
@@ -2067,21 +2067,21 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.986Z",
-      "updatedAt": "2026-10-09T21:20:11.114Z",
+      "updatedAt": "2026-10-09T22:09:29.173Z",
       "order": 44,
       "pr": {
         "number": 16,
         "url": "https://github.com/QuantumWars/project-companion/pull/16",
         "state": "MERGED",
         "headSha": "b92eb6a987d8a0588f7c574a76ad22ad780993d4",
-        "syncedAt": "2026-10-09T21:20:11.113Z"
+        "syncedAt": "2026-10-09T22:09:29.172Z"
       }
     },
     {
       "id": "bdcf995e",
       "title": "Notify the PM from gate request and card open",
       "description": "da-t7. Criteria: DA-01.1 to DA-01.6; DA-03.4 (README, rule 12; tech-writer writes the paragraph at /devolps:pr step 2). Tests: one 'DA-01.n: ...' test per criterion; 'DA-03.4: README names the commands, the off switch and macOS only'. Verify: npm test -- notify. Adds 1 import and 2 calls in cli/index.ts. Lines: ~101 (cli 4 + README 12 from design 3.4; tests 85 from architect hand-off, not checked). Over 100 because rule 12 puts the README paragraph in this change. Depends on: da-t1 merged, da-t6. Real banners start on this Mac once built here; merge da-t8 right after.\n\nNotes from the PR #16 reviews (EM, 2026-10-09): (1) The CLI only calls notifyDecision; it writes no \"notification not sent\" line of its own (notifyDecision writes it), or stderr gets it twice. (2) Add a CLI-level DA-02.5 check: `gate request` and `card open` with notify on (stubEnv) and with it off give the same event-log lines, because the in-process DA-02.5 test does not cover the call sites (security F4). (3) Every CLI subprocess env in tests comes from stubEnv(...) (with overrides only for off and the platform); never run the CLI with process.env and notify on.",
-      "status": "review",
+      "status": "done",
       "componentId": "agent-tooling",
       "featureId": "decision-notify",
       "phaseId": "decision-alerts",
@@ -2090,21 +2090,21 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:13.087Z",
-      "updatedAt": "2026-10-09T21:48:44.061Z",
-      "order": 0,
+      "updatedAt": "2026-10-09T22:09:30.154Z",
+      "order": 45,
       "pr": {
         "number": 17,
         "url": "https://github.com/QuantumWars/project-companion/pull/17",
-        "state": "OPEN",
-        "headSha": "91f5282b6e42aab1a8b01f1e2854efe66c3e0fb8",
-        "syncedAt": "2026-10-09T21:32:36.324Z"
+        "state": "MERGED",
+        "headSha": "2519dd4c6e53881bd3b4be3a44c9c6aab3a24078",
+        "syncedAt": "2026-10-09T22:09:30.154Z"
       }
     },
     {
       "id": "6042a875",
       "title": "Prove a failed or slow notifier leaves the CLI unchanged",
       "description": "da-t8. Criteria: DA-02.1, DA-02.3; finishes DA-02.4 (stub half), DA-03.3 (CLI half) and the CLI half of TH-5. Tests: 'DA-02.1: same exit code and stdout as off'; 'DA-02.3: the CLI exits while the notifier waits'; 'DA-02.4: a hostile card question reaches the stub unchanged'; 'DA-03.3: linux and win32 give the same output as off'; 'TH-5: a folder in place of an approved artifact gives one stderr line and output as with off' (design 3.4, design.md:450-454); TH-21 CLI test. Verify: npm test -- notify. Lines: ~100 tests (source: architect hand-off ~90, plus ~10 for the TH-5 CLI test; not checked). Depends on: da-t7.\n\nTest rules from the PR #11 code review (notes, not findings; EM, 2026-10-09; also apply to da-t7): (1) Wait for <pid>.done before a test ends, and delete stub files with { force: true }. The STUB_OUT folder is shared, so a detached stub's late files can otherwise make the next test flaky. (2) DA-02.3: when the CLI exits, check that <pid>.argv exists and <pid>.done does not, then release the hold. Nothing in PR #11 tests the stub's wait. (3) The \"off\" comparison runs for DA-02.1 and DA-03.3 set PROJECT_COMPANION_NOTIFY: \"off\" in their own env (use stubEnv(STUB, { notify: \"off\" }) since PR #15). (4) The stub's hold loop stops after 600 polls (about 30 s at 0.05 s each); keep the test's guard timeout below that.\n\nNotes from the PR #16 code review (EM, 2026-10-09): (5) In the DA-02.1 run with a missing notifier, also check that stderr is exactly one line `project-companion: notification not sent: ENOENT <tmp>/missing`; that closes the CLI half of DA-02.2 for the cause the requirement names. If that run also breaks .project-notify, expect 2 lines, \"not sent\" first.",
-      "status": "backlog",
+      "status": "review",
       "componentId": "notifier",
       "featureId": "notify-safety",
       "phaseId": "decision-alerts",
@@ -2113,8 +2113,15 @@
       "points": 3,
       "role": "qa-engineer",
       "createdAt": "2026-10-08T16:42:13.187Z",
-      "updatedAt": "2026-10-09T18:35:18.739Z",
-      "order": 13
+      "updatedAt": "2026-10-09T22:48:19.791Z",
+      "order": 0,
+      "pr": {
+        "number": 18,
+        "url": "https://github.com/QuantumWars/project-companion/pull/18",
+        "state": "OPEN",
+        "headSha": "181ed3b6ba951e163f684af51b52893be4e1bdde",
+        "syncedAt": "2026-10-09T22:27:25.860Z"
+      }
     },
     {
       "id": "1b3763e7",
@@ -2164,7 +2171,7 @@
       "kind": "task",
       "role": "devops-sre",
       "createdAt": "2026-10-08T20:52:59.167Z",
-      "updatedAt": "2026-10-09T21:20:11.659Z",
+      "updatedAt": "2026-10-09T22:09:31.163Z",
       "order": 38,
       "points": 2,
       "pr": {
@@ -2172,7 +2179,7 @@
         "url": "https://github.com/QuantumWars/project-companion/pull/8",
         "state": "MERGED",
         "headSha": "cc56648aef8271a40b192db026d10063d68d1bbb",
-        "syncedAt": "2026-10-09T21:20:11.657Z"
+        "syncedAt": "2026-10-09T22:09:31.162Z"
       }
     }
   ],
