@@ -12,7 +12,9 @@ import {
   controlsToSpaces, decisionText, dispatch, DispatchError, failureReason, NOTIFIER, NOTIFIER_ENV, notifierArgs, notifierPath, notifyDecision, NOTIFY_ENV,
   NOTIFY_SCRIPT, type NotifyText, osascriptArgs, PLATFORM_ENV,
 } from "@/lib/project/notify";
-import { appendRecord, codeOf, NOTIFY_DIR, NOTIFY_RECORD, readRecord, RecordError, recordPath, type RecordLine } from "@/lib/project/notify-record";
+import {
+  appendRecord, codeOf, NOTIFY_DIR, NOTIFY_RECORD, type NotifyOutcome, readRecord, RecordError, recordPath, type RecordLine,
+} from "@/lib/project/notify-record";
 import { initProject } from "@/lib/project/store";
 
 import { eq, ok, runAll, test, throws } from "./harness";
@@ -672,6 +674,56 @@ cliTest("DA-02.5: gate request and card open log the same events with the notifi
   // Each log grew by the 3 decisions' own events, after the identity line that a new shard starts with (events.ts).
   const grew = [on, off].map((root, i) => readEvents(root).slice(start[i]).map((e) => e.kind).join());
   eq(grew, ["on", "off"].map(() => "actor.identified,card.opened,card.opened,gate.requested"), "new events");
+});
+
+/* --------------------- DA-04.1: one record line per decision --------------- */
+// The mkdir EEXIST race (another process making .project-notify first): the EM
+// decided in da-t9 (task 1b3763e7) to leave it untested (no seam; a failure
+// there only gives the "record not written" line). Design 3.3 step 1 defines
+// the behaviour (lstat again once).
+
+cliTest("DA-04.1: one record line per decision, once for each outcome", async () => {
+  const cases: [NotifyOutcome, StubOverrides, string?][] = [
+    ["sent", {}],
+    ["off", { notify: "off" }],
+    ["unsupported", { platform: "linux" }],
+    ["failed", {}, join(TMP, "missing")],
+  ];
+  for (const [outcome, overrides, notifier] of cases) {
+    const root = cliProject();
+    const t0 = Date.now();
+    const gate = cli(root, ["gate", "request", "prd", "alerts", "--artifact", "docs/a.md"], overrides, notifier);
+    const card = cli(root, ["card", "open", "--subject", "alerts", "--ask", "Ship it?", "--kind", "question", "--json"], overrides, notifier);
+    eq([gate.code, card.code], [0, 0], outcome);
+    if (outcome === "sent") eq((await calls(2)).length, 2, outcome);
+    const id = cardId(card.out);
+    const model = JSON.parse(cli(root, ["cockpit", "--json"], { notify: "off" }).out) as { needsYou: { id: string; title: string; command: string }[] };
+    const want = new Map(model.needsYou.map((d) => [d.id, d] as const));
+    const raw = readFileSync(recordPath(root), "utf8").split("\n");
+    eq(raw.pop(), "", outcome); // the final line break
+    eq(raw.length, 2, `${outcome}: one line per decision`);
+    const keys = outcome === "failed" ? ["id", "at", "title", "command", "outcome", "reason"] : ["id", "at", "title", "command", "outcome"];
+    for (const text of raw) {
+      const line = JSON.parse(text) as RecordLine;
+      eq(Object.keys(line), keys, outcome);
+      eq(line.outcome, outcome);
+      eq(new Date(line.at).toISOString(), line.at, `${outcome}: at is ISO`);
+      ok(t0 <= Date.parse(line.at) && Date.parse(line.at) <= Date.now(), `${outcome}: at ${line.at} out of range`);
+      const expect = want.get(line.id);
+      ok(expect, `${outcome}: ${line.id} not in the cockpit`);
+      eq([line.title, line.command], [expect!.title, expect!.command], outcome);
+    }
+    eq(raw.map((text) => (JSON.parse(text) as RecordLine).id).sort(), ["gate:prd:alerts", id].sort(), outcome);
+  }
+});
+
+cliTest("DA-04.1: a card question with a line break gives exactly one record line", async () => {
+  const root = cliProject();
+  eq(cli(root, ["card", "open", "--subject", "alerts", "--ask", "Ship\nit?", "--kind", "question"]).code, 0);
+  eq((await calls(1)).length, 1, "stub calls");
+  const lines = readFileSync(recordPath(root), "utf8").split("\n");
+  eq(lines.length, 2, "one record line and its final line break");
+  eq((JSON.parse(lines[0]) as RecordLine).title, "Ship\nit?");
 });
 
 /* ---------------------- the CLI with a broken notifier --------------------- */
