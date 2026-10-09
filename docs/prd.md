@@ -399,10 +399,10 @@ Paths: lib/project/notify.ts
 
 Verify: npm test -- notify
 
-- [ ] DA-02.1 If the system notifier cannot start, or the notification record cannot be written, then the CLI shall exit with the same exit code and write the same standard output as it does with the off switch set. — A broken notifier never breaks the EM's command or its `--json` output.
+- [x] DA-02.1 If the system notifier cannot start, or the notification record cannot be written, then the CLI shall exit with the same exit code and write the same standard output as it does with the off switch set. — A broken notifier never breaks the EM's command or its `--json` output.
 - [x] DA-02.2 If the system notifier cannot start, then the CLI shall write one line to standard error that says no notification was sent and why. — The EM can see a broken notifier and report it.
-- [ ] DA-02.3 When the CLI passes a notification to the system notifier, the CLI shall exit without waiting for the system notifier to finish. — A slow or stuck notifier never holds up the command.
-- [ ] DA-02.4 If a title, command or project name contains quotes, backslashes or line breaks, then the notifier shall deliver that text unchanged and run no part of it as code. — A card question that an agent wrote cannot run commands on the PM's Mac.
+- [x] DA-02.3 When the CLI passes a notification to the system notifier, the CLI shall exit without waiting for the system notifier to finish. — A slow or stuck notifier never holds up the command.
+- [x] DA-02.4 If a title, command or project name contains quotes, backslashes or line breaks, then the notifier shall deliver that text unchanged and run no part of it as code. — A card question that an agent wrote cannot run commands on the PM's Mac.
 - [x] DA-02.5 The notifier shall append no gate, track or card event to the event log. — Sending a notification never records or changes a decision.
 
 ### Off switch and systems
@@ -414,9 +414,9 @@ Paths: lib/project/notify.ts, scripts/run-tests.mjs
 
 Verify: npm test -- notify
 
-- [ ] DA-03.1 While the environment variable `PROJECT_COMPANION_NOTIFY` has the value `off`, the CLI shall pass no notification. — Tests, CI or the PM can turn notifications off for one shell.
+- [x] DA-03.1 While the environment variable `PROJECT_COMPANION_NOTIFY` has the value `off`, the CLI shall pass no notification. — Tests, CI or the PM can turn notifications off for one shell.
 - [x] DA-03.2 When `npm test` runs a suite, the test runner shall set `PROJECT_COMPANION_NOTIFY` to `off` for that suite. — Running the tests never shows notifications to the PM.
-- [ ] DA-03.3 If the CLI runs on a system other than macOS, then the CLI shall pass no notification and exit with the exit code and standard output that it gives with the off switch set. — On Linux or Windows, nothing is sent and nothing fails.
+- [x] DA-03.3 If the CLI runs on a system other than macOS, then the CLI shall pass no notification and exit with the exit code and standard output that it gives with the off switch set. — On Linux or Windows, nothing is sent and nothing fails.
 - [x] DA-03.4 The README section "Gates, sprints and the PM cockpit" shall name the commands that send a notification, the off switch and the supported systems. — The PM and the agents can find how alerts work and how to turn them off.
 
 ### Notification record
