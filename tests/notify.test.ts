@@ -433,13 +433,19 @@ test("TH-5: a NUL in the project name gives ERR_INVALID_ARG_VALUE, and the name 
   ok(!err.includes("Secret") && !err.includes("Name"), `the project name is on stderr: ${err}`);
 });
 
-test("TH-5: a folder in place of an approved artifact gives lookup failed: EISDIR", () => {
-  // Design TH-5 (SR-4). It depends on how hashArtifact reads files today: the SR-8 bugfix must update this test.
+/** gateProject, plus an approved design gate on docs/a.md, so each lookup re-hashes it (withStaleness, hashArtifact). */
+const approvedProject = (): string => {
   const root = gateProject();
   mkdirSync(join(root, "docs"));
   writeFileSync(join(root, "docs", "a.md"), "# A\n");
   requestGate(root, { kind: "design", subject: "alerts", artifacts: ["docs/a.md"] });
   approveGate(root, { kind: "design", subject: "alerts", via: "prompt:test" });
+  return root;
+};
+
+test("TH-5: a folder in place of an approved artifact gives lookup failed: EISDIR", () => {
+  // Design TH-5 (SR-4). It depends on how hashArtifact reads files today: the SR-8 bugfix must update this test.
+  const root = approvedProject();
   eq(decisionText(root, GATE).title, GATE_LINE.title, "the lookup fails before the swap");
   rmSync(join(root, "docs", "a.md"));
   mkdirSync(join(root, "docs", "a.md"));
@@ -451,20 +457,28 @@ test("TH-5: a folder in place of an approved artifact gives lookup failed: EISDI
 const logLines = (root: string): string[] =>
   readdirSync(logDir(root)).sort().flatMap((name) => readFileSync(join(logDir(root), name), "utf8").split("\n").filter(Boolean));
 
-test("DA-02.5: the notifier appends no event", () => {
-  const root = gateProject();
-  const before = logLines(root);
-  ok(before.length > 0, "the temporary project's log has no event");
-  const runs: [string, string, StubOverrides, string][] = [
-    [GATE, STUB, { notify: "off" }, "off"], [GATE, STUB, { platform: "linux" }, "unsupported"], [GATE, STUB, {}, "sent"],
-    [GATE, join(TMP, "missing"), {}, "failed"], [LOST_LINE.id, STUB, {}, "failed"],
-  ];
-  for (const [id, notifier, overrides, outcome] of runs) {
-    eq(captured(() => notifyDecision(root, id, stubEnv(notifier, overrides)))[0], outcome, id);
-    const after = logLines(root);
-    eq(after.length, before.length, `${outcome}: event lines`);
-    ok(after.every((line, i) => line === before[i]), `${outcome}: an event line changed`);
-  }
+test("DA-02.5: the notifier appends no event", async () => {
+  const root = approvedProject(); // with an approved artifact, each lookup also runs the staleness re-hash (TH-16)
+  const [events, bytes] = [logLines(root), readFileSync(join(root, ".project"))];
+  ok(events.length > 0, "the temporary project's log has no event");
+  const run = (label: string, id: string, notifier: string, overrides: StubOverrides, outcome: string): void => {
+    eq(captured(() => notifyDecision(root, id, stubEnv(notifier, overrides)))[0], outcome, label);
+    eq(logLines(root), events, `${label}: the event log changed`);
+    ok(readFileSync(join(root, ".project")).equals(bytes), `${label}: .project changed`);
+  };
+  run("off", GATE, STUB, { notify: "off" }, "off");
+  run("unsupported", GATE, STUB, { platform: "linux" }, "unsupported");
+  run("sent", GATE, STUB, {}, "sent");
+  run("missing notifier", GATE, join(TMP, "missing"), {}, "failed");
+  run("not in the cockpit", LOST_LINE.id, STUB, {}, "failed");
+  run("folder as the notifier", GATE, project("notifier-"), {}, "failed"); // no pid
+  await new Promise((done) => setImmediate(done)); // the folder's late 'error' event
+  writeFileSync(join(root, "docs", "a.md"), "# A, changed\n");
+  run("changed artifact", GATE, STUB, {}, "sent");
+  rmSync(join(root, "docs", "a.md"));
+  mkdirSync(join(root, "docs", "a.md"));
+  run("artifact is a folder", GATE, STUB, {}, "failed");
+  eq(lines(root).slice(-1), [{ id: GATE, title: null, command: null, outcome: "failed", reason: "lookup failed: EISDIR" }]);
 });
 
 test("notifyDecision: a file at .project-notify gives one 'record not written' line, after any 'not sent' line", () => {
