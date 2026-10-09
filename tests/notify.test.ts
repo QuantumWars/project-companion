@@ -12,7 +12,9 @@ import {
   controlsToSpaces, decisionText, dispatch, DispatchError, failureReason, NOTIFIER, NOTIFIER_ENV, notifierArgs, notifierPath, notifyDecision, NOTIFY_ENV,
   NOTIFY_SCRIPT, type NotifyText, osascriptArgs, PLATFORM_ENV,
 } from "@/lib/project/notify";
-import { appendRecord, codeOf, NOTIFY_DIR, NOTIFY_RECORD, readRecord, RecordError, recordPath, type RecordLine } from "@/lib/project/notify-record";
+import {
+  appendRecord, codeOf, NOTIFY_DIR, NOTIFY_RECORD, type NotifyOutcome, readRecord, RecordError, recordPath, type RecordLine,
+} from "@/lib/project/notify-record";
 import { initProject } from "@/lib/project/store";
 
 import { eq, ok, runAll, test, throws } from "./harness";
@@ -672,6 +674,50 @@ cliTest("DA-02.5: gate request and card open log the same events with the notifi
   // Each log grew by the 3 decisions' own events, after the identity line that a new shard starts with (events.ts).
   const grew = [on, off].map((root, i) => readEvents(root).slice(start[i]).map((e) => e.kind).join());
   eq(grew, ["on", "off"].map(() => "actor.identified,card.opened,card.opened,gate.requested"), "new events");
+});
+
+/* --------------------- DA-04.1: one record line per decision --------------- */
+// The mkdir EEXIST race (another process making .project-notify first) has no
+// seam to trigger in a test; design 3.3 accepts that window untested (da-t9).
+
+cliTest("DA-04.1: one record line per decision, once for each outcome", async () => {
+  const cases: [NotifyOutcome, StubOverrides, string?][] = [
+    ["sent", {}],
+    ["off", { notify: "off" }],
+    ["unsupported", { platform: "linux" }],
+    ["failed", {}, join(TMP, "missing")],
+  ];
+  for (const [outcome, overrides, notifier] of cases) {
+    const root = cliProject();
+    const gate = cli(root, ["gate", "request", "prd", "alerts", "--artifact", "docs/a.md"], overrides, notifier);
+    const card = cli(root, ["card", "open", "--subject", "alerts", "--ask", "Ship it?", "--kind", "question", "--json"], overrides, notifier);
+    eq([gate.code, card.code], [0, 0], outcome);
+    if (outcome === "sent") eq((await calls(2)).length, 2, outcome);
+    const cardId = (JSON.parse(card.out) as { id: string }).id;
+    const model = JSON.parse(cli(root, ["cockpit", "--json"], { notify: "off" }).out) as { needsYou: { id: string; title: string; command: string }[] };
+    const want = new Map(model.needsYou.map((d) => [d.id, d] as const));
+    const raw = readFileSync(recordPath(root), "utf8").split("\n");
+    eq(raw.pop(), "", outcome); // the final line break
+    eq(raw.length, 2, `${outcome}: one line per decision`);
+    const keys = outcome === "failed" ? ["id", "at", "title", "command", "outcome", "reason"] : ["id", "at", "title", "command", "outcome"];
+    for (const text of raw) {
+      const line = JSON.parse(text) as RecordLine;
+      eq(Object.keys(line), keys, outcome);
+      eq(line.outcome, outcome);
+      eq(new Date(line.at).toISOString(), line.at, `${outcome}: at is ISO`);
+      const expect = want.get(line.id);
+      ok(expect, `${outcome}: ${line.id} not in the cockpit`);
+      eq([line.title, line.command], [expect!.title, expect!.command], outcome);
+    }
+    eq(raw.map((text) => (JSON.parse(text) as RecordLine).id).sort(), ["gate:prd:alerts", cardId].sort(), outcome);
+  }
+});
+
+cliTest("DA-04.1: a card question with a line break gives exactly one record line", async () => {
+  const root = cliProject();
+  eq(cli(root, ["card", "open", "--subject", "alerts", "--ask", "Ship\nit?", "--kind", "question"]).code, 0);
+  await calls(1);
+  eq(readFileSync(recordPath(root), "utf8").split("\n").length, 2, "one record line and its final line break");
 });
 
 /* ---------------------- the CLI with a broken notifier --------------------- */
