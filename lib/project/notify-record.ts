@@ -1,11 +1,11 @@
 /**
  * The notification record (DA-04): one line of JSON for each decision that the CLI tried to notify. It lives in
  * `.project-notify/`, which git ignores, so it stays on this Mac. This module never writes the event log (TH-16).
- * `appendRecord` is design 3.3, "Record write": it refuses symlinks (TH-21) and writes the folder's own `.gitignore`
- * before the first line (TH-13).
+ * `appendRecord` is design 3.3, "Record write": it refuses symlinks (TH-21) and a record that is not a regular file,
+ * such as a FIFO (TH-8), and it writes the folder's own `.gitignore` before the first line (TH-13).
  */
 
-import { closeSync, constants, lstatSync, mkdirSync, openSync, readFileSync, writeFileSync, writeSync } from "node:fs";
+import { closeSync, constants, fstatSync, lstatSync, mkdirSync, openSync, readFileSync, writeFileSync, writeSync } from "node:fs";
 import { join } from "node:path";
 
 export type NotifyOutcome = "sent" | "off" | "unsupported" | "failed";
@@ -27,7 +27,7 @@ export class RecordError extends Error {
   }
 }
 
-const codeOf = (error: unknown): string => {
+export const codeOf = (error: unknown): string => {
   const { code, name } = (error ?? {}) as { code?: unknown; name?: unknown };
   return typeof code === "string" ? code : typeof name === "string" ? name : "Error";
 };
@@ -41,6 +41,8 @@ const unless = <T>(allowed: string, run: () => T): T | null => {
     throw error;
   }
 };
+
+const OPEN_FLAGS = constants.O_WRONLY | constants.O_APPEND | constants.O_CREAT | (constants.O_NOFOLLOW ?? 0) | (constants.O_NONBLOCK ?? 0);
 
 /** Throws a RecordError on the first failure, and writes nothing after it. */
 export const appendRecord = (root: string, line: RecordLine): void => {
@@ -63,13 +65,16 @@ export const appendRecord = (root: string, line: RecordLine): void => {
     // 2. The ignore file comes before the first append. `wx` never follows a symlink.
     target = ignore;
     unless("EEXIST", () => writeFileSync(ignore, "*\n", { flag: "wx" }));
-    // 3. A symlink at the record gives ELOOP. Windows has no O_NOFOLLOW: only step 1 guards there.
+    // 3. A symlink at the record gives ELOOP, and a FIFO with no reader gives ENXIO, not a wait.
+    //    Windows has no O_NOFOLLOW or O_NONBLOCK: only step 1 guards there.
     target = record;
-    const fd = openSync(record, constants.O_WRONLY | constants.O_APPEND | constants.O_CREAT | (constants.O_NOFOLLOW ?? 0), 0o600);
+    const fd = openSync(record, OPEN_FLAGS, 0o600);
     // 4. One line, with the keys in the design's order and `reason` only on `failed`.
     const { id, at, title, command, outcome } = line;
     const ordered = line.outcome === "failed" ? { id, at, title, command, outcome, reason: line.reason } : { id, at, title, command, outcome };
     try {
+      // A FIFO with a reader, or a device, opens without error. It is not the record, so write nothing (TH-8).
+      if (!fstatSync(fd).isFile()) throw new RecordError("EFTYPE", record);
       writeSync(fd, JSON.stringify(ordered) + "\n");
     } finally {
       closeSync(fd);
