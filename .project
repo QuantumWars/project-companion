@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-09T18:28:22.363Z",
-  "revision": 297,
+  "updatedAt": "2026-10-09T18:39:29.802Z",
+  "revision": 301,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2067,7 +2067,7 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.986Z",
-      "updatedAt": "2026-10-09T18:28:22.363Z",
+      "updatedAt": "2026-10-09T18:39:29.802Z",
       "order": 0,
       "pr": {
         "number": 16,
@@ -2080,7 +2080,7 @@
     {
       "id": "bdcf995e",
       "title": "Notify the PM from gate request and card open",
-      "description": "da-t7. Criteria: DA-01.1 to DA-01.6; DA-03.4 (README, rule 12; tech-writer writes the paragraph at /devolps:pr step 2). Tests: one 'DA-01.n: ...' test per criterion; 'DA-03.4: README names the commands, the off switch and macOS only'. Verify: npm test -- notify. Adds 1 import and 2 calls in cli/index.ts. Lines: ~101 (cli 4 + README 12 from design 3.4; tests 85 from architect hand-off, not checked). Over 100 because rule 12 puts the README paragraph in this change. Depends on: da-t1 merged, da-t6. Real banners start on this Mac once built here; merge da-t8 right after.",
+      "description": "da-t7. Criteria: DA-01.1 to DA-01.6; DA-03.4 (README, rule 12; tech-writer writes the paragraph at /devolps:pr step 2). Tests: one 'DA-01.n: ...' test per criterion; 'DA-03.4: README names the commands, the off switch and macOS only'. Verify: npm test -- notify. Adds 1 import and 2 calls in cli/index.ts. Lines: ~101 (cli 4 + README 12 from design 3.4; tests 85 from architect hand-off, not checked). Over 100 because rule 12 puts the README paragraph in this change. Depends on: da-t1 merged, da-t6. Real banners start on this Mac once built here; merge da-t8 right after.\n\nNotes from the PR #16 reviews (EM, 2026-10-09): (1) The CLI only calls notifyDecision; it writes no \"notification not sent\" line of its own (notifyDecision writes it), or stderr gets it twice. (2) Add a CLI-level DA-02.5 check: `gate request` and `card open` with notify on (stubEnv) and with it off give the same event-log lines, because the in-process DA-02.5 test does not cover the call sites (security F4). (3) Every CLI subprocess env in tests comes from stubEnv(...) (with overrides only for off and the platform); never run the CLI with process.env and notify on.",
       "status": "backlog",
       "componentId": "agent-tooling",
       "featureId": "decision-notify",
@@ -2090,13 +2090,13 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:13.087Z",
-      "updatedAt": "2026-10-08T16:52:20.847Z",
+      "updatedAt": "2026-10-09T18:35:13.701Z",
       "order": 12
     },
     {
       "id": "6042a875",
       "title": "Prove a failed or slow notifier leaves the CLI unchanged",
-      "description": "da-t8. Criteria: DA-02.1, DA-02.3; finishes DA-02.4 (stub half), DA-03.3 (CLI half) and the CLI half of TH-5. Tests: 'DA-02.1: same exit code and stdout as off'; 'DA-02.3: the CLI exits while the notifier waits'; 'DA-02.4: a hostile card question reaches the stub unchanged'; 'DA-03.3: linux and win32 give the same output as off'; 'TH-5: a folder in place of an approved artifact gives one stderr line and output as with off' (design 3.4, design.md:450-454); TH-21 CLI test. Verify: npm test -- notify. Lines: ~100 tests (source: architect hand-off ~90, plus ~10 for the TH-5 CLI test; not checked). Depends on: da-t7.\n\nTest rules from the PR #11 code review (notes, not findings; EM, 2026-10-09; also apply to da-t7): (1) Wait for <pid>.done before a test ends, and delete stub files with { force: true }. The STUB_OUT folder is shared, so a detached stub's late files can otherwise make the next test flaky. (2) DA-02.3: when the CLI exits, check that <pid>.argv exists and <pid>.done does not, then release the hold. Nothing in PR #11 tests the stub's wait. (3) The \"off\" comparison runs for DA-02.1 and DA-03.3 set PROJECT_COMPANION_NOTIFY: \"off\" in their own env. (4) The stub's hold loop stops after 600 polls (about 30 s at 0.05 s each); keep the test's guard timeout below that.",
+      "description": "da-t8. Criteria: DA-02.1, DA-02.3; finishes DA-02.4 (stub half), DA-03.3 (CLI half) and the CLI half of TH-5. Tests: 'DA-02.1: same exit code and stdout as off'; 'DA-02.3: the CLI exits while the notifier waits'; 'DA-02.4: a hostile card question reaches the stub unchanged'; 'DA-03.3: linux and win32 give the same output as off'; 'TH-5: a folder in place of an approved artifact gives one stderr line and output as with off' (design 3.4, design.md:450-454); TH-21 CLI test. Verify: npm test -- notify. Lines: ~100 tests (source: architect hand-off ~90, plus ~10 for the TH-5 CLI test; not checked). Depends on: da-t7.\n\nTest rules from the PR #11 code review (notes, not findings; EM, 2026-10-09; also apply to da-t7): (1) Wait for <pid>.done before a test ends, and delete stub files with { force: true }. The STUB_OUT folder is shared, so a detached stub's late files can otherwise make the next test flaky. (2) DA-02.3: when the CLI exits, check that <pid>.argv exists and <pid>.done does not, then release the hold. Nothing in PR #11 tests the stub's wait. (3) The \"off\" comparison runs for DA-02.1 and DA-03.3 set PROJECT_COMPANION_NOTIFY: \"off\" in their own env (use stubEnv(STUB, { notify: \"off\" }) since PR #15). (4) The stub's hold loop stops after 600 polls (about 30 s at 0.05 s each); keep the test's guard timeout below that.\n\nNotes from the PR #16 code review (EM, 2026-10-09): (5) In the DA-02.1 run with a missing notifier, also check that stderr is exactly one line `project-companion: notification not sent: ENOENT <tmp>/missing`; that closes the CLI half of DA-02.2 for the cause the requirement names. If that run also breaks .project-notify, expect 2 lines, \"not sent\" first.",
       "status": "backlog",
       "componentId": "notifier",
       "featureId": "notify-safety",
@@ -2106,7 +2106,7 @@
       "points": 3,
       "role": "qa-engineer",
       "createdAt": "2026-10-08T16:42:13.187Z",
-      "updatedAt": "2026-10-09T07:08:21.738Z",
+      "updatedAt": "2026-10-09T18:35:18.739Z",
       "order": 13
     },
     {
