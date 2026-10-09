@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-09T08:36:43.541Z",
-  "revision": 245,
+  "updatedAt": "2026-10-09T08:47:23.901Z",
+  "revision": 246,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1989,7 +1989,7 @@
       "id": "398705ee",
       "title": "Add the notification record with a symlink-safe append",
       "description": "da-t3. Criteria: DA-04.2. Tests: 'DA-04.2: git ignores the record path'; TH-13, TH-15, TH-21 in-process tests. Verify: npm test -- notify. Creates lib/project/notify-record.ts. Lines: ~140 (70 code from design 3.4 + 70 tests from architect hand-off; not checked). Over 100 because splitting would merge an untested guard. Depends on: da-t1, da-t2.",
-      "status": "in_progress",
+      "status": "review",
       "componentId": "notifier",
       "featureId": "notify-record",
       "phaseId": "decision-alerts",
@@ -1998,7 +1998,7 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.680Z",
-      "updatedAt": "2026-10-09T08:36:43.540Z",
+      "updatedAt": "2026-10-09T08:47:23.900Z",
       "order": 0
     },
     {
