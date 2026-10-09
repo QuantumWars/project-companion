@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-09T18:39:29.802Z",
-  "revision": 301,
+  "updatedAt": "2026-10-09T21:48:44.061Z",
+  "revision": 317,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1952,14 +1952,14 @@
       "points": 1,
       "role": "devops-sre",
       "createdAt": "2026-10-08T16:42:12.477Z",
-      "updatedAt": "2026-10-09T18:19:35.421Z",
+      "updatedAt": "2026-10-09T21:20:07.517Z",
       "order": 39,
       "pr": {
         "number": 10,
         "url": "https://github.com/QuantumWars/project-companion/pull/10",
         "state": "MERGED",
         "headSha": "9f0d1accc72ef0b42722a4c4444528a449e96615",
-        "syncedAt": "2026-10-09T18:19:35.419Z"
+        "syncedAt": "2026-10-09T21:20:07.515Z"
       }
     },
     {
@@ -1975,14 +1975,14 @@
       "points": 1,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.579Z",
-      "updatedAt": "2026-10-09T18:19:35.995Z",
+      "updatedAt": "2026-10-09T21:20:08.163Z",
       "order": 40,
       "pr": {
         "number": 11,
         "url": "https://github.com/QuantumWars/project-companion/pull/11",
         "state": "MERGED",
         "headSha": "a7018441c070d605e6372bef65b2079ac2ccd4eb",
-        "syncedAt": "2026-10-09T18:19:35.993Z"
+        "syncedAt": "2026-10-09T21:20:08.162Z"
       }
     },
     {
@@ -1998,14 +1998,14 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.680Z",
-      "updatedAt": "2026-10-09T18:19:36.777Z",
+      "updatedAt": "2026-10-09T21:20:09.094Z",
       "order": 41,
       "pr": {
         "number": 12,
         "url": "https://github.com/QuantumWars/project-companion/pull/12",
         "state": "MERGED",
         "headSha": "d40d5237e42c6e109a809950bffa6dac50831dd7",
-        "syncedAt": "2026-10-09T18:19:36.776Z"
+        "syncedAt": "2026-10-09T21:20:09.093Z"
       }
     },
     {
@@ -2021,14 +2021,14 @@
       "points": 2,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.781Z",
-      "updatedAt": "2026-10-09T18:19:37.368Z",
+      "updatedAt": "2026-10-09T21:20:09.901Z",
       "order": 42,
       "pr": {
         "number": 14,
         "url": "https://github.com/QuantumWars/project-companion/pull/14",
         "state": "MERGED",
         "headSha": "c83bd383f8aee3f5555e7e14e428c38a676a9ef5",
-        "syncedAt": "2026-10-09T18:19:37.366Z"
+        "syncedAt": "2026-10-09T21:20:09.900Z"
       }
     },
     {
@@ -2044,21 +2044,21 @@
       "points": 2,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.883Z",
-      "updatedAt": "2026-10-09T18:19:37.971Z",
+      "updatedAt": "2026-10-09T21:20:10.570Z",
       "order": 43,
       "pr": {
         "number": 15,
         "url": "https://github.com/QuantumWars/project-companion/pull/15",
         "state": "MERGED",
         "headSha": "24563c227b039384a5d0060c3c48a44f3ce3cd15",
-        "syncedAt": "2026-10-09T18:19:37.970Z"
+        "syncedAt": "2026-10-09T21:20:10.569Z"
       }
     },
     {
       "id": "02d2e84e",
       "title": "Report notifier failures without echoing decision text",
       "description": "da-t6. Criteria: DA-02.2, DA-02.5. Tests: 'DA-02.2: a missing notifier gives one stderr line'; 'DA-02.5: the notifier appends no event'; TH-5 NUL and EISDIR tests, in process (they call notifyDecision directly and check the one stderr line and the outcome `failed`; the CLI half of TH-5 is in da-t8, because the CLI call arrives in da-t7). Verify: npm test -- notify. Adds precedence rows 3-5, reason table, control-character cleanup, 'not sent' line. Lines: ~100 (source: architect hand-off; not checked). Depends on: da-t5.\n\nRule from the PR #12 code review (EM, 2026-10-09): build reasons with codeOf, exported from lib/project/notify-record.ts (error code, else error name), so the \"not sent\" and \"record not written\" reasons follow one rule. Do not write a second copy.\n\nWhat da-t5 (PR #15) already did (EM, 2026-10-09): notifyDecision already builds every reason in the design table (failureReason, NotInCockpitError for \"not in the cockpit: <id>\", \"lookup failed: <code>\"), applies controlsToSpaces (exported), and writes the \"record not written\" line. dispatch refuses a relative path itself (row 4). So da-t6 mainly adds the \"project-companion: notification not sent: <reason>\" stderr line for outcome failed (DA-02.2), the DA-02.5 test, and the TH-5 NUL and EISDIR tests; the TH-5 EISDIR test is also the first test of the \"lookup failed: <code>\" reason (proposal from the da-t5 build). The da-t5 failure test checks only that stderr holds no decision text, so adding the line does not break it. QA note: the PROJECT_COMPANION_NOTIF grep also matches the TH-19 forced-cast input line; it is an input to stubEnv, not an env.\n\nAlso from the PR #15 reviews (EM, 2026-10-09): (1) Add tests for the two reasons nothing tests yet (code review L2): \"did not start <folder>\" via notifyDecision(root, GATE, stubEnv(<a folder in TMP>)) in an async test that waits one setImmediate; \"not an absolute path: <value>\" via an exported failureReason(new DispatchError(\"path\", null), \"pc-no-such-notifier\") (a relative notifier is not allowed in a notifyDecision env). (2) Compute controlsToSpaces(reason) once, so the record line and the stderr line hold the same text. (3) Write the \"not sent\" line before record(...), to match design flow 2. (4) The DA-02.5 test is now the real proof of TH-16: notify.ts reaches appendEvent through readCockpit's imports, though the lookup path writes nothing (security F2).",
-      "status": "review",
+      "status": "done",
       "componentId": "notifier",
       "featureId": "notify-safety",
       "phaseId": "decision-alerts",
@@ -2067,21 +2067,21 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.986Z",
-      "updatedAt": "2026-10-09T18:39:29.802Z",
-      "order": 0,
+      "updatedAt": "2026-10-09T21:20:11.114Z",
+      "order": 44,
       "pr": {
         "number": 16,
         "url": "https://github.com/QuantumWars/project-companion/pull/16",
-        "state": "OPEN",
-        "headSha": "f4cd6a5572aa6776b5170c0b6a080aeba624a1fb",
-        "syncedAt": "2026-10-09T18:28:22.361Z"
+        "state": "MERGED",
+        "headSha": "b92eb6a987d8a0588f7c574a76ad22ad780993d4",
+        "syncedAt": "2026-10-09T21:20:11.113Z"
       }
     },
     {
       "id": "bdcf995e",
       "title": "Notify the PM from gate request and card open",
       "description": "da-t7. Criteria: DA-01.1 to DA-01.6; DA-03.4 (README, rule 12; tech-writer writes the paragraph at /devolps:pr step 2). Tests: one 'DA-01.n: ...' test per criterion; 'DA-03.4: README names the commands, the off switch and macOS only'. Verify: npm test -- notify. Adds 1 import and 2 calls in cli/index.ts. Lines: ~101 (cli 4 + README 12 from design 3.4; tests 85 from architect hand-off, not checked). Over 100 because rule 12 puts the README paragraph in this change. Depends on: da-t1 merged, da-t6. Real banners start on this Mac once built here; merge da-t8 right after.\n\nNotes from the PR #16 reviews (EM, 2026-10-09): (1) The CLI only calls notifyDecision; it writes no \"notification not sent\" line of its own (notifyDecision writes it), or stderr gets it twice. (2) Add a CLI-level DA-02.5 check: `gate request` and `card open` with notify on (stubEnv) and with it off give the same event-log lines, because the in-process DA-02.5 test does not cover the call sites (security F4). (3) Every CLI subprocess env in tests comes from stubEnv(...) (with overrides only for off and the platform); never run the CLI with process.env and notify on.",
-      "status": "backlog",
+      "status": "review",
       "componentId": "agent-tooling",
       "featureId": "decision-notify",
       "phaseId": "decision-alerts",
@@ -2090,8 +2090,15 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:13.087Z",
-      "updatedAt": "2026-10-09T18:35:13.701Z",
-      "order": 12
+      "updatedAt": "2026-10-09T21:48:44.061Z",
+      "order": 0,
+      "pr": {
+        "number": 17,
+        "url": "https://github.com/QuantumWars/project-companion/pull/17",
+        "state": "OPEN",
+        "headSha": "91f5282b6e42aab1a8b01f1e2854efe66c3e0fb8",
+        "syncedAt": "2026-10-09T21:32:36.324Z"
+      }
     },
     {
       "id": "6042a875",
@@ -2157,7 +2164,7 @@
       "kind": "task",
       "role": "devops-sre",
       "createdAt": "2026-10-08T20:52:59.167Z",
-      "updatedAt": "2026-10-09T18:19:39.074Z",
+      "updatedAt": "2026-10-09T21:20:11.659Z",
       "order": 38,
       "points": 2,
       "pr": {
@@ -2165,7 +2172,7 @@
         "url": "https://github.com/QuantumWars/project-companion/pull/8",
         "state": "MERGED",
         "headSha": "cc56648aef8271a40b192db026d10063d68d1bbb",
-        "syncedAt": "2026-10-09T18:19:39.072Z"
+        "syncedAt": "2026-10-09T21:20:11.657Z"
       }
     }
   ],

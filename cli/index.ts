@@ -75,6 +75,7 @@ import { burnup, foldSprints, sprintTasks } from "../lib/project/sprint";
 import { foldCards, foldUpdates, isHealth, weekId } from "../lib/project/decisions";
 import { agentLane, gateMetrics, humanLane } from "../lib/project/metrics";
 import { readCockpit } from "../lib/project/cockpit";
+import { notifyDecision } from "../lib/project/notify";
 import { appendEvent } from "../lib/project/events";
 import { randomUUID } from "node:crypto";
 import { mergeBundles } from "../lib/project/merge";
@@ -1239,6 +1240,7 @@ const main = () => {
         const tasks = splitList(flag("tasks")) ?? (sprint ? sprintTasks(sprint) : undefined);
         const gate = requestGate(root, { kind, subject, artifacts, tasks }, prdPath);
         say(gate, `Requested the ${kind} gate for ${subject}. The PM approves with /devolps:approve ${kind} ${subject}\n`);
+        notifyDecision(root, `gate:${kind}:${subject}`); // DA-01.1: after the record and stdout; it never throws
         return;
       }
       if (sub === "approve") {
@@ -1455,6 +1457,7 @@ const main = () => {
         data: { cardId: id, kind, subject, ask, why: flag("why"), options, recommendation: flag("recommend"), costOfWaiting: flag("cost"), deadline: flag("deadline") },
       });
       process.stdout.write(has("json") ? `${JSON.stringify({ id })}\n` : `Opened card ${id}. The PM answers it with /devolps:answer ${id} "<answer>".\n`);
+      notifyDecision(root, id); // DA-01.2: after the record and stdout; it never throws
       return;
     }
     if (sub === "answer") {
