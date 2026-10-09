@@ -2,6 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
+  "updatedAt": "2026-10-09T13:02:13.656Z",
+  "revision": 264,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2010,7 +2012,7 @@
       "id": "8e6e5a71",
       "title": "Pass decision text to osascript only as arguments",
       "description": "da-t4. Criteria: DA-02.4 (argument half). Tests: 'DA-02.4: osascript passes every argument after -- unchanged' (required, darwin only); 'DA-02.4: notifierArgs gives 10 items, text only after --'; 'TH-3: notifierPath defaults to /usr/bin/osascript and takes the override' (both cases from design.md:445-446: the default, and PROJECT_COMPANION_NOTIFIER \"/x\" gives \"/x\"). Verify: npm test -- notify. Creates lib/project/notify.ts (constants, notifierPath, notifierArgs, dispatch). Lines: ~90 (source: architect hand-off; not checked). Depends on: da-t2.\n\nTest rule from the PR #10 security review (finding 1, TH-19, low; EM, 2026-10-09): the off switch guards only notifyDecision, not dispatch(program, args) (design.md:287). Tests call dispatch only with notifierPath(stubEnv(...)), never with NOTIFIER or notifierPath(process.env), or a test run can show a real banner on the PM's Mac. QA check at review: grep 'dispatch(' tests/notify.test.ts and confirm every call uses a stubEnv path. CI also runs on macos-latest (card c-18a31a), so there the off switch, not the platform check, stops dispatch.\n\nTest rule from the PR #11 reviews (security F2, low; EM, 2026-10-09; applies to da-t4 to da-t9): every env in tests/notify.test.ts spreads process.env or stubEnv(...), and no test overrides or removes PROJECT_COMPANION_NOTIFIER or PROJECT_COMPANION_NOTIFY after stubEnv (an empty notifier falls back to /usr/bin/osascript). Since PR #11, stubEnv accepts only a path inside the suite's temporary folder, and the suite stops at once when the off switch is not set. QA check at review: grep -nE 'PROJECT_COMPANION_NOTIF|env: *\\{|stubEnv\\(' tests/notify.test.ts. A grep for writes to process.env must end its pattern in =[^=], so that === does not match.",
-      "status": "backlog",
+      "status": "in_progress",
       "componentId": "notifier",
       "featureId": "notify-safety",
       "phaseId": "decision-alerts",
@@ -2019,8 +2021,8 @@
       "points": 2,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.781Z",
-      "updatedAt": "2026-10-09T07:08:17.675Z",
-      "order": 9
+      "updatedAt": "2026-10-09T13:02:13.656Z",
+      "order": 0
     },
     {
       "id": "108eb782",
@@ -2155,7 +2157,5 @@
   "agents": {
     "byComponent": {}
   },
-  "wip": {},
-  "revision": 263,
-  "updatedAt": "2026-10-09T13:02:05.902Z"
+  "wip": {}
 }
