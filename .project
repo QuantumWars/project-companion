@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-09T07:08:28.913Z",
-  "revision": 241,
+  "updatedAt": "2026-10-09T08:33:06.714Z",
+  "revision": 243,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1954,7 +1954,7 @@
       "id": "0c8e6562",
       "title": "Start the notify suite with stubEnv and the runner test",
       "description": "da-t2. Criteria: DA-03.2. Tests: 'DA-03.2: the runner sets PROJECT_COMPANION_NOTIFY=off'; 'TH-19: stubEnv refuses an empty or relative path'. Verify: npm test -- notify. Stub must exit at once when STUB_OUT is not set. Lines: ~50 (source: architect hand-off; not in design 3.4; not checked). Depends on: da-t1.",
-      "status": "review",
+      "status": "done",
       "componentId": "notifier",
       "featureId": "notify-switch",
       "phaseId": "decision-alerts",
@@ -1963,8 +1963,8 @@
       "points": 1,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.579Z",
-      "updatedAt": "2026-10-09T07:08:28.913Z",
-      "order": 0,
+      "updatedAt": "2026-10-09T08:33:05.590Z",
+      "order": 40,
       "pr": {
         "number": 11,
         "url": "https://github.com/QuantumWars/project-companion/pull/11",
