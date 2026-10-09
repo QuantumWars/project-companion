@@ -400,10 +400,10 @@ Paths: lib/project/notify.ts
 Verify: npm test -- notify
 
 - [ ] DA-02.1 If the system notifier cannot start, or the notification record cannot be written, then the CLI shall exit with the same exit code and write the same standard output as it does with the off switch set. — A broken notifier never breaks the EM's command or its `--json` output.
-- [ ] DA-02.2 If the system notifier cannot start, then the CLI shall write one line to standard error that says no notification was sent and why. — The EM can see a broken notifier and report it.
+- [x] DA-02.2 If the system notifier cannot start, then the CLI shall write one line to standard error that says no notification was sent and why. — The EM can see a broken notifier and report it.
 - [ ] DA-02.3 When the CLI passes a notification to the system notifier, the CLI shall exit without waiting for the system notifier to finish. — A slow or stuck notifier never holds up the command.
 - [ ] DA-02.4 If a title, command or project name contains quotes, backslashes or line breaks, then the notifier shall deliver that text unchanged and run no part of it as code. — A card question that an agent wrote cannot run commands on the PM's Mac.
-- [ ] DA-02.5 The notifier shall append no gate, track or card event to the event log. — Sending a notification never records or changes a decision.
+- [x] DA-02.5 The notifier shall append no gate, track or card event to the event log. — Sending a notification never records or changes a decision.
 
 ### Off switch and systems
 <!-- id: notify-switch -->
