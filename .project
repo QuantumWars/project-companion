@@ -2,6 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
+  "updatedAt": "2026-10-09T21:21:00.164Z",
+  "revision": 313,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2079,7 +2081,7 @@
       "id": "bdcf995e",
       "title": "Notify the PM from gate request and card open",
       "description": "da-t7. Criteria: DA-01.1 to DA-01.6; DA-03.4 (README, rule 12; tech-writer writes the paragraph at /devolps:pr step 2). Tests: one 'DA-01.n: ...' test per criterion; 'DA-03.4: README names the commands, the off switch and macOS only'. Verify: npm test -- notify. Adds 1 import and 2 calls in cli/index.ts. Lines: ~101 (cli 4 + README 12 from design 3.4; tests 85 from architect hand-off, not checked). Over 100 because rule 12 puts the README paragraph in this change. Depends on: da-t1 merged, da-t6. Real banners start on this Mac once built here; merge da-t8 right after.\n\nNotes from the PR #16 reviews (EM, 2026-10-09): (1) The CLI only calls notifyDecision; it writes no \"notification not sent\" line of its own (notifyDecision writes it), or stderr gets it twice. (2) Add a CLI-level DA-02.5 check: `gate request` and `card open` with notify on (stubEnv) and with it off give the same event-log lines, because the in-process DA-02.5 test does not cover the call sites (security F4). (3) Every CLI subprocess env in tests comes from stubEnv(...) (with overrides only for off and the platform); never run the CLI with process.env and notify on.",
-      "status": "backlog",
+      "status": "in_progress",
       "componentId": "agent-tooling",
       "featureId": "decision-notify",
       "phaseId": "decision-alerts",
@@ -2088,8 +2090,8 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:13.087Z",
-      "updatedAt": "2026-10-09T18:35:13.701Z",
-      "order": 12
+      "updatedAt": "2026-10-09T21:21:00.163Z",
+      "order": 0
     },
     {
       "id": "6042a875",
@@ -2176,7 +2178,5 @@
   "agents": {
     "byComponent": {}
   },
-  "wip": {},
-  "revision": 312,
-  "updatedAt": "2026-10-09T21:20:25.125Z"
+  "wip": {}
 }
