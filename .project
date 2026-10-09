@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-08T22:09:24.917Z",
-  "revision": 233,
+  "updatedAt": "2026-10-09T07:08:28.913Z",
+  "revision": 241,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1931,7 +1931,7 @@
       "id": "cc05f85e",
       "title": "Set the notify off switch in the test runner",
       "description": "da-t1. Criteria: DA-03.2 (runner half). Changes: scripts/run-tests.mjs env PROJECT_COMPANION_NOTIFY=off; .gitignore /.project-notify/ (card c-1cb9f6). Verify: npm test -> pass; git check-ignore -q .project-notify/record.jsonl -> exit 0; grep -c 'PROJECT_COMPANION_NOTIFY: \"off\"' scripts/run-tests.mjs -> 1. Lines: ~4 (design 3.4). Depends on: none. Merges first (design 6 step 1).",
-      "status": "review",
+      "status": "done",
       "componentId": "agent-tooling",
       "featureId": "notify-switch",
       "phaseId": "decision-alerts",
@@ -1940,8 +1940,8 @@
       "points": 1,
       "role": "devops-sre",
       "createdAt": "2026-10-08T16:42:12.477Z",
-      "updatedAt": "2026-10-08T21:57:56.708Z",
-      "order": 0,
+      "updatedAt": "2026-10-09T04:49:38.422Z",
+      "order": 39,
       "pr": {
         "number": 10,
         "url": "https://github.com/QuantumWars/project-companion/pull/10",
@@ -1954,7 +1954,7 @@
       "id": "0c8e6562",
       "title": "Start the notify suite with stubEnv and the runner test",
       "description": "da-t2. Criteria: DA-03.2. Tests: 'DA-03.2: the runner sets PROJECT_COMPANION_NOTIFY=off'; 'TH-19: stubEnv refuses an empty or relative path'. Verify: npm test -- notify. Stub must exit at once when STUB_OUT is not set. Lines: ~50 (source: architect hand-off; not in design 3.4; not checked). Depends on: da-t1.",
-      "status": "backlog",
+      "status": "review",
       "componentId": "notifier",
       "featureId": "notify-switch",
       "phaseId": "decision-alerts",
@@ -1963,8 +1963,15 @@
       "points": 1,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.579Z",
-      "updatedAt": "2026-10-08T16:50:04.859Z",
-      "order": 7
+      "updatedAt": "2026-10-09T07:08:28.913Z",
+      "order": 0,
+      "pr": {
+        "number": 11,
+        "url": "https://github.com/QuantumWars/project-companion/pull/11",
+        "state": "OPEN",
+        "headSha": "9363cb36cfbc737a0c1984cb09255fab531717ce",
+        "syncedAt": "2026-10-09T05:29:26.910Z"
+      }
     },
     {
       "id": "398705ee",
@@ -1985,7 +1992,7 @@
     {
       "id": "8e6e5a71",
       "title": "Pass decision text to osascript only as arguments",
-      "description": "da-t4. Criteria: DA-02.4 (argument half). Tests: 'DA-02.4: osascript passes every argument after -- unchanged' (required, darwin only); 'DA-02.4: notifierArgs gives 10 items, text only after --'; 'TH-3: notifierPath defaults to /usr/bin/osascript and takes the override' (both cases from design.md:445-446: the default, and PROJECT_COMPANION_NOTIFIER \"/x\" gives \"/x\"). Verify: npm test -- notify. Creates lib/project/notify.ts (constants, notifierPath, notifierArgs, dispatch). Lines: ~90 (source: architect hand-off; not checked). Depends on: da-t2.\n\nTest rule from the PR #10 security review (finding 1, TH-19, low; EM, 2026-10-09): the off switch guards only notifyDecision, not dispatch(program, args) (design.md:287). Tests call dispatch only with notifierPath(stubEnv(...)), never with NOTIFIER or notifierPath(process.env), or a test run can show a real banner on the PM's Mac. QA check at review: grep 'dispatch(' tests/notify.test.ts and confirm every call uses a stubEnv path. CI also runs on macos-latest (card c-18a31a), so there the off switch, not the platform check, stops dispatch.",
+      "description": "da-t4. Criteria: DA-02.4 (argument half). Tests: 'DA-02.4: osascript passes every argument after -- unchanged' (required, darwin only); 'DA-02.4: notifierArgs gives 10 items, text only after --'; 'TH-3: notifierPath defaults to /usr/bin/osascript and takes the override' (both cases from design.md:445-446: the default, and PROJECT_COMPANION_NOTIFIER \"/x\" gives \"/x\"). Verify: npm test -- notify. Creates lib/project/notify.ts (constants, notifierPath, notifierArgs, dispatch). Lines: ~90 (source: architect hand-off; not checked). Depends on: da-t2.\n\nTest rule from the PR #10 security review (finding 1, TH-19, low; EM, 2026-10-09): the off switch guards only notifyDecision, not dispatch(program, args) (design.md:287). Tests call dispatch only with notifierPath(stubEnv(...)), never with NOTIFIER or notifierPath(process.env), or a test run can show a real banner on the PM's Mac. QA check at review: grep 'dispatch(' tests/notify.test.ts and confirm every call uses a stubEnv path. CI also runs on macos-latest (card c-18a31a), so there the off switch, not the platform check, stops dispatch.\n\nTest rule from the PR #11 reviews (security F2, low; EM, 2026-10-09; applies to da-t4 to da-t9): every env in tests/notify.test.ts spreads process.env or stubEnv(...), and no test overrides or removes PROJECT_COMPANION_NOTIFIER or PROJECT_COMPANION_NOTIFY after stubEnv (an empty notifier falls back to /usr/bin/osascript). Since PR #11, stubEnv accepts only a path inside the suite's temporary folder, and the suite stops at once when the off switch is not set. QA check at review: grep -nE 'PROJECT_COMPANION_NOTIF|env: *\\{|stubEnv\\(' tests/notify.test.ts. A grep for writes to process.env must end its pattern in =[^=], so that === does not match.",
       "status": "backlog",
       "componentId": "notifier",
       "featureId": "notify-safety",
@@ -1995,7 +2002,7 @@
       "points": 2,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.781Z",
-      "updatedAt": "2026-10-08T22:09:24.917Z",
+      "updatedAt": "2026-10-09T07:08:17.675Z",
       "order": 9
     },
     {
@@ -2049,7 +2056,7 @@
     {
       "id": "6042a875",
       "title": "Prove a failed or slow notifier leaves the CLI unchanged",
-      "description": "da-t8. Criteria: DA-02.1, DA-02.3; finishes DA-02.4 (stub half), DA-03.3 (CLI half) and the CLI half of TH-5. Tests: 'DA-02.1: same exit code and stdout as off'; 'DA-02.3: the CLI exits while the notifier waits'; 'DA-02.4: a hostile card question reaches the stub unchanged'; 'DA-03.3: linux and win32 give the same output as off'; 'TH-5: a folder in place of an approved artifact gives one stderr line and output as with off' (design 3.4, design.md:450-454); TH-21 CLI test. Verify: npm test -- notify. Lines: ~100 tests (source: architect hand-off ~90, plus ~10 for the TH-5 CLI test; not checked). Depends on: da-t7.",
+      "description": "da-t8. Criteria: DA-02.1, DA-02.3; finishes DA-02.4 (stub half), DA-03.3 (CLI half) and the CLI half of TH-5. Tests: 'DA-02.1: same exit code and stdout as off'; 'DA-02.3: the CLI exits while the notifier waits'; 'DA-02.4: a hostile card question reaches the stub unchanged'; 'DA-03.3: linux and win32 give the same output as off'; 'TH-5: a folder in place of an approved artifact gives one stderr line and output as with off' (design 3.4, design.md:450-454); TH-21 CLI test. Verify: npm test -- notify. Lines: ~100 tests (source: architect hand-off ~90, plus ~10 for the TH-5 CLI test; not checked). Depends on: da-t7.\n\nTest rules from the PR #11 code review (notes, not findings; EM, 2026-10-09; also apply to da-t7): (1) Wait for <pid>.done before a test ends, and delete stub files with { force: true }. The STUB_OUT folder is shared, so a detached stub's late files can otherwise make the next test flaky. (2) DA-02.3: when the CLI exits, check that <pid>.argv exists and <pid>.done does not, then release the hold. Nothing in PR #11 tests the stub's wait. (3) The \"off\" comparison runs for DA-02.1 and DA-03.3 set PROJECT_COMPANION_NOTIFY: \"off\" in their own env. (4) The stub's hold loop stops after 600 polls (about 30 s at 0.05 s each); keep the test's guard timeout below that.",
       "status": "backlog",
       "componentId": "notifier",
       "featureId": "notify-safety",
@@ -2059,7 +2066,7 @@
       "points": 3,
       "role": "qa-engineer",
       "createdAt": "2026-10-08T16:42:13.187Z",
-      "updatedAt": "2026-10-08T16:49:59.122Z",
+      "updatedAt": "2026-10-09T07:08:21.738Z",
       "order": 13
     },
     {
