@@ -415,7 +415,7 @@ Paths: lib/project/notify.ts, scripts/run-tests.mjs
 Verify: npm test -- notify
 
 - [ ] DA-03.1 While the environment variable `PROJECT_COMPANION_NOTIFY` has the value `off`, the CLI shall pass no notification. — Tests, CI or the PM can turn notifications off for one shell.
-- [ ] DA-03.2 When `npm test` runs a suite, the test runner shall set `PROJECT_COMPANION_NOTIFY` to `off` for that suite. — Running the tests never shows notifications to the PM.
+- [x] DA-03.2 When `npm test` runs a suite, the test runner shall set `PROJECT_COMPANION_NOTIFY` to `off` for that suite. — Running the tests never shows notifications to the PM.
 - [ ] DA-03.3 If the CLI runs on a system other than macOS, then the CLI shall pass no notification and exit with the exit code and standard output that it gives with the off switch set. — On Linux or Windows, nothing is sent and nothing fails.
 - [ ] DA-03.4 The README section "Gates, sprints and the PM cockpit" shall name the commands that send a notification, the off switch and the supported systems. — The PM and the agents can find how alerts work and how to turn them off.
 
