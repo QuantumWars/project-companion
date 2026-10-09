@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-09T13:13:29.726Z",
-  "revision": 267,
+  "updatedAt": "2026-10-09T13:23:32.484Z",
+  "revision": 271,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2011,7 +2011,7 @@
     {
       "id": "8e6e5a71",
       "title": "Pass decision text to osascript only as arguments",
-      "description": "da-t4. Criteria: DA-02.4 (argument half). Tests: 'DA-02.4: osascript passes every argument after -- unchanged' (required, darwin only); 'DA-02.4: notifierArgs gives 10 items, text only after --'; 'TH-3: notifierPath defaults to /usr/bin/osascript and takes the override' (both cases from design.md:445-446: the default, and PROJECT_COMPANION_NOTIFIER \"/x\" gives \"/x\"). Verify: npm test -- notify. Creates lib/project/notify.ts (constants, notifierPath, notifierArgs, dispatch). Lines: ~90 (source: architect hand-off; not checked). Depends on: da-t2.\n\nTest rule from the PR #10 security review (finding 1, TH-19, low; EM, 2026-10-09): the off switch guards only notifyDecision, not dispatch(program, args) (design.md:287). Tests call dispatch only with notifierPath(stubEnv(...)), never with NOTIFIER or notifierPath(process.env), or a test run can show a real banner on the PM's Mac. QA check at review: grep 'dispatch(' tests/notify.test.ts and confirm every call uses a stubEnv path. CI also runs on macos-latest (card c-18a31a), so there the off switch, not the platform check, stops dispatch.\n\nTest rule from the PR #11 reviews (security F2, low; EM, 2026-10-09; applies to da-t4 to da-t9): every env in tests/notify.test.ts spreads process.env or stubEnv(...), and no test overrides or removes PROJECT_COMPANION_NOTIFIER or PROJECT_COMPANION_NOTIFY after stubEnv (an empty notifier falls back to /usr/bin/osascript). Since PR #11, stubEnv accepts only a path inside the suite's temporary folder, and the suite stops at once when the off switch is not set. QA check at review: grep -nE 'PROJECT_COMPANION_NOTIF|env: *\\{|stubEnv\\(' tests/notify.test.ts. A grep for writes to process.env must end its pattern in =[^=], so that === does not match.",
+      "description": "da-t4. Criteria: DA-02.4 (argument half). Tests: 'DA-02.4: osascript passes every argument after -- unchanged' (required, darwin only); 'DA-02.4: notifierArgs gives 10 items, text only after --'; 'TH-3: notifierPath defaults to /usr/bin/osascript and takes the override' (both cases from design.md:445-446: the default, and PROJECT_COMPANION_NOTIFIER \"/x\" gives \"/x\"). Verify: npm test -- notify. Creates lib/project/notify.ts (constants, notifierPath, notifierArgs, dispatch). Lines: ~90 (source: architect hand-off; not checked). Depends on: da-t2.\n\nTest rule from the PR #10 security review (finding 1, TH-19, low; EM, 2026-10-09): the off switch guards only notifyDecision, not dispatch(program, args) (design.md:287). Tests call dispatch only with notifierPath(stubEnv(...)), never with NOTIFIER or notifierPath(process.env), or a test run can show a real banner on the PM's Mac. QA check at review: grep 'dispatch(' tests/notify.test.ts and confirm every call uses a stubEnv path. CI also runs on macos-latest (card c-18a31a), so there the off switch, not the platform check, stops dispatch.\n\nTest rule from the PR #11 reviews (security F2, low; EM, 2026-10-09; applies to da-t4 to da-t9): every env in tests/notify.test.ts spreads process.env or stubEnv(...), and no test overrides or removes PROJECT_COMPANION_NOTIFIER or PROJECT_COMPANION_NOTIFY after stubEnv (an empty notifier falls back to /usr/bin/osascript). Since PR #11, stubEnv accepts only a path inside the suite's temporary folder, and the suite stops at once when the off switch is not set. QA check at review: grep -nE 'PROJECT_COMPANION_NOTIF|env: *\\{|stubEnv\\(' tests/notify.test.ts. A grep for writes to process.env must end its pattern in =[^=], so that === does not match.\n\nRule changes from the PR #14 reviews (EM, 2026-10-09; apply to da-t4 to da-t9): (1) The env rule above applies to every env given to dispatch, notifyDecision or a child process; a plain object such as {} passed to the pure notifierPath is fine. (2) Since PR #14, dispatch refuses a program path that is not absolute (DispatchError step \"path\"). The one allowed dispatch call without a stubEnv path is a name that is not on PATH (for example pc-no-such-notifier), to test that refusal; it needs a one-line comment. (3) The suite also stops at once when STUB_OUT or STUB_HOLD is set in the environment.",
       "status": "review",
       "componentId": "notifier",
       "featureId": "notify-safety",
@@ -2021,7 +2021,7 @@
       "points": 2,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.781Z",
-      "updatedAt": "2026-10-09T13:13:29.725Z",
+      "updatedAt": "2026-10-09T13:23:32.483Z",
       "order": 0,
       "pr": {
         "number": 14,
@@ -2034,7 +2034,7 @@
     {
       "id": "108eb782",
       "title": "Add notifyDecision with the off switch and platform check",
-      "description": "da-t5. Criteria: DA-03.1, DA-03.3 (in-process half). Tests: 'DA-03.1: off passes no notification'; 'DA-03.3: linux and win32 pass no notification'. Verify: npm test -- notify. Adds decisionText, notifyDecision (precedence rows 1, 2, 6), catch that records failed, 'record not written' line. Lines: ~95 (source: architect hand-off; not checked). Depends on: da-t3, da-t4.\n\nRule from the PR #12 reviews (code review note, security N2; EM, 2026-10-09): appendRecord throws only RecordError, with fields code and target. Build the \"record not written\" reason as `${e.code} ${e.target}`, never from e.message, then replace control characters as the reason table says (U+0000-U+001F, U+007F-U+009F). The target holds the project root path, which can contain the folder name. readRecord must not get a non-test caller until it has appendRecord's checks (security F2).\n\nNotes from the da-t4 build (backend-engineer hand-off; EM, 2026-10-09): (1) dispatch(program, args) returns the pid (outcome sent) or throws DispatchError with step \"access\" | \"spawn\" | \"pid\" and code (never error.message). Map: access -> `<code> <path>`, spawn -> `<code>`, pid -> `did not start <path>` (design reason table). (2) dispatch does not check that the program path is absolute: notifyDecision must apply design row 4 (isAbsolute(notifierPath(env))) before calling dispatch, with a test that a bare name such as `osascript` gives failed and starts nothing; otherwise accessSync checks the current folder while spawn searches PATH (TH-3). (3) notifierPath takes Partial<NodeJS.ProcessEnv> because Next.js types make NODE_ENV required.",
+      "description": "da-t5. Criteria: DA-03.1, DA-03.3 (in-process half). Tests: 'DA-03.1: off passes no notification'; 'DA-03.3: linux and win32 pass no notification'. Verify: npm test -- notify. Adds decisionText, notifyDecision (precedence rows 1, 2, 6), catch that records failed, 'record not written' line. Lines: ~95 (source: architect hand-off; not checked). Depends on: da-t3, da-t4.\n\nRule from the PR #12 reviews (code review note, security N2; EM, 2026-10-09): appendRecord throws only RecordError, with fields code and target. Build the \"record not written\" reason as `${e.code} ${e.target}`, never from e.message, then replace control characters as the reason table says (U+0000-U+001F, U+007F-U+009F). The target holds the project root path, which can contain the folder name. readRecord must not get a non-test caller until it has appendRecord's checks (security F2).\n\nNotes from the da-t4 build and the PR #14 reviews (EM, 2026-10-09): (1) dispatch(program, args) returns the pid (outcome sent) or throws DispatchError with step \"path\" | \"access\" | \"spawn\" | \"pid\" and code (never error.message). Map: path -> `not an absolute path: <value>`, access -> `<code> <path>`, spawn -> `<code>`, pid -> `did not start <path>` (design reason table). (2) Since PR #14, dispatch itself refuses a program path that is not absolute (TH-3). notifyDecision still applies design row 4 (isAbsolute(notifierPath(env))) first. Test the bare-name case with a name that is not on PATH (for example pc-no-such-notifier), never with osascript, so a regression starts nothing; that is the one allowed exception to the stubEnv rule and needs a one-line comment. (3) notifierPath takes Partial<NodeJS.ProcessEnv> because Next.js types make NODE_ENV required. (4) In-process tests of notifyDecision must use the returned outcome and the record line as the witness, never the stub's output: dispatch takes no env, so the child inherits process.env (no STUB_OUT) and the stub writes nothing in process.",
       "status": "backlog",
       "componentId": "notifier",
       "featureId": "notify-switch",
@@ -2044,7 +2044,7 @@
       "points": 2,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.883Z",
-      "updatedAt": "2026-10-09T13:12:57.150Z",
+      "updatedAt": "2026-10-09T13:20:39.428Z",
       "order": 10
     },
     {
