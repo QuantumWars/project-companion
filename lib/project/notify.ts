@@ -1,11 +1,12 @@
 /**
  * The notifier (design 3.3, ADR-0001). Decision text reaches /usr/bin/osascript only as arguments after `--`, never
- * inside script source, so no part of it runs as code (DA-02.4, TH-1). The program is an absolute path, so `PATH` is
- * never searched (TH-3). This module never writes the event log (TH-16).
+ * inside script source, so no part of it runs as code (DA-02.4, TH-1). `dispatch` refuses a program path that is not
+ * absolute, so `PATH` is never searched (TH-3). This module never writes the event log (TH-16).
  */
 
 import { spawn, type ChildProcess } from "node:child_process";
 import { accessSync, constants } from "node:fs";
+import { isAbsolute } from "node:path";
 
 import { codeOf } from "@/lib/project/notify-record";
 
@@ -43,16 +44,20 @@ export const osascriptArgs = (script: readonly string[], text: readonly string[]
 export const notifierArgs = ({ title, command, project }: NotifyText): string[] =>
   osascriptArgs(NOTIFY_SCRIPT, [title, command, project]);
 
-/** The dispatch step that failed, and the error code. It never holds `error.message` or the text (TH-5). */
+/**
+ * The dispatch step that failed, and the error code: "path" (not absolute), "access", "spawn" or "pid" (no pid).
+ * The code is null for "path" and "pid". It never holds `error.message` or the text (TH-5).
+ */
 export class DispatchError extends Error {
-  constructor(readonly step: "access" | "spawn" | "pid", readonly code: string | null) {
+  constructor(readonly step: "path" | "access" | "spawn" | "pid", readonly code: string | null) {
     super(code ? `${step} ${code}` : step);
     this.name = "DispatchError";
   }
 }
 
-// Contract: returns the pid (outcome "sent"); throws a DispatchError when the notifier did not start (outcome "failed").
+// Contract: returns the pid (outcome "sent"); throws a DispatchError at the first failed step (outcome "failed").
 export const dispatch = (program: string, args: readonly string[]): number => {
+  if (!isAbsolute(program)) throw new DispatchError("path", null); // a bare name would make spawn search PATH (TH-3)
   try {
     accessSync(program, constants.X_OK);
   } catch (error) {

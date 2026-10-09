@@ -24,6 +24,11 @@ if (process.env.PROJECT_COMPANION_NOTIFY !== "off") {
   process.stderr.write("notify.test.ts: PROJECT_COMPANION_NOTIFY is not off; run this suite with npm test -- notify\n");
   process.exit(1);
 }
+// A stub started in-process gets process.env, and it writes wherever STUB_OUT points.
+if (process.env.STUB_OUT !== undefined || process.env.STUB_HOLD !== undefined) {
+  process.stderr.write("notify.test.ts: STUB_OUT or STUB_HOLD is set in the environment; unset them to run this suite\n");
+  process.exit(1);
+}
 
 const TMP = realpathSync(mkdtempSync(join(tmpdir(), "pc-notify-")));
 const STUB_OUT = join(TMP, "out");
@@ -266,7 +271,7 @@ test("DA-02.4: osascript passes every argument after -- unchanged", () => {
 });
 
 /* -------------------------------- dispatch --------------------------------- */
-// Every dispatch call uses notifierPath(stubEnv(...)): dispatch has no off switch (TH-19).
+// Every dispatch call uses notifierPath(stubEnv(...)), except the commented TH-3 calls: dispatch has no off switch (TH-19).
 
 const dispatchFailure = (run: () => unknown): [string, string | null] => {
   try { run(); } catch (error) { if (error instanceof DispatchError) return [error.step, error.code]; throw error; }
@@ -280,6 +285,12 @@ test("dispatch: a missing notifier fails at accessSync, a folder gives no pid, a
   eq(dispatchFailure(() => dispatch(notifierPath(stubEnv(folder)), [])), ["pid", null]);
   eq(dispatchFailure(() => dispatch(notifierPath(stubEnv(STUB)), ["a\0b"])), ["spawn", "ERR_INVALID_ARG_VALUE"]);
   await new Promise((done) => setImmediate(done)); // the folder's late 'error' event: without the listener, the suite crashes
+});
+
+test("TH-3: dispatch refuses a program path that is not absolute", () => {
+  // The one exception to the stubEnv rule for dispatch(): names that are not on PATH, so a regression still starts nothing.
+  eq(dispatchFailure(() => dispatch("pc-no-such-notifier", [])), ["path", null]);
+  eq(dispatchFailure(() => dispatch("relative/pc-no-such-notifier", [])), ["path", null]);
 });
 
 test("dispatch: the stub starts, and dispatch returns its pid", () => {
