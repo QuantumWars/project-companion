@@ -498,11 +498,13 @@ test("notifyDecision: a file at .project-notify gives one 'record not written' l
 // Every CLI run gets its env from stubEnv(...), so a notification can start only the stub (TH-19).
 
 const CLI = join(process.cwd(), "dist", "project-companion.mjs");
+const HOME = join(TMP, "home"); // the CLI's project index goes here, not in the real ~/.claude (security F1)
+mkdirSync(HOME);
 
 /** Runs the CLI bundle in `root`. CLAUDE_PROJECT_DIR is dropped: findProject would use it, not the cwd (store.ts). */
 const cli = (root: string, args: string[], overrides: StubOverrides = {}) => {
   const { CLAUDE_PROJECT_DIR: _dir, ...env } = stubEnv(STUB, overrides);
-  const run = spawnSync(process.execPath, [CLI, ...args], { cwd: root, env, encoding: "utf8", timeout: 20_000 });
+  const run = spawnSync(process.execPath, [CLI, ...args], { cwd: root, env: { ...env, HOME }, encoding: "utf8", timeout: 20_000 });
   return { code: run.status, out: run.stdout, err: run.stderr };
 };
 
@@ -535,7 +537,10 @@ const cliTest = (name: string, run: () => Promise<void>) =>
   test(name, async () => {
     [made, drained] = [[], 0];
     try { await run(); } finally {
-      const sent = made.flatMap((root) => readRecord(root)).filter((l) => l.outcome === "sent").length;
+      rmSync(STUB_HOLD, { force: true }); // release a held stub before the drain
+      // A record that cannot be read gives [] here, so a test that breaks the record must wait for its own stub with `await calls(n)`.
+      const record = (root: string) => { try { return readRecord(root); } catch { return []; } };
+      const sent = made.flatMap(record).filter((l) => l.outcome === "sent").length;
       if (sent > drained) await calls(sent - drained);
     }
   });
@@ -634,6 +639,7 @@ cliTest("DA-02.5: gate request and card open log the same events with the notifi
   // added no event. The decisions' own events are in both lists, so the check covers every line of both logs.
   const events = (root: string) => readEvents(root).map((e) => JSON.stringify([e.kind, e.data]).replace(/c-[0-9a-f]{6}/g, "c-x"));
   const [on, off] = [cliProject(), cliProject()];
+  const start = [on, off].map((root) => readEvents(root).length);
   for (const [root, overrides] of [[on, {}], [off, { notify: "off" }]] as const) {
     for (const kind of ["question", "track"]) eq(cli(root, ["card", "open", "--subject", "alerts", "--ask", "Q?", "--kind", kind], overrides).code, 0);
     eq(cli(root, ["gate", "request", "prd", "alerts", "--artifact", "docs/a.md"], overrides).code, 0);
@@ -641,13 +647,16 @@ cliTest("DA-02.5: gate request and card open log the same events with the notifi
   eq([on, off].map((root) => readRecord(root).map((l) => l.outcome).join()), ["sent,sent,sent", "off,off,off"]);
   eq((await calls(3)).length, 3, "stub calls");
   eq(events(on), events(off));
-  eq(events(on).filter((e) => /"(card\.opened|gate\.requested)"/.test(e)).length, 3, "the decisions' own events");
+  // Each log grew by the 3 decisions' own events, after the identity line that a new shard starts with (events.ts).
+  const grew = [on, off].map((root, i) => readEvents(root).slice(start[i]).map((e) => e.kind).join());
+  eq(grew, ["on", "off"].map(() => "actor.identified,card.opened,card.opened,gate.requested"), "new events");
 });
 
 test("DA-03.4: README names the commands, the off switch and macOS only", () => {
   const readme = readFileSync(join(process.cwd(), "README.md"), "utf8").split("\n");
   const start = readme.findIndex((l) => l.startsWith("**Decision alerts.**"));
   ok(start >= 0, "README.md has no line that starts with **Decision alerts.**");
+  eq(readme.slice(0, start).reverse().find((l) => l.startsWith("## ")), "## Gates, sprints and the PM cockpit", "the section above the paragraph");
   const end = readme.findIndex((l, i) => i > start && (l.startsWith("**") || l.startsWith("## ")));
   const text = readme.slice(start, end < 0 ? undefined : end).join("\n");
   const wanted = ["gate request", "card open", "PROJECT_COMPANION_NOTIFY=off", "macOS only", "exactly `off`"];
