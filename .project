@@ -2,8 +2,6 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-09T23:25:03.290Z",
-  "revision": 360,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1952,14 +1950,14 @@
       "points": 1,
       "role": "devops-sre",
       "createdAt": "2026-10-08T16:42:12.477Z",
-      "updatedAt": "2026-10-09T23:07:10.675Z",
+      "updatedAt": "2026-10-09T23:42:04.731Z",
       "order": 39,
       "pr": {
         "number": 10,
         "url": "https://github.com/QuantumWars/project-companion/pull/10",
         "state": "MERGED",
         "headSha": "9f0d1accc72ef0b42722a4c4444528a449e96615",
-        "syncedAt": "2026-10-09T23:07:10.673Z"
+        "syncedAt": "2026-10-09T23:42:04.730Z"
       }
     },
     {
@@ -1975,14 +1973,14 @@
       "points": 1,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.579Z",
-      "updatedAt": "2026-10-09T23:07:11.203Z",
+      "updatedAt": "2026-10-09T23:42:05.276Z",
       "order": 40,
       "pr": {
         "number": 11,
         "url": "https://github.com/QuantumWars/project-companion/pull/11",
         "state": "MERGED",
         "headSha": "a7018441c070d605e6372bef65b2079ac2ccd4eb",
-        "syncedAt": "2026-10-09T23:07:11.201Z"
+        "syncedAt": "2026-10-09T23:42:05.274Z"
       }
     },
     {
@@ -1998,14 +1996,14 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.680Z",
-      "updatedAt": "2026-10-09T23:07:11.770Z",
+      "updatedAt": "2026-10-09T23:42:05.872Z",
       "order": 41,
       "pr": {
         "number": 12,
         "url": "https://github.com/QuantumWars/project-companion/pull/12",
         "state": "MERGED",
         "headSha": "d40d5237e42c6e109a809950bffa6dac50831dd7",
-        "syncedAt": "2026-10-09T23:07:11.769Z"
+        "syncedAt": "2026-10-09T23:42:05.870Z"
       }
     },
     {
@@ -2021,14 +2019,14 @@
       "points": 2,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.781Z",
-      "updatedAt": "2026-10-09T23:07:12.395Z",
+      "updatedAt": "2026-10-09T23:42:06.408Z",
       "order": 42,
       "pr": {
         "number": 14,
         "url": "https://github.com/QuantumWars/project-companion/pull/14",
         "state": "MERGED",
         "headSha": "c83bd383f8aee3f5555e7e14e428c38a676a9ef5",
-        "syncedAt": "2026-10-09T23:07:12.395Z"
+        "syncedAt": "2026-10-09T23:42:06.407Z"
       }
     },
     {
@@ -2044,14 +2042,14 @@
       "points": 2,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.883Z",
-      "updatedAt": "2026-10-09T23:07:12.957Z",
+      "updatedAt": "2026-10-09T23:42:06.949Z",
       "order": 43,
       "pr": {
         "number": 15,
         "url": "https://github.com/QuantumWars/project-companion/pull/15",
         "state": "MERGED",
         "headSha": "24563c227b039384a5d0060c3c48a44f3ce3cd15",
-        "syncedAt": "2026-10-09T23:07:12.956Z"
+        "syncedAt": "2026-10-09T23:42:06.947Z"
       }
     },
     {
@@ -2067,14 +2065,14 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.986Z",
-      "updatedAt": "2026-10-09T23:07:13.489Z",
+      "updatedAt": "2026-10-09T23:42:07.513Z",
       "order": 44,
       "pr": {
         "number": 16,
         "url": "https://github.com/QuantumWars/project-companion/pull/16",
         "state": "MERGED",
         "headSha": "b92eb6a987d8a0588f7c574a76ad22ad780993d4",
-        "syncedAt": "2026-10-09T23:07:13.489Z"
+        "syncedAt": "2026-10-09T23:42:07.512Z"
       }
     },
     {
@@ -2090,14 +2088,14 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:13.087Z",
-      "updatedAt": "2026-10-09T23:07:14.073Z",
+      "updatedAt": "2026-10-09T23:42:08.047Z",
       "order": 45,
       "pr": {
         "number": 17,
         "url": "https://github.com/QuantumWars/project-companion/pull/17",
         "state": "MERGED",
         "headSha": "2519dd4c6e53881bd3b4be3a44c9c6aab3a24078",
-        "syncedAt": "2026-10-09T23:07:14.071Z"
+        "syncedAt": "2026-10-09T23:42:08.046Z"
       }
     },
     {
@@ -2113,21 +2111,21 @@
       "points": 3,
       "role": "qa-engineer",
       "createdAt": "2026-10-08T16:42:13.187Z",
-      "updatedAt": "2026-10-09T23:07:14.839Z",
+      "updatedAt": "2026-10-09T23:42:08.577Z",
       "order": 46,
       "pr": {
         "number": 18,
         "url": "https://github.com/QuantumWars/project-companion/pull/18",
         "state": "MERGED",
         "headSha": "c20b099d25281a7bcf88c97aa2c1cad4b2f30a36",
-        "syncedAt": "2026-10-09T23:07:14.839Z"
+        "syncedAt": "2026-10-09T23:42:08.575Z"
       }
     },
     {
       "id": "1b3763e7",
       "title": "Prove one record line per decision for each outcome",
       "description": "da-t9. Criteria: DA-04.1. Test: 'DA-04.1: one record line per decision, once for each outcome' (through the CLI, exact key order; a multi-line question gives one line). Verify: npm test -- notify. Lines: ~40 tests (source: architect hand-off; not checked). Depends on: da-t7.\n\nOpen paths from the da-t3 build (backend-engineer hand-off; EM, 2026-10-09): two appendRecord paths in lib/project/notify-record.ts have no test yet. (a) Writing .project-notify/.gitignore fails with an error other than EEXIST, so nothing is appended (needs a read-only folder; skip the test when running as root, which ignores the mode). (b) mkdir gives EEXIST because another process made the folder at the same time, then lstat runs once more. Decide here whether to cover (a); (b) is hard to test without a seam and may stay untested with a reason.",
-      "status": "review",
+      "status": "done",
       "componentId": "notifier",
       "featureId": "notify-record",
       "phaseId": "decision-alerts",
@@ -2136,14 +2134,14 @@
       "points": 1,
       "role": "qa-engineer",
       "createdAt": "2026-10-08T16:42:13.291Z",
-      "updatedAt": "2026-10-09T23:25:03.289Z",
-      "order": 0,
+      "updatedAt": "2026-10-09T23:42:09.126Z",
+      "order": 47,
       "pr": {
         "number": 19,
         "url": "https://github.com/QuantumWars/project-companion/pull/19",
-        "state": "OPEN",
-        "headSha": "cb10b8ae6bc4f6b4bc8b471d4f15f66b122510c5",
-        "syncedAt": "2026-10-09T23:17:52.626Z"
+        "state": "MERGED",
+        "headSha": "88d236f2eda9ee4531322742d31b1db96478c9c4",
+        "syncedAt": "2026-10-09T23:42:09.125Z"
       }
     },
     {
@@ -2178,7 +2176,7 @@
       "kind": "task",
       "role": "devops-sre",
       "createdAt": "2026-10-08T20:52:59.167Z",
-      "updatedAt": "2026-10-09T23:07:15.384Z",
+      "updatedAt": "2026-10-09T23:42:09.660Z",
       "order": 38,
       "points": 2,
       "pr": {
@@ -2186,7 +2184,7 @@
         "url": "https://github.com/QuantumWars/project-companion/pull/8",
         "state": "MERGED",
         "headSha": "cc56648aef8271a40b192db026d10063d68d1bbb",
-        "syncedAt": "2026-10-09T23:07:15.383Z"
+        "syncedAt": "2026-10-09T23:42:09.659Z"
       }
     }
   ],
@@ -2199,5 +2197,7 @@
   "agents": {
     "byComponent": {}
   },
-  "wip": {}
+  "wip": {},
+  "revision": 373,
+  "updatedAt": "2026-10-09T23:42:47.214Z"
 }
