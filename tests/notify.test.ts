@@ -1,23 +1,28 @@
 import { spawnSync } from "node:child_process";
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { isAbsolute, join } from "node:path";
+import { dirname, isAbsolute, join, resolve } from "node:path";
 
 import { eq, ok, runAll, test, throws } from "./harness";
 
 /**
  * Decision alerts. No test here may show a notification to the PM (TH-19), so:
- * the runner sets PROJECT_COMPANION_NOTIFY=off, the suite never changes
- * process.env, and `stubEnv` is the only way to turn notifications on. It
- * always points the notifier at an absolute path, in practice `STUB` below.
+ * the runner sets PROJECT_COMPANION_NOTIFY=off (else the suite stops at once),
+ * the suite never changes process.env, and `stubEnv` is the only way to turn
+ * notifications on. It accepts only a notifier in the suite's temporary folder.
  */
+
+if (process.env.PROJECT_COMPANION_NOTIFY !== "off") {
+  process.stderr.write("notify.test.ts: PROJECT_COMPANION_NOTIFY is not off; run this suite with npm test -- notify\n");
+  process.exit(1);
+}
 
 const TMP = realpathSync(mkdtempSync(join(tmpdir(), "pc-notify-")));
 const STUB_OUT = join(TMP, "out");
 const STUB_HOLD = join(TMP, "hold");
 mkdirSync(STUB_OUT);
 
-/** Saves its arguments (each ends in NUL), waits while STUB_HOLD exists, then writes <pid>.done. */
+/** Saves its arguments (each ends in NUL), waits while STUB_HOLD exists (600 polls at most), then writes <pid>.done. */
 const STUB = join(TMP, "notifier-stub");
 writeFileSync(STUB, [
   "#!/bin/sh",
@@ -25,7 +30,8 @@ writeFileSync(STUB, [
   "printf '%s\\0' \"$@\" > \"$STUB_OUT/$$.tmp\"",
   'mv "$STUB_OUT/$$.tmp" "$STUB_OUT/$$.argv"',
   'if [ -n "${STUB_HOLD:-}" ]; then',
-  '  while [ -e "$STUB_HOLD" ]; do sleep 0.05 2>/dev/null || sleep 1; done',
+  "  i=0",
+  '  while [ -e "$STUB_HOLD" ] && [ "$i" -lt 600 ]; do sleep 0.05 2>/dev/null || sleep 1; i=$((i+1)); done',
   "fi",
   ': > "$STUB_OUT/$$.done"',
   "",
@@ -33,8 +39,8 @@ writeFileSync(STUB, [
 chmodSync(STUB, 0o755);
 
 const stubEnv = (notifier: string): NodeJS.ProcessEnv => {
-  if (!notifier || !isAbsolute(notifier)) {
-    throw new Error(`stubEnv: the notifier must be an absolute path, got ${JSON.stringify(notifier)}`);
+  if (!notifier || !isAbsolute(notifier) || dirname(resolve(notifier)) !== TMP) {
+    throw new Error(`stubEnv: the notifier must be an absolute path inside the suite's temporary folder, got ${JSON.stringify(notifier)}`);
   }
   return { ...process.env, PROJECT_COMPANION_NOTIFY: "on", PROJECT_COMPANION_PLATFORM: "darwin", PROJECT_COMPANION_NOTIFIER: notifier, STUB_OUT, STUB_HOLD };
 };
@@ -49,6 +55,9 @@ test("TH-19: stubEnv refuses an empty or relative path", () => {
   const before = { ...process.env };
   throws(() => stubEnv(""), /absolute path/);
   throws(() => stubEnv("relative/x"), /absolute path/);
+  throws(() => stubEnv("osascript"), /absolute path/);
+  throws(() => stubEnv("/usr/bin/osascript"), /inside the suite's temporary folder/);
+  eq(stubEnv(join(TMP, "missing")).PROJECT_COMPANION_NOTIFIER, join(TMP, "missing"), "<tmp>/missing is allowed");
   const env = stubEnv(STUB);
   eq(
     [env.PROJECT_COMPANION_NOTIFY, env.PROJECT_COMPANION_PLATFORM, env.PROJECT_COMPANION_NOTIFIER, env.STUB_OUT, env.STUB_HOLD],
