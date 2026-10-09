@@ -6,10 +6,11 @@ import {
 import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 
-import { requestGate } from "@/lib/project/gate";
+import { logDir } from "@/lib/project/events";
+import { approveGate, requestGate } from "@/lib/project/gate";
 import {
-  controlsToSpaces, dispatch, DispatchError, NOTIFIER, NOTIFIER_ENV, notifierArgs, notifierPath, notifyDecision, NOTIFY_ENV, NOTIFY_SCRIPT, type NotifyText,
-  osascriptArgs, PLATFORM_ENV,
+  controlsToSpaces, decisionText, dispatch, DispatchError, failureReason, NOTIFIER, NOTIFIER_ENV, notifierArgs, notifierPath, notifyDecision, NOTIFY_ENV,
+  NOTIFY_SCRIPT, type NotifyText, osascriptArgs, PLATFORM_ENV,
 } from "@/lib/project/notify";
 import { appendRecord, codeOf, NOTIFY_DIR, NOTIFY_RECORD, readRecord, RecordError, recordPath, type RecordLine } from "@/lib/project/notify-record";
 import { initProject } from "@/lib/project/store";
@@ -327,6 +328,7 @@ test("dispatch: the stub starts, and dispatch returns its pid", () => {
 const GATE = "gate:prd:alerts";
 const GATE_LINE = { id: GATE, title: 'Approve the requirements for "alerts"', command: "/devolps:approve prd alerts" };
 const LOST_LINE = { id: "c-000000", title: null, command: null }; // an id that is not in the cockpit
+const NOT_SENT = "project-companion: notification not sent: "; // design 3.3, "Standard error lines" (DA-02.2)
 
 /** A project in TMP whose cockpit holds one requested gate, GATE. */
 const gateProject = (): string => {
@@ -386,10 +388,11 @@ test("notifyDecision: a failure records failed and a reason without decision tex
   const root = gateProject();
   const missing = join(TMP, "missing");
   const runs = [captured(() => notifyDecision(root, "c-000000", stubEnv(STUB))), captured(() => notifyDecision(root, GATE, stubEnv(missing)))];
-  for (const [outcome, out, err] of runs) {
-    eq([outcome, out], ["failed", ""]);
+  const notSent = [`${NOT_SENT}not in the cockpit: c-000000\n`, `${NOT_SENT}ENOENT ${missing}\n`];
+  runs.forEach(([outcome, out, err], i) => {
+    eq([outcome, out, err], ["failed", "", notSent[i]]);
     ok(![GATE_LINE.title, GATE_LINE.command, "Demo"].some((t) => err.includes(t)), `decision text on stderr: ${err}`);
-  }
+  });
   // A failed lookup gives null text. A dispatch failure keeps the text, and its reason is the code and the path.
   eq(lines(root), [
     { id: "c-000000", title: null, command: null, outcome: "failed", reason: "not in the cockpit: c-000000" },
@@ -397,12 +400,80 @@ test("notifyDecision: a failure records failed and a reason without decision tex
   ]);
 });
 
-test("notifyDecision: a file at .project-notify gives one 'record not written' line, and the outcome", () => {
+test("DA-02.2: a missing notifier gives one stderr line", () => {
+  const root = gateProject();
+  eq(captured(() => notifyDecision(root, GATE, stubEnv(join(TMP, "missing")))), ["failed", "", `${NOT_SENT}ENOENT ${TMP}/missing\n`]);
+  // A line break in the path becomes one space, in the stderr line and in the record alike.
+  eq(captured(() => notifyDecision(root, GATE, stubEnv(join(TMP, "miss\ning")))), ["failed", "", `${NOT_SENT}ENOENT ${TMP}/miss ing\n`]);
+  eq(lines(root), [`ENOENT ${TMP}/missing`, `ENOENT ${TMP}/miss ing`].map((reason) => ({ ...GATE_LINE, outcome: "failed" as const, reason })));
+});
+
+test("notifyDecision: a folder as the notifier gives \"did not start <folder>\"", async () => {
+  const root = gateProject();
+  const folder = join(TMP, "folder-notifier");
+  mkdirSync(folder);
+  eq(captured(() => notifyDecision(root, GATE, stubEnv(folder))), ["failed", "", `${NOT_SENT}did not start ${folder}\n`]);
+  await new Promise((done) => setImmediate(done)); // the folder's late 'error' event must not crash the suite
+});
+
+test("failureReason: \"not an absolute path: pc-no-such-notifier\", and never the error's message", () => {
+  // Through failureReason, not notifyDecision: stubEnv refuses a relative notifier, and nothing starts here.
+  eq(failureReason(new DispatchError("path", null), "pc-no-such-notifier"), "not an absolute path: pc-no-such-notifier");
+  eq(failureReason(Object.assign(new Error(GATE_LINE.title), { code: "EPERM" }), "/x"), "EPERM");
+});
+
+test("TH-5: a NUL in the project name gives ERR_INVALID_ARG_VALUE, and the name is not on stderr", () => {
+  const root = project();
+  initProject(root, "Secret\u0000Name");
+  requestGate(root, { kind: "prd", subject: "alerts", artifacts: [] });
+  ok(readFileSync(join(root, ".project"), "utf8").includes("Secret\\u0000Name"), "no \\u0000 in .project");
+  eq(decisionText(root, GATE).project, "Secret\u0000Name", "the lookup does not give the name");
+  const [outcome, out, err] = captured(() => notifyDecision(root, GATE, stubEnv(STUB)));
+  eq([outcome, out, err], ["failed", "", `${NOT_SENT}ERR_INVALID_ARG_VALUE\n`]);
+  ok(!err.includes("Secret") && !err.includes("Name"), `the project name is on stderr: ${err}`);
+});
+
+test("TH-5: a folder in place of an approved artifact gives lookup failed: EISDIR", () => {
+  // Design TH-5 (SR-4). It depends on how hashArtifact reads files today: the SR-8 bugfix must update this test.
+  const root = gateProject();
+  mkdirSync(join(root, "docs"));
+  writeFileSync(join(root, "docs", "a.md"), "# A\n");
+  requestGate(root, { kind: "design", subject: "alerts", artifacts: ["docs/a.md"] });
+  approveGate(root, { kind: "design", subject: "alerts", via: "prompt:test" });
+  eq(decisionText(root, GATE).title, GATE_LINE.title, "the lookup fails before the swap");
+  rmSync(join(root, "docs", "a.md"));
+  mkdirSync(join(root, "docs", "a.md"));
+  eq(captured(() => notifyDecision(root, GATE, stubEnv(STUB))), ["failed", "", `${NOT_SENT}lookup failed: EISDIR\n`]);
+  eq(lines(root), [{ id: GATE, title: null, command: null, outcome: "failed", reason: "lookup failed: EISDIR" }]);
+});
+
+/** Every line of every file in the project's event log, so any append, of any kind, changes the result. */
+const logLines = (root: string): string[] =>
+  readdirSync(logDir(root)).sort().flatMap((name) => readFileSync(join(logDir(root), name), "utf8").split("\n").filter(Boolean));
+
+test("DA-02.5: the notifier appends no event", () => {
+  const root = gateProject();
+  const before = logLines(root);
+  ok(before.length > 0, "the temporary project's log has no event");
+  const runs: [string, string, StubOverrides, string][] = [
+    [GATE, STUB, { notify: "off" }, "off"], [GATE, STUB, { platform: "linux" }, "unsupported"], [GATE, STUB, {}, "sent"],
+    [GATE, join(TMP, "missing"), {}, "failed"], [LOST_LINE.id, STUB, {}, "failed"],
+  ];
+  for (const [id, notifier, overrides, outcome] of runs) {
+    eq(captured(() => notifyDecision(root, id, stubEnv(notifier, overrides)))[0], outcome, id);
+    const after = logLines(root);
+    eq(after.length, before.length, `${outcome}: event lines`);
+    ok(after.every((line, i) => line === before[i]), `${outcome}: an event line changed`);
+  }
+});
+
+test("notifyDecision: a file at .project-notify gives one 'record not written' line, after any 'not sent' line", () => {
   eq(controlsToSpaces("a\u0000b\u001fc\u007fd\u009fe\u00a0f"), "a b c d e\u00a0f");
   const root = gateProject();
   writeFileSync(join(root, NOTIFY_DIR), "");
   const line = `project-companion: notification record not written: ENOTDIR ${root}/.project-notify\n`;
   eq(captured(() => notifyDecision(root, GATE, stubEnv(STUB, { notify: "off" }))), ["off", "", line]);
+  eq(captured(() => notifyDecision(root, GATE, stubEnv(join(TMP, "missing")))), ["failed", "", `${NOT_SENT}ENOENT ${TMP}/missing\n${line}`]);
   const odd = project("line\nbreak\u0085-"); // control characters in the path become spaces, so stderr gets one line
   writeFileSync(join(odd, NOTIFY_DIR), "");
   const [, , err] = captured(() => notifyDecision(odd, GATE, stubEnv(STUB, { notify: "off" })));
