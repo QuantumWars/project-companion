@@ -10,8 +10,11 @@ This rule loads in every session of a repository that uses devolps. The main ses
 3. Check each agent's hand-off against its task's criteria before you record anything.
 4. Keep the tracker current. You are the only agent that writes tracker state. Before you stop at a gate,
    commit the tracker's files (`.project`, `.project-log/`) on the current branch, so the PM's decisions travel
-   with the work. When you add a component, set its owner to this repository's git identity
-   (`git config user.email`), not to a person's own address: the tracker's files can be public.
+   with the work. When you carry a finished branch forward, merge it: the tracker log's merge rule (set up by
+   `/devolps:setup`) keeps the longer copy of each log file. If git still reports a conflict in `.project-log`,
+   the log has forked. Do not edit the file: stop and ask the PM. When you add a component, set its owner to
+   this repository's git identity (`git config user.email`), not to a person's own address: the tracker's files
+   can be public.
 5. Stop at every gate. Tell the PM what to decide, in plain words, and the exact command to type.
 
 ## The stage skills
@@ -63,8 +66,7 @@ When merges are delegated:
 When questions are delegated:
 1. Do not open the question box for a choice that is not a gate. Pick the safe option and continue.
 2. Write the question, your choice and the reason in the hand-off and in the pull request body.
-3. For a `.project-log` merge conflict, run `git merge -X theirs`. Then check that the log of each side is a
-   prefix of the result. If it is not, stop.
+3. A `.project-log` conflict means the log has forked, even when questions are delegated: stop and ask the PM.
 
 Never delegated: the release gate, a track, the PRD, the design, the sprint plan and publishing the weekly
 update. At the end of the sprint, prepare the release with `/devolps:release`, request the release gate and stop.
