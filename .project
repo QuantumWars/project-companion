@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-10T08:49:32.822Z",
-  "revision": 428,
+  "updatedAt": "2026-10-10T08:50:05.167Z",
+  "revision": 429,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1426,11 +1426,11 @@
       "status": "backlog",
       "componentId": "agent-tooling",
       "createdAt": "2026-10-08T20:33:57.586Z",
-      "updatedAt": "2026-10-10T08:49:32.822Z",
+      "updatedAt": "2026-10-10T08:50:05.166Z",
       "order": 16,
       "kind": "bug",
       "role": "backend-engineer",
-      "description": "Track: Bugfix (confirmed by the PM on 2026-10-10). Ready to build: bug spec `specs/bugs/15753492/bugfix.md` and failing regression test `tests/bug-15753492.test.ts` on branch `fix/15753492-spec` @ 79df5ef (qa-engineer). EM re-ran `npm --prefix <worktree> test -- bug-15753492`: exit 1, 0/1 — \"a run that wrote this exact file, inside its open window, must be the match: expected \\\"run\\\", got undefined\".\n\nRequirement: `run-attribution` (`docs/prd.md:213`), \"A commit matching a run's files and window attributes to that run's task\".\nRoot cause (qa-engineer, checked in code; EM spot-checked git-link.ts:152, run.ts:179-180, cli/index.ts:515): `writtenPaths` (`lib/project/ingest.ts:62-78`) takes the harness's absolute `file_path`; `cli/index.ts:1181-1187` passes it to `reportRun` (`lib/project/store.ts:1482-1512`), which logs it unchanged; `runFor` (`lib/project/git-link.ts:152`) compares it with the commit's relative paths, so it never matches.\nFix: store each touched path relative to the project root; keep a path outside the root as its absolute string, never `../..`. Also covers `mayWrite` (`lib/project/run.ts:179-180`), which compares absolute paths with relative write globs, so today every write of a component with a write boundary counts as outside it.\nOpen for the PM: card c-a1704f (normalise the paths already in the log when they are read, or fix only new events).\nFollow-up: 37f9fbce (the CLI's git log never passes runs).\nRole: backend-engineer."
+      "description": "Track: Bugfix (confirmed by the PM on 2026-10-10). Ready to build: bug spec `specs/bugs/15753492/bugfix.md` and failing regression test `tests/bug-15753492.test.ts` on branch `fix/15753492-spec` @ 79df5ef (qa-engineer). EM re-ran `npm --prefix <worktree> test -- bug-15753492`: exit 1, 0/1 — \"a run that wrote this exact file, inside its open window, must be the match: expected \\\"run\\\", got undefined\".\n\nRequirement: `run-attribution` (`docs/prd.md:213`), \"A commit matching a run's files and window attributes to that run's task\".\nRoot cause (qa-engineer, checked in code; EM spot-checked git-link.ts:152, run.ts:179-180, cli/index.ts:515): `writtenPaths` (`lib/project/ingest.ts:62-78`) takes the harness's absolute `file_path`; `cli/index.ts:1181-1187` passes it to `reportRun` (`lib/project/store.ts:1482-1512`), which logs it unchanged; `runFor` (`lib/project/git-link.ts:152`) compares it with the commit's relative paths, so it never matches.\nFix: store each touched path relative to the project root; keep a path outside the root as its absolute string, never `../..`. Also covers `mayWrite` (`lib/project/run.ts:179-180`), which compares absolute paths with relative write globs, so today every write of a component with a write boundary counts as outside it.\nDecided by the PM (card c-a1704f): also normalise the full paths already in the log when they are read, so old runs link to their commits.\nFollow-up: 37f9fbce (the CLI's git log never passes runs).\nRole: backend-engineer."
     },
     {
       "id": "978ce4d6",
