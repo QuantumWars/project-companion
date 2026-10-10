@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-10T05:32:01.472Z",
-  "revision": 398,
+  "updatedAt": "2026-10-10T05:51:37.670Z",
+  "revision": 399,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2161,9 +2161,9 @@
     {
       "id": "d5ebde85",
       "title": "Bug: the artifact text lookup can be slow without limit (SR-8)",
-      "status": "in_progress",
+      "status": "review",
       "createdAt": "2026-10-08T20:33:57.740Z",
-      "updatedAt": "2026-10-10T05:32:01.472Z",
+      "updatedAt": "2026-10-10T05:51:37.669Z",
       "order": 0,
       "kind": "bug",
       "role": "backend-engineer",
