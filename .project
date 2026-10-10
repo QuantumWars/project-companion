@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-09T23:43:51.887Z",
-  "revision": 381,
+  "updatedAt": "2026-10-10T00:00:06.813Z",
+  "revision": 382,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2188,16 +2188,6 @@
         "headSha": "cc56648aef8271a40b192db026d10063d68d1bbb",
         "syncedAt": "2026-10-09T23:42:09.659Z"
       }
-    },
-    {
-      "id": "0da68d29",
-      "title": "Prepare release 0.3.0: launch checklist, version, release notes",
-      "status": "todo",
-      "createdAt": "2026-10-09T23:43:50.891Z",
-      "updatedAt": "2026-10-09T23:43:51.886Z",
-      "order": 0,
-      "kind": "task",
-      "role": "devops-sre"
     }
   ],
   "roadmap": {
