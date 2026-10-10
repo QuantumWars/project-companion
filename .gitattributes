@@ -1,1 +1,2 @@
 .project merge=project-companion
+.project-log/*.jsonl merge=devolps-log
