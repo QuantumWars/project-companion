@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-10T09:16:36.475Z",
-  "revision": 439,
+  "updatedAt": "2026-10-10T10:08:37.939Z",
+  "revision": 445,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2225,49 +2225,57 @@
       "title": "CLI git log and git unlinked never attribute commits to agent runs",
       "status": "backlog",
       "createdAt": "2026-10-10T08:49:22.341Z",
-      "updatedAt": "2026-10-10T08:49:29.529Z",
+      "updatedAt": "2026-10-10T10:07:29.942Z",
       "order": 6,
-      "description": "Not triaged; track not proposed yet. Found by the qa-engineer while writing the 15753492 spec (2026-10-10); EM checked the line.\nObserved: `cli/index.ts:515` calls `linkRepository(repo, tasks, features, limit)` without the agent runs, so `project-companion git log` and `git unlinked` never try run-based attribution, even after bug 15753492 is fixed. Only the app's Git view (`git-view.ts`) passes runs.\nExpected: the CLI and the app attribute commits the same way (`run-attribution`, `docs/prd.md:213`).\nDepends on: 15753492.",
+      "description": "Track: Bugfix (confirmed by the PM, 2026-10-10). Found by the qa-engineer while writing the 15753492 spec.\n\nSpec ready to build (EM checked 2026-10-10): `specs/bugs/37f9fbce/bugfix.md` and `tests/bug-37f9fbce.test.ts` on branch `fix/37f9fbce-bug-spec` @ 495a8b9 (from 58f85bc). Build the fix from that branch (bugfix skill step 4).\nEM check on 495a8b9: `npm test -- bug-37f9fbce` -> exit 1, 1 of 3 pass (the control: linkRepository WITH runs attributes the commit), the 2 CLI tests fail (git log shows no run signal; git unlinked lists a commit a run covers), 2 s.\n\nObserved: `cli/index.ts:515` calls `linkRepository(repo, tasks, features, limit)` without the agent runs, so `project-companion git log` and `git unlinked` never try run-based attribution. Only the app's Git view (`lib/project/git-view.ts:87`) passes runs.\nExpected: PRD feature run-attribution (`docs/prd.md:222`): \"A commit matching a run's files and window attributes to that run's task.\"\nFix (spec): pass `readRuns(root)` as the 5th argument (readRuns is already imported in cli/index.ts). About 1 changed line (qa-engineer; not checked).\nOrder: independent of 15753492; the test uses root-relative touched paths, so it can merge before or after it (evidence in the spec's Fix section).\nNote (qa-engineer): the PRD box for run-attribution is ticked on the strength of the app's code path alone; the CLI never met it until this test.",
       "labels": [
         "bug",
         "agent-tooling"
-      ]
+      ],
+      "kind": "bug",
+      "role": "backend-engineer"
     },
     {
       "id": "1187698b",
       "title": "Write a short runbook for decision alerts (off switch, record, SR-8 rollback)",
-      "description": "Track: Quick, epic repo-upkeep (bundled with the other two chores; PM card c-6e8bb6, 2026-10-10; track not confirmed yet). Role: devops-sre (it owns runbooks; `docs/runbooks/ci.md` is the model).\n\nSource: the release 0.3.0 launch checklist (`docs/releases/0.3.0-checklist.md`: \"A decision-alerts runbook is a backlog task\").\nScope: `docs/runbooks/decision-alerts.md`, short. Cover:\n1. The off switch (`PROJECT_COMPANION_NOTIFY=off`) and how to check that it works.\n2. The notification record (`.project-notify/record.jsonl`): what each line means, and that it is a local metric, not proof that the PM saw a banner (TH-18).\n3. Rollback: the off switch first, then reverting a release; the SR-8 fix (bug d5ebde85, PR 22) and its accepted residuals.\n4. Where to look when an alert does not appear (outcome `failed`, the stderr line).\nVerify: every command in the runbook was run once, and its output matches the text.\n\nReplaces task a9c34f46, which had no epic.",
+      "description": "Track: Quick, epic repo-upkeep (bundled with the other two chores; PM card c-6e8bb6, 2026-10-10; track confirmed by the PM 2026-10-10). Role: devops-sre (it owns runbooks; `docs/runbooks/ci.md` is the model).\n\nSource: the release 0.3.0 launch checklist (`docs/releases/0.3.0-checklist.md`: \"A decision-alerts runbook is a backlog task\").\nScope: `docs/runbooks/decision-alerts.md`, short. Cover:\n1. The off switch (`PROJECT_COMPANION_NOTIFY=off`) and how to check that it works.\n2. The notification record (`.project-notify/record.jsonl`): what each line means, and that it is a local metric, not proof that the PM saw a banner (TH-18).\n3. Rollback: the off switch first, then reverting a release; the SR-8 fix (bug d5ebde85, PR 22) and its accepted residuals.\n4. Where to look when an alert does not appear (outcome `failed`, the stderr line).\nVerify: every command in the runbook was run once, and its output matches the text.\n\nReplaces task a9c34f46, which had no epic.\n\nSpec: specs/repo-upkeep/quick.md (d98ceb3), criteria RU-01.1 to RU-01.11; their Verify lines are the task's checks. Estimate: about 90 lines, 1 new file (exact count UNKNOWN until written; RU-01.1 caps it at 120).",
       "status": "backlog",
       "phaseId": "repo-upkeep",
       "kind": "task",
       "role": "devops-sre",
       "createdAt": "2026-10-10T09:01:44.136Z",
-      "updatedAt": "2026-10-10T09:01:44.136Z",
+      "updatedAt": "2026-10-10T10:08:31.538Z",
       "order": 7
     },
     {
       "id": "85e1d62b",
       "title": "Fix package-lock.json name drift (board-video-tutorial vs project-companion)",
-      "description": "Track: Quick, epic repo-upkeep (bundled with the other two chores; PM card c-6e8bb6, 2026-10-10; track not confirmed yet). Role: devops-sre.\n\nObserved (EM, release 0.3.0 and again on master 848898a, 2026-10-10): `package.json` names the package `project-companion`, but `package-lock.json` names it `board-video-tutorial` (top-level `name` and `packages[\"\"].name`). The drift was there before release 0.3.0; that release changed only the `version` fields.\nFix: set both names in `package-lock.json` to `project-companion`, for example with `npm install --package-lock-only`, and check that no dependency entry changes.\nVerify: `node -e` check that the lock's two names equal `package.json`'s name; `npm ci` passes; `git diff package-lock.json` changes only the two name lines.\n\nReplaces task 0375f5e8, which had no epic.",
+      "description": "Track: Quick, epic repo-upkeep (bundled with the other two chores; PM card c-6e8bb6, 2026-10-10; track confirmed by the PM 2026-10-10). Role: devops-sre.\n\nObserved (EM, release 0.3.0 and again on master 848898a, 2026-10-10): `package.json` names the package `project-companion`, but `package-lock.json` names it `board-video-tutorial` (top-level `name` and `packages[\"\"].name`). The drift was there before release 0.3.0; that release changed only the `version` fields.\nFix: set both names in `package-lock.json` to `project-companion`, for example with `npm install --package-lock-only`, and check that no dependency entry changes.\nVerify: `node -e` check that the lock's two names equal `package.json`'s name; `npm ci` passes; `git diff package-lock.json` changes only the two name lines.\n\nReplaces task 0375f5e8, which had no epic.\n\nSpec: specs/repo-upkeep/quick.md (d98ceb3), criteria RU-02.1 to RU-02.3; their Verify lines are the task's checks. Estimate: 4 lines (2 removed, 2 added; product-manager's scratch run).",
       "status": "backlog",
       "phaseId": "repo-upkeep",
       "kind": "task",
       "role": "devops-sre",
       "createdAt": "2026-10-10T09:01:44.335Z",
-      "updatedAt": "2026-10-10T09:01:44.335Z",
+      "updatedAt": "2026-10-10T10:08:34.609Z",
       "order": 7
     },
     {
       "id": "be08efcf",
       "title": "Set \"root\": true in .eslintrc.json so lint runs in agent worktrees",
-      "description": "Track: Quick, epic repo-upkeep (bundled with the other two chores; PM card c-6e8bb6, 2026-10-10; track not confirmed yet). Role: devops-sre (UNKNOWN whether `.eslintrc.json` is in its write scope; no role scope names it).\n\nObserved (backend-engineer and qa-engineer, PR 22, 2026-10-10): `npm run lint` fails in every agent worktree under `.claude/worktrees/` with `Plugin \"@next/next\" was conflicted between \".eslintrc.json\" and \"../../../.eslintrc.json\"`. ESLint reads the worktree's config and the main checkout's, because `.eslintrc.json` has no `\"root\": true`. Builders cannot report lint from their own copy; the EM runs it in the main checkout.\nFix: add `\"root\": true` to `.eslintrc.json`.\nVerify: `npm run lint` passes in an agent worktree and in the main checkout.\n\nReplaces task d187f516, which had no epic.",
+      "description": "Track: Quick, epic repo-upkeep (bundled with the other two chores; PM card c-6e8bb6, 2026-10-10; track confirmed by the PM 2026-10-10). Role: devops-sre (the PM widens its scope to `.eslintrc.json`, card c-b9efd8).\n\nObserved (backend-engineer and qa-engineer, PR 22, 2026-10-10): `npm run lint` fails in every agent worktree under `.claude/worktrees/` with `Plugin \"@next/next\" was conflicted between \".eslintrc.json\" and \"../../../.eslintrc.json\"`. ESLint reads the worktree's config and the main checkout's, because `.eslintrc.json` has no `\"root\": true`. Builders cannot report lint from their own copy; the EM runs it in the main checkout.\nFix: add `\"root\": true` to `.eslintrc.json`.\nVerify: `npm run lint` passes in an agent worktree and in the main checkout.\n\nReplaces task d187f516, which had no epic.\n\nSpec: specs/repo-upkeep/quick.md (d98ceb3), criteria RU-03.1 to RU-03.3; their Verify lines are the task's checks. Estimate: 1 line; starts only after the PM's .claude/harness.json scope PR has merged (card c-b9efd8).",
       "status": "backlog",
       "phaseId": "repo-upkeep",
       "kind": "task",
       "role": "devops-sre",
       "createdAt": "2026-10-10T09:01:44.528Z",
-      "updatedAt": "2026-10-10T09:01:44.528Z",
-      "order": 7
+      "updatedAt": "2026-10-10T10:08:37.939Z",
+      "order": 7,
+      "blocked": {
+        "reason": "Waits for the PM's 1-line .claude/harness.json pull request that adds .eslintrc.json to the devops-sre write scope (card c-b9efd8). Only the PM edits .claude/.",
+        "cause": "decision",
+        "unblocker": "PM",
+        "since": "2026-10-10T10:08:10.027Z"
+      }
     },
     {
       "id": "1d22facd",
