@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-10T09:01:44.627Z",
-  "revision": 436,
+  "updatedAt": "2026-10-10T09:16:36.475Z",
+  "revision": 439,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2209,14 +2209,16 @@
       "title": "Bug: log shards and .project read through a symlink or device (SR-8 residual 3)",
       "status": "backlog",
       "createdAt": "2026-10-10T07:37:24.550Z",
-      "updatedAt": "2026-10-10T07:37:31.579Z",
+      "updatedAt": "2026-10-10T09:16:36.474Z",
       "order": 5,
-      "description": "Proposed track: Bugfix (needs the PM's confirmation: /devolps:approve track 54b4e811 bugfix). Opened by the PM's answer to card c-73ccab at the PR 22 merge: accept TH-7 residuals 1 and 2; open a separate bug for residual 3.\n\nSource: PR 22 security re-check (bug d5ebde85, SR-8) and `specs/decision-alerts/threat-model.md` TH-7 residual 3.\nObserved:\n1. Log shards (`lib/project/events.ts`) and `.project` (`lib/project/bundle.ts`) are read with no check. A merged commit can make them a symlink to a device such as `/dev/zero`, and the read never ends. This is the same hang SR-8 was opened for, reached through D1 and D2.\n2. The write-then-rename helpers write `<path>.<pid>.tmp` with a plain `writeFileSync`, which follows a symlink at that name: `writeText` (`lib/project/roadmap.ts:242-246`), `lib/project/bundle.ts:235-237`, and `writeJson` (`lib/project/store.ts:220-223`). Severity: low. A commit would need one planted symlink for each possible process id.\nFix (from the security re-check): read only a regular file, with lstat plus `isFile()`, or with `O_NOFOLLOW|O_NONBLOCK` plus `fstat`, as `lib/project/notify-record.ts:71-77` does. Write the temp file with `wx`. On EEXIST, remove the temp path (this removes a symlink, not its target) and write again with `wx`. Note: `lib/project/registry.ts:127` uses the same pattern, but it writes in the home folder, so a committed symlink cannot reach it.\nDocs: update TH-7 residual 3 and the D1 and D2 rows when it is fixed.",
+      "description": "Track: Bugfix (confirmed by the PM). Opened by the PM's answer to card c-73ccab at the PR 22 merge: accept TH-7 residuals 1 and 2; open a separate bug for residual 3.\n\nSpec ready to build (EM checked 2026-10-10): `specs/bugs/54b4e811/bugfix.md` and `tests/bug-54b4e811.test.ts` on branch `fix/54b4e811-bug-spec` @ c4c739e (from bb0df35). Build the fix from that branch (bugfix skill step 4).\nEM check on c4c739e: `npm test -- bug-54b4e811` -> exit 1, 5 of 6 fail, the control passes, 6 s, no hang. The two read tests use a FIFO with no writer, in a child process with a 3 s kill timeout (not /dev/zero, which grew memory to several GB in the qa-engineer's measurement).\n\nObserved 1: log shards (`lib/project/events.ts` readShard) and `.project` (`lib/project/bundle.ts` readBundle) are read with no regular-file check; a merged symlink to a device or FIFO makes the read never end.\nObserved 2 (low): `writeText` (roadmap.ts), `writeBundle` (bundle.ts) and `writeJson` (store.ts) write `<path>.<pid>.tmp` with a plain writeFileSync, which follows a symlink at that name.\nFix (spec): reuse `regularFileIn`/`isInside` (lib/project/gate.ts, from SR-8) for the reads; write temp files with `wx`, and on EEXIST unlink and retry with `wx` (model: notify-record.ts).\nEstimate: about 40-60 changed lines (qa-engineer, from the two landed examples of the same shapes; not checked).\nExpected: no requirement ID exists; the spec cites TH-7 residual 3 (threat-model.md) and card c-73ccab. Same gap as d5ebde85.\nDocs: update TH-7 residual 3 and the D1 and D2 rows when it is fixed.",
       "labels": [
         "bug",
         "security",
         "decision-alerts"
-      ]
+      ],
+      "kind": "bug",
+      "role": "backend-engineer"
     },
     {
       "id": "37f9fbce",
@@ -2265,6 +2267,16 @@
       "role": "devops-sre",
       "createdAt": "2026-10-10T09:01:44.528Z",
       "updatedAt": "2026-10-10T09:01:44.528Z",
+      "order": 7
+    },
+    {
+      "id": "1d22facd",
+      "title": "Bug: readRecord reads .project-notify/record.jsonl without a regular-file check",
+      "description": "Not triaged; track not proposed yet. Found by the qa-engineer while writing the 54b4e811 spec (2026-10-10).\nObserved: lib/project/notify-record.ts readRecord (about lines 88-95) reads .project-notify/record.jsonl with a plain readFileSync and no regular-file check: the same read-side gap as 54b4e811 Observed 1, on a third file. TH-7 residual 3 names only events.ts and bundle.ts, so 54b4e811 does not cover it.\nNote: .project-notify/ is git-ignored (DA-04.2), so a merged commit cannot plant a symlink there the way it can for .project-log/ and .project. Severity: UNKNOWN until triaged.",
+      "status": "backlog",
+      "componentId": "notifier",
+      "createdAt": "2026-10-10T09:16:30.889Z",
+      "updatedAt": "2026-10-10T09:16:30.889Z",
       "order": 7
     }
   ],
