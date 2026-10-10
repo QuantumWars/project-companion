@@ -63,21 +63,21 @@ file loses only metric history.
 1. Off switch, no code: set `PROJECT_COMPANION_NOTIFY=off` as above. This
    takes effect at once and needs no pull request. It does not stop the
    text lookup that builds the title and command — see below.
-2. Revert the 2 CLI calls, only if step 1 is not enough: PR #17 is the
-   squashed merge commit `4ad07e9` on `master`. Open a pull request that
-   reverts it and take it through the PM's merge gate.
+2. Remove the 2 CLI calls, only if step 1 is not enough. PR #17 (squash
+   commit `4ad07e9` on `master`) added them to `cli/index.ts`. Open a pull
+   request that reverses only that file's change, removes the CLI tests
+   that expect a notification (DA-01.1 and DA-01.2 in `tests/notify.test.ts`),
+   and updates the README paragraph (DA-03.4). Take it through the PM's
+   merge gate. Never revert the whole of `4ad07e9`: it also holds tracker
+   log lines, PRD ticks and a QA report, and it no longer reverts cleanly.
 
    ```sh
    d=$(mktemp -d)
    git clone -q "$(git remote get-url origin)" "$d"
-   git -C "$d" revert --no-edit 4ad07e9
-   echo "exit=$?"
+   git -C "$d" show 4ad07e9 -- cli/index.ts | git -C "$d" apply -R --check
+   echo "exit=$?"    # 0: the cli/index.ts change still reverses cleanly
    rm -rf "$d"
    ```
-
-   Run the revert only in a throwaway clone, as above, to check that it
-   applies cleanly; push the result as a pull request instead of reverting
-   in this repository or in your own worktree.
 
 The off switch does not stop the text lookup: every `gate request` or
 `card open` still re-reads the cockpit, the gate artifacts and the PRD
