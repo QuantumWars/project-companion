@@ -14,8 +14,8 @@
  * assignee -- becomes a stored override.
  */
 
-import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
-import { dirname } from "node:path";
+import { existsSync, mkdirSync, readFileSync, realpathSync, renameSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 
 import {
   applyOps,
@@ -26,7 +26,7 @@ import {
   type PrdOp,
 } from "./prd";
 import { mutateBundle, readBundle, withProjectLock } from "./bundle";
-import { regularFileIn } from "./gate";
+import { isInside, regularFileIn } from "./gate";
 import { readJson, projectPaths, writeJson } from "./store";
 import {
   DEFAULT_PRD_PATH,
@@ -323,6 +323,30 @@ export const setPhase = (root: string, phase: Partial<Phase> & { id: string }): 
 };
 
 /** Points the project at a different PRD file. */
+/**
+ * Writes a new PRD at the source path (`prd init`); returns the source (SR-8).
+ *
+ * The nearest folder that exists must be inside the project root, and `wx`
+ * never replaces a file or follows a symlink at the path (O_EXCL).
+ */
+export const createPrd = (root: string, text: string): string => {
+  const { present, source } = readRoadmap(root);
+  if (present) throw new Error(`${source} already exists.`);
+  const base = realpathSync(root);
+  const file = join(base, source);
+  let dir = dirname(file);
+  while (!existsSync(dir)) dir = dirname(dir);
+  if (!isInside(base, realpathSync(dir))) throw new Error(`${source} is not inside the project.`);
+  mkdirSync(dirname(file), { recursive: true });
+  try {
+    writeFileSync(file, text, { encoding: "utf8", flag: "wx" });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+    throw new Error(`${source} exists but is not a regular file inside the project.`);
+  }
+  return source;
+};
+
 export const setPrdSource = (root: string, source: string): Roadmap => {
   writeSidecar(root, { ...readSidecar(root), source });
   return readRoadmap(root);

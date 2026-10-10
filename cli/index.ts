@@ -102,6 +102,7 @@ import {
   type Stage,
 } from "../lib/project/gate";
 import {
+  createPrd,
   editPrd,
   readRoadmap,
   setFeatureOverride,
@@ -1767,10 +1768,13 @@ const main = () => {
     }
 
     if (sub === "init") {
-      const roadmap = readRoadmap(root);
-      if (roadmap.present) die(`${roadmap.source} already exists.`);
-      writeFileSync(join(root, roadmap.source), PRD_TEMPLATE, "utf8");
-      process.stdout.write(`Created ${roadmap.source}\n`);
+      let source = "";
+      try {
+        source = createPrd(root, PRD_TEMPLATE); // SR-8: never outside the root, never over a file or a symlink
+      } catch (error) {
+        die(error instanceof Error ? error.message : String(error));
+      }
+      process.stdout.write(`Created ${source}\n`);
       return;
     }
 

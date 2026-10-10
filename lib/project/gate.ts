@@ -130,6 +130,12 @@ export const prdSection = (prd: string, epic: string): string | null => {
     .join("\n");
 };
 
+/** Whether the real path `file` is the real path `base` or inside it (SR-8). */
+export const isInside = (base: string, file: string): boolean => {
+  const rel = relative(base, file);
+  return !isAbsolute(rel) && rel.split(sep)[0] !== "..";
+};
+
 /**
  * The real path of `path` when it is a regular file inside `root`; null otherwise (SR-8).
  *
@@ -137,12 +143,11 @@ export const prdSection = (prd: string, epic: string): string | null => {
  * folder, a device or a FIFO counts as missing. Nothing here opens the file.
  * The roadmap's PRD source read uses it too.
  */
-export const regularFileIn =(root: string, path: string): string | null => {
+export const regularFileIn = (root: string, path: string): string | null => {
   try {
     const base = realpathSync(root);
     const file = realpathSync(join(base, path));
-    const rel = relative(base, file);
-    if (isAbsolute(rel) || rel.split(sep)[0] === "..") return null;
+    if (!isInside(base, file)) return null;
     return statSync(file).isFile() ? file : null;
   } catch {
     return null; // as existsSync did: a path that cannot be resolved is missing
@@ -267,7 +272,9 @@ export const requestGate = (
   const artifacts = input.artifacts.map((ref) => ({ ref, sha256: hashArtifact(root, ref, prdPath) }));
   const missing = artifacts.filter((a) => a.sha256 === null).map((a) => a.ref);
   if (missing.length) {
-    throw new GateError(`These artifacts do not exist, so there is nothing to approve: ${missing.join(", ")}`);
+    throw new GateError(
+      `These artifacts do not exist or are not regular files inside the project, so there is nothing to approve: ${missing.join(", ")}`,
+    );
   }
   appendEvent(root, {
     kind: "gate.requested",
@@ -310,7 +317,9 @@ export const approveGate = (
   const artifacts = refs.map((ref) => ({ ref, sha256: hashArtifact(root, ref, prdPath) }));
   const missing = artifacts.filter((a) => a.sha256 === null).map((a) => a.ref);
   if (missing.length) {
-    throw new GateError(`These artifacts no longer exist: ${missing.join(", ")}. Request the gate again.`);
+    throw new GateError(
+      `These artifacts no longer exist or are not regular files inside the project: ${missing.join(", ")}. Request the gate again.`,
+    );
   }
   appendEvent(root, {
     kind: "gate.approved",
