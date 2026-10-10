@@ -3770,3 +3770,4 @@
 {"id":"2d96e8e4849c:3760","ts":1791612918206,"seq":3760,"actor":"2d96e8e4849c","prev":"67f174226a096e10","kind":"run.progress","data":{"runId":"2f29ec42","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
 {"id":"2d96e8e4849c:3761","ts":1791612921678,"seq":3761,"actor":"2d96e8e4849c","prev":"2b558a9431f4703d","kind":"run.progress","data":{"runId":"2f29ec42","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
 {"id":"2d96e8e4849c:3762","ts":1791612930940,"seq":3762,"actor":"2d96e8e4849c","prev":"825d565914df3bb8","kind":"run.state","data":{"runId":"2f29ec42","state":"awaiting_review","reason":"the subagent finished"}}
+{"id":"2d96e8e4849c:3763","ts":1791612945698,"seq":3763,"actor":"2d96e8e4849c","prev":"b206f731aa859f7c","kind":"task.moved","data":{"taskId":"d5ebde85","from":"in_progress","to":"review"}}
