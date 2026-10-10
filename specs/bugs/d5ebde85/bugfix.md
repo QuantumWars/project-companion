@@ -63,6 +63,9 @@ place to look and the EM should say where the id lives.
    fast and safe): point the same kind of `..` ref at a very large file or at a device such as `/dev/zero`.
    `gate request`, `gate status`/`readGates`, and since PR #17 `card open`, all run `hashArtifact` on it and can
    run for a very long time or never return.
+5. (PR #22 review H1/security F1) `prd init` (`cli/index.ts`, now `createPrd` in `lib/project/roadmap.ts`) wrote
+   to the PRD source path with no containment or symlink check either, so it could overwrite a file outside the
+   root, or a symlink's target, even once `readPrdText` refused to read from there.
 
 ## Root cause
 
@@ -86,12 +89,12 @@ branch's `join(root, prdPath)`:
    FIFOs and similar), without calling `readFileSync` on it first.
 4. Only then read and hash the file.
 
-This is a pure change inside `hashArtifact`; `requestGate`, `approveGate` and `withStaleness` already treat a
-`null` hash as "missing"/"changed", so no caller needs to change. The fix must also update the two tests named in
-the task source (`tests/notify.test.ts`, `TH-5: a folder in place of an approved artifact gives lookup failed:
-EISDIR`, in-process and CLI) to match the new, non-throwing behaviour for a directory, and the DA-02.5
-approved-artifact case, as noted in design.md:453 and the task description. Not done here: this bug spec adds
-only the regression test below; the code fix and the TH-5 test updates are for the build stage.
+This is mostly a pure change inside `hashArtifact`; `requestGate`, `approveGate` and `withStaleness` already
+treat a `null` hash as "missing"/"changed". One caller did need to change: `prd init`/`createPrd` (item 5 above)
+now refuses a source whose nearest existing folder is outside the root, and writes with `wx` (never over a file,
+never through a symlink). This fix also updated the two tests named in the task source (`tests/notify.test.ts`,
+the TH-5 `EISDIR` case, in-process and CLI) for the new, non-throwing behaviour, and the DA-02.5
+approved-artifact case; both the code and these test updates landed in this pull request (PR #22).
 
 `readPrdText` must use the same check: the builder exported `regularFileIn` from `gate.ts` and had
 `readPrdText` (`lib/project/roadmap.ts`) reuse it, so the PRD source gets the same in-root, regular-file rule
@@ -99,22 +102,16 @@ only the regression test below; the code fix and the TH-5 test updates are for t
 
 ## Regression test
 
-`d5ebde85: an artifact path outside the project root is not read` (in `tests/bug-d5ebde85.test.ts`).
+`tests/bug-d5ebde85.test.ts`, 6 tests:
 
-It creates a temporary project root and a sibling file one directory above it, then calls
-`hashArtifact(root, "../secret.txt")` directly (no CLI, no event log, no git repo needed — `hashArtifact` is a
-pure function of `root` and `ref`). It asserts the result is `null`. Today the sibling file is read and hashed,
-so the test fails fast (confirmed below); after the fix, the escaped ref must be treated as missing and the test
-must pass.
+- `d5ebde85: an artifact path outside the project root is not read`
+- `d5ebde85: a folder, a symlink out of the root and an escaped PRD source give null`
+- `d5ebde85: a PRD source outside the project root or not a regular file is not read`
+- `d5ebde85: an artifact path inside the project root is still read (control)` (now also an in-root symlink)
+- `d5ebde85: a Unix socket inside the project root gives null`
+- `d5ebde85: prd init never writes outside the root or over a file or a symlink`
 
-A second test in the same file, `d5ebde85: an artifact path inside the project root is still read (control)`,
-checks that an ordinary in-root artifact is still hashed, so the fix does not overcorrect. It passes today and
-must keep passing after the fix.
-
-A third test, for the PRD-source gap: `d5ebde85: a PRD source outside the project root or not a regular file is
-not read`.
-
-Confirmed failing now:
+Before the fix (only the first two existed, the second narrower):
 
 ```
 $ npm test -- bug-d5ebde85
