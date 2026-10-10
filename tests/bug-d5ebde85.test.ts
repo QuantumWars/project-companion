@@ -18,7 +18,7 @@
  * bug; this test only needs one fast-failing case to prove it.
  */
 
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -35,6 +35,21 @@ test("d5ebde85: an artifact path outside the project root is not read", () => {
 
     const escaped = hashArtifact(root, "../secret.txt");
     eq(escaped, null, "a ref that escapes the project root must not be read or hashed");
+  } finally {
+    rmSync(parent, { recursive: true, force: true });
+  }
+});
+
+test("d5ebde85: a folder, a symlink out of the root and an escaped PRD source give null", () => {
+  const parent = mkdtempSync(join(tmpdir(), "pc-d5ebde85-"));
+  const root = join(parent, "project");
+  mkdirSync(join(root, "docs"), { recursive: true });
+  try {
+    writeFileSync(join(parent, "secret.md"), "## Phase: Alerts\n");
+    symlinkSync(join(parent, "secret.md"), join(root, "docs", "link.md"));
+    eq(hashArtifact(root, "docs"), null, "a folder inside the root is not a regular file");
+    eq(hashArtifact(root, "docs/link.md"), null, "a symlink that leaves the root is not read");
+    eq(hashArtifact(root, "prd-section:alerts", "../secret.md"), null, "a PRD source outside the root is not read");
   } finally {
     rmSync(parent, { recursive: true, force: true });
   }

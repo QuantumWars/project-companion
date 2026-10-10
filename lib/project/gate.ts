@@ -39,8 +39,8 @@
  */
 
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { readFileSync, realpathSync, statSync } from "node:fs";
+import { isAbsolute, join, relative, sep } from "node:path";
 
 import { appendEvent, readEvents, type ProjectEvent } from "./events";
 import { slug } from "./prd";
@@ -130,17 +130,35 @@ export const prdSection = (prd: string, epic: string): string | null => {
     .join("\n");
 };
 
-/** sha256 of an artifact's current bytes; null when it does not exist. */
+/**
+ * The real path of `path` when it is a regular file inside `root`; null otherwise (SR-8).
+ *
+ * A merged log names the path, so a `..` escape, a symlink out of the root, a
+ * folder, a device or a FIFO counts as missing. Nothing here opens the file.
+ */
+const regularFileIn = (root: string, path: string): string | null => {
+  try {
+    const base = realpathSync(root);
+    const file = realpathSync(join(base, path));
+    const rel = relative(base, file);
+    if (isAbsolute(rel) || rel.split(sep)[0] === "..") return null;
+    return statSync(file).isFile() ? file : null;
+  } catch {
+    return null; // as existsSync did: a path that cannot be resolved is missing
+  }
+};
+
+/** sha256 of an artifact's current bytes; null when it is not a regular file inside the root. */
 export const hashArtifact = (root: string, ref: string, prdPath = "docs/prd.md"): string | null => {
   if (ref.startsWith("head:")) return ref.slice("head:".length) || null;
   if (ref.startsWith("prd-section:")) {
-    const file = join(root, prdPath);
-    if (!existsSync(file)) return null;
+    const file = regularFileIn(root, prdPath);
+    if (file === null) return null;
     const section = prdSection(readFileSync(file, "utf8"), ref.slice("prd-section:".length));
     return section === null ? null : sha(section);
   }
-  const file = join(root, ref);
-  return existsSync(file) ? sha(readFileSync(file, "utf8")) : null;
+  const file = regularFileIn(root, ref);
+  return file === null ? null : sha(readFileSync(file, "utf8"));
 };
 
 /* ---------------------------------- fold ---------------------------------- */
