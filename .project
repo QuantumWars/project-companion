@@ -2,6 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
+  "updatedAt": "2026-10-10T05:24:33.461Z",
+  "revision": 397,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1950,14 +1952,14 @@
       "points": 1,
       "role": "devops-sre",
       "createdAt": "2026-10-08T16:42:12.477Z",
-      "updatedAt": "2026-10-09T23:42:04.731Z",
+      "updatedAt": "2026-10-10T05:24:28.138Z",
       "order": 39,
       "pr": {
         "number": 10,
         "url": "https://github.com/QuantumWars/project-companion/pull/10",
         "state": "MERGED",
         "headSha": "9f0d1accc72ef0b42722a4c4444528a449e96615",
-        "syncedAt": "2026-10-09T23:42:04.730Z"
+        "syncedAt": "2026-10-10T05:24:28.136Z"
       }
     },
     {
@@ -1973,14 +1975,14 @@
       "points": 1,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.579Z",
-      "updatedAt": "2026-10-09T23:42:05.276Z",
+      "updatedAt": "2026-10-10T05:24:28.696Z",
       "order": 40,
       "pr": {
         "number": 11,
         "url": "https://github.com/QuantumWars/project-companion/pull/11",
         "state": "MERGED",
         "headSha": "a7018441c070d605e6372bef65b2079ac2ccd4eb",
-        "syncedAt": "2026-10-09T23:42:05.274Z"
+        "syncedAt": "2026-10-10T05:24:28.695Z"
       }
     },
     {
@@ -1996,14 +1998,14 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.680Z",
-      "updatedAt": "2026-10-09T23:42:05.872Z",
+      "updatedAt": "2026-10-10T05:24:29.247Z",
       "order": 41,
       "pr": {
         "number": 12,
         "url": "https://github.com/QuantumWars/project-companion/pull/12",
         "state": "MERGED",
         "headSha": "d40d5237e42c6e109a809950bffa6dac50831dd7",
-        "syncedAt": "2026-10-09T23:42:05.870Z"
+        "syncedAt": "2026-10-10T05:24:29.246Z"
       }
     },
     {
@@ -2019,14 +2021,14 @@
       "points": 2,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.781Z",
-      "updatedAt": "2026-10-09T23:42:06.408Z",
+      "updatedAt": "2026-10-10T05:24:29.770Z",
       "order": 42,
       "pr": {
         "number": 14,
         "url": "https://github.com/QuantumWars/project-companion/pull/14",
         "state": "MERGED",
         "headSha": "c83bd383f8aee3f5555e7e14e428c38a676a9ef5",
-        "syncedAt": "2026-10-09T23:42:06.407Z"
+        "syncedAt": "2026-10-10T05:24:29.765Z"
       }
     },
     {
@@ -2042,14 +2044,14 @@
       "points": 2,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.883Z",
-      "updatedAt": "2026-10-09T23:42:06.949Z",
+      "updatedAt": "2026-10-10T05:24:30.270Z",
       "order": 43,
       "pr": {
         "number": 15,
         "url": "https://github.com/QuantumWars/project-companion/pull/15",
         "state": "MERGED",
         "headSha": "24563c227b039384a5d0060c3c48a44f3ce3cd15",
-        "syncedAt": "2026-10-09T23:42:06.947Z"
+        "syncedAt": "2026-10-10T05:24:30.270Z"
       }
     },
     {
@@ -2065,14 +2067,14 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.986Z",
-      "updatedAt": "2026-10-09T23:42:07.513Z",
+      "updatedAt": "2026-10-10T05:24:30.887Z",
       "order": 44,
       "pr": {
         "number": 16,
         "url": "https://github.com/QuantumWars/project-companion/pull/16",
         "state": "MERGED",
         "headSha": "b92eb6a987d8a0588f7c574a76ad22ad780993d4",
-        "syncedAt": "2026-10-09T23:42:07.512Z"
+        "syncedAt": "2026-10-10T05:24:30.886Z"
       }
     },
     {
@@ -2088,14 +2090,14 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:13.087Z",
-      "updatedAt": "2026-10-09T23:42:08.047Z",
+      "updatedAt": "2026-10-10T05:24:31.433Z",
       "order": 45,
       "pr": {
         "number": 17,
         "url": "https://github.com/QuantumWars/project-companion/pull/17",
         "state": "MERGED",
         "headSha": "2519dd4c6e53881bd3b4be3a44c9c6aab3a24078",
-        "syncedAt": "2026-10-09T23:42:08.046Z"
+        "syncedAt": "2026-10-10T05:24:31.432Z"
       }
     },
     {
@@ -2111,14 +2113,14 @@
       "points": 3,
       "role": "qa-engineer",
       "createdAt": "2026-10-08T16:42:13.187Z",
-      "updatedAt": "2026-10-09T23:42:08.577Z",
+      "updatedAt": "2026-10-10T05:24:32.352Z",
       "order": 46,
       "pr": {
         "number": 18,
         "url": "https://github.com/QuantumWars/project-companion/pull/18",
         "state": "MERGED",
         "headSha": "c20b099d25281a7bcf88c97aa2c1cad4b2f30a36",
-        "syncedAt": "2026-10-09T23:42:08.575Z"
+        "syncedAt": "2026-10-10T05:24:32.351Z"
       }
     },
     {
@@ -2134,14 +2136,14 @@
       "points": 1,
       "role": "qa-engineer",
       "createdAt": "2026-10-08T16:42:13.291Z",
-      "updatedAt": "2026-10-09T23:42:09.126Z",
+      "updatedAt": "2026-10-10T05:24:32.871Z",
       "order": 47,
       "pr": {
         "number": 19,
         "url": "https://github.com/QuantumWars/project-companion/pull/19",
         "state": "MERGED",
         "headSha": "88d236f2eda9ee4531322742d31b1db96478c9c4",
-        "syncedAt": "2026-10-09T23:42:09.125Z"
+        "syncedAt": "2026-10-10T05:24:32.870Z"
       }
     },
     {
@@ -2176,7 +2178,7 @@
       "kind": "task",
       "role": "devops-sre",
       "createdAt": "2026-10-08T20:52:59.167Z",
-      "updatedAt": "2026-10-09T23:42:09.660Z",
+      "updatedAt": "2026-10-10T05:24:33.461Z",
       "order": 38,
       "points": 2,
       "pr": {
@@ -2184,7 +2186,7 @@
         "url": "https://github.com/QuantumWars/project-companion/pull/8",
         "state": "MERGED",
         "headSha": "cc56648aef8271a40b192db026d10063d68d1bbb",
-        "syncedAt": "2026-10-09T23:42:09.659Z"
+        "syncedAt": "2026-10-10T05:24:33.460Z"
       }
     },
     {
@@ -2221,7 +2223,5 @@
   "agents": {
     "byComponent": {}
   },
-  "wip": {},
-  "revision": 387,
-  "updatedAt": "2026-10-10T00:30:07.616Z"
+  "wip": {}
 }
