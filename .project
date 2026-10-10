@@ -2,8 +2,6 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-10T07:37:31.579Z",
-  "revision": 405,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1952,14 +1950,14 @@
       "points": 1,
       "role": "devops-sre",
       "createdAt": "2026-10-08T16:42:12.477Z",
-      "updatedAt": "2026-10-10T05:24:28.138Z",
+      "updatedAt": "2026-10-10T07:54:40.872Z",
       "order": 39,
       "pr": {
         "number": 10,
         "url": "https://github.com/QuantumWars/project-companion/pull/10",
         "state": "MERGED",
         "headSha": "9f0d1accc72ef0b42722a4c4444528a449e96615",
-        "syncedAt": "2026-10-10T05:24:28.136Z"
+        "syncedAt": "2026-10-10T07:54:40.870Z"
       }
     },
     {
@@ -1975,14 +1973,14 @@
       "points": 1,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.579Z",
-      "updatedAt": "2026-10-10T05:24:28.696Z",
+      "updatedAt": "2026-10-10T07:54:41.470Z",
       "order": 40,
       "pr": {
         "number": 11,
         "url": "https://github.com/QuantumWars/project-companion/pull/11",
         "state": "MERGED",
         "headSha": "a7018441c070d605e6372bef65b2079ac2ccd4eb",
-        "syncedAt": "2026-10-10T05:24:28.695Z"
+        "syncedAt": "2026-10-10T07:54:41.469Z"
       }
     },
     {
@@ -1998,14 +1996,14 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.680Z",
-      "updatedAt": "2026-10-10T05:24:29.247Z",
+      "updatedAt": "2026-10-10T07:54:42.401Z",
       "order": 41,
       "pr": {
         "number": 12,
         "url": "https://github.com/QuantumWars/project-companion/pull/12",
         "state": "MERGED",
         "headSha": "d40d5237e42c6e109a809950bffa6dac50831dd7",
-        "syncedAt": "2026-10-10T05:24:29.246Z"
+        "syncedAt": "2026-10-10T07:54:42.400Z"
       }
     },
     {
@@ -2021,14 +2019,14 @@
       "points": 2,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.781Z",
-      "updatedAt": "2026-10-10T05:24:29.770Z",
+      "updatedAt": "2026-10-10T07:54:43.060Z",
       "order": 42,
       "pr": {
         "number": 14,
         "url": "https://github.com/QuantumWars/project-companion/pull/14",
         "state": "MERGED",
         "headSha": "c83bd383f8aee3f5555e7e14e428c38a676a9ef5",
-        "syncedAt": "2026-10-10T05:24:29.765Z"
+        "syncedAt": "2026-10-10T07:54:43.058Z"
       }
     },
     {
@@ -2044,14 +2042,14 @@
       "points": 2,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.883Z",
-      "updatedAt": "2026-10-10T05:24:30.270Z",
+      "updatedAt": "2026-10-10T07:54:43.579Z",
       "order": 43,
       "pr": {
         "number": 15,
         "url": "https://github.com/QuantumWars/project-companion/pull/15",
         "state": "MERGED",
         "headSha": "24563c227b039384a5d0060c3c48a44f3ce3cd15",
-        "syncedAt": "2026-10-10T05:24:30.270Z"
+        "syncedAt": "2026-10-10T07:54:43.579Z"
       }
     },
     {
@@ -2067,14 +2065,14 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.986Z",
-      "updatedAt": "2026-10-10T05:24:30.887Z",
+      "updatedAt": "2026-10-10T07:54:44.120Z",
       "order": 44,
       "pr": {
         "number": 16,
         "url": "https://github.com/QuantumWars/project-companion/pull/16",
         "state": "MERGED",
         "headSha": "b92eb6a987d8a0588f7c574a76ad22ad780993d4",
-        "syncedAt": "2026-10-10T05:24:30.886Z"
+        "syncedAt": "2026-10-10T07:54:44.119Z"
       }
     },
     {
@@ -2090,14 +2088,14 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:13.087Z",
-      "updatedAt": "2026-10-10T05:24:31.433Z",
+      "updatedAt": "2026-10-10T07:54:44.645Z",
       "order": 45,
       "pr": {
         "number": 17,
         "url": "https://github.com/QuantumWars/project-companion/pull/17",
         "state": "MERGED",
         "headSha": "2519dd4c6e53881bd3b4be3a44c9c6aab3a24078",
-        "syncedAt": "2026-10-10T05:24:31.432Z"
+        "syncedAt": "2026-10-10T07:54:44.644Z"
       }
     },
     {
@@ -2113,14 +2111,14 @@
       "points": 3,
       "role": "qa-engineer",
       "createdAt": "2026-10-08T16:42:13.187Z",
-      "updatedAt": "2026-10-10T05:24:32.352Z",
+      "updatedAt": "2026-10-10T07:54:45.402Z",
       "order": 46,
       "pr": {
         "number": 18,
         "url": "https://github.com/QuantumWars/project-companion/pull/18",
         "state": "MERGED",
         "headSha": "c20b099d25281a7bcf88c97aa2c1cad4b2f30a36",
-        "syncedAt": "2026-10-10T05:24:32.351Z"
+        "syncedAt": "2026-10-10T07:54:45.400Z"
       }
     },
     {
@@ -2136,14 +2134,14 @@
       "points": 1,
       "role": "qa-engineer",
       "createdAt": "2026-10-08T16:42:13.291Z",
-      "updatedAt": "2026-10-10T05:24:32.871Z",
+      "updatedAt": "2026-10-10T07:54:46.008Z",
       "order": 47,
       "pr": {
         "number": 19,
         "url": "https://github.com/QuantumWars/project-companion/pull/19",
         "state": "MERGED",
         "headSha": "88d236f2eda9ee4531322742d31b1db96478c9c4",
-        "syncedAt": "2026-10-10T05:24:32.870Z"
+        "syncedAt": "2026-10-10T07:54:46.007Z"
       }
     },
     {
@@ -2161,19 +2159,19 @@
     {
       "id": "d5ebde85",
       "title": "Bug: the artifact text lookup can be slow without limit (SR-8)",
-      "status": "review",
+      "status": "done",
       "createdAt": "2026-10-08T20:33:57.740Z",
-      "updatedAt": "2026-10-10T06:15:45.689Z",
-      "order": 0,
+      "updatedAt": "2026-10-10T07:54:46.619Z",
+      "order": 54,
       "kind": "bug",
       "role": "backend-engineer",
       "description": "Proposed track: Bugfix. Plan: after decision-alerts (sprint 2026-w43). It must come after the feature: design section 3 (`specs/decision-alerts/design.md:453`) says the SR-8 fix changes how `hashArtifact` reads files, and must update a decision-alerts test. Not ready to build: needs the PM's track confirmation, then `specs/bugs/d5ebde85/bugfix.md` and a failing regression test from the qa-engineer.\n\nPM at the release 0.3.0 gate (2026-10-10): \"Fix SR-8 next with bug d5ebde85.\" Since 0.3.0 the lookup is also reachable from `card open` (PR #17). The SR-8 fix must also update the tests `TH-5: a folder in place of an approved artifact gives lookup failed: EISDIR` (in process) and `TH-5: a folder in place of an approved artifact gives one stderr line and output as with off` (CLI), and the DA-02.5 approved-artifact case.\n\nSource: security review SR-8 (`specs/decision-alerts/reviews/security.md:108`), design section 6 step 5 (`specs/decision-alerts/design.md:513`), both approved at the design gate.\nObserved: the text lookup re-hashes every approved artifact. An artifact path from a merged log can name a very large file or a device such as `/dev/zero` (`join(root, ref)` accepts `..`). Then `gate request` (`lib/project/gate.ts:257`), and after da-t7 also `card open`, are slow without limit or never end.\nFix (from SR-8): accept only artifact paths and a PRD source that are regular files inside the project root.\nNote: `lib/project/gate.ts` belongs to no component.",
       "pr": {
         "number": 22,
         "url": "https://github.com/QuantumWars/project-companion/pull/22",
-        "state": "OPEN",
-        "headSha": "f3b52297a7e9ccdbff88b09bfad32e2127720d5e",
-        "syncedAt": "2026-10-10T05:55:25.151Z"
+        "state": "MERGED",
+        "headSha": "d4bd59b3773296af25e8381a6bab449e4bd7e840",
+        "syncedAt": "2026-10-10T07:54:46.618Z"
       }
     },
     {
@@ -2185,7 +2183,7 @@
       "kind": "task",
       "role": "devops-sre",
       "createdAt": "2026-10-08T20:52:59.167Z",
-      "updatedAt": "2026-10-10T05:24:33.461Z",
+      "updatedAt": "2026-10-10T07:54:47.177Z",
       "order": 38,
       "points": 2,
       "pr": {
@@ -2193,7 +2191,7 @@
         "url": "https://github.com/QuantumWars/project-companion/pull/8",
         "state": "MERGED",
         "headSha": "cc56648aef8271a40b192db026d10063d68d1bbb",
-        "syncedAt": "2026-10-10T05:24:33.460Z"
+        "syncedAt": "2026-10-10T07:54:47.176Z"
       }
     },
     {
@@ -2244,5 +2242,7 @@
   "agents": {
     "byComponent": {}
   },
-  "wip": {}
+  "wip": {},
+  "revision": 418,
+  "updatedAt": "2026-10-10T07:54:48.457Z"
 }
