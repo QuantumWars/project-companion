@@ -62,7 +62,7 @@ Facts checked on this Mac (2026-10-08):
 In scope: `lib/project/notify.ts` (new), `lib/project/notify-record.ts` (new), two call sites in `cli/index.ts`, the
 `env` in `scripts/run-tests.mjs`, one line in `.gitignore`, one paragraph in `README.md`, and `tests/notify.test.ts`
 (new). Not in scope: the MCP server (it has no tool that makes a decision), the cockpit page, the devolps plugin, and
-the fix for unbounded artifact reads (SR-8, a separate bugfix; section 6).
+the fix for unbounded artifact reads (SR-8, the separate bugfix d5ebde85; section 6).
 
 ## 2. Goals and non-goals
 
@@ -342,7 +342,7 @@ built, each character from U+0000 to U+001F and from U+007F to U+009F becomes on
 
 | Cause | `<reason>` |
 |---|---|
-| The text lookup threw | `lookup failed: <error.code or error.name>`, for example `lookup failed: EISDIR` |
+| The text lookup threw | `lookup failed: <error.code or error.name>`, for example `lookup failed: EACCES` (an unreadable artifact file) |
 | The decision is not in the cockpit | `not in the cockpit: <decision id>` |
 | The notifier path is not absolute | `not an absolute path: <value>` |
 | `accessSync` threw | `<error.code> <notifier path>`, for example `ENOENT /tmp/pc-x/missing` |
@@ -447,11 +447,12 @@ Test notes for the QA engineer:
 - **TH-5, NUL.** Write a project name that has a NUL character (`\u0000` in `.project`). Expect
   `project-companion: notification not sent: ERR_INVALID_ARG_VALUE`, and expect that the name is not in standard
   error.
-- **TH-5, lookup (SR-4).** Request and approve a gate on `docs/a.md`. Replace that file with a folder. Run `card open`
-  with `stubEnv`. Expect exactly one standard error line,
-  `project-companion: notification not sent: lookup failed: EISDIR`, and exit code and standard output as with
-  `off`. This test depends on how `hashArtifact` reads files today. The SR-8 bugfix will change it, and must update
-  this test.
+- **TH-5, lookup (SR-4, updated by the SR-8 bugfix d5ebde85).** Request and approve a gate on `docs/a.md`. Replace
+  that file with a folder. Expect the gate `stale` (a folder counts as a missing artifact), and `card open` with
+  `stubEnv` sends, with no standard error line. Then replace it with a file that its owner cannot read (mode 000).
+  Run `card open` with `stubEnv`. Expect exactly one standard error line,
+  `project-companion: notification not sent: lookup failed: EACCES`, and exit code and standard output as with
+  `off`. The test skips the unreadable file when it runs as root, because root ignores file modes.
 - **TH-21 (SR-3).** Make `.project-notify/` a real folder, and make `record.jsonl` a symlink to a file outside the
   project. Run `card open`. Expect the target unchanged, exit code and standard output as with `off`, and standard
   error `project-companion: notification record not written: ELOOP <root>/.project-notify/record.jsonl`. Repeat with
@@ -514,8 +515,9 @@ Test notes for the QA engineer:
    path from a merged log can name a very large file or a device such as `/dev/zero` (`join(root, ref)` accepts
    `..`). Then the command is slow without limit, or never ends. `gate request` already has this problem
    (`gate.ts:257`). With T4, `card open` gets it too. The off switch does not avoid it, so the rollback is to revert
-   T4. The fix is a separate bugfix: accept only artifact paths and a PRD source that are regular files inside the
-   project root.
+   T4. The fix is the separate bugfix d5ebde85 (PR #22): accept only artifact paths and a PRD source that are regular
+   files inside the project root. Its residuals (for example, no size limit for a regular file inside the root) are in
+   the threat model, TH-7, and wait for the PM's decision at the PR #22 merge.
 6. The record file can be deleted at any time. That only loses metric history.
 
 ## 7. Open questions

@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 
 import { logDir, readEvents } from "@/lib/project/events";
-import { approveGate, requestGate } from "@/lib/project/gate";
+import { approveGate, readGates, requestGate } from "@/lib/project/gate";
 import {
   controlsToSpaces, decisionText, dispatch, DispatchError, failureReason, NOTIFIER, NOTIFIER_ENV, notifierArgs, notifierPath, notifyDecision, NOTIFY_ENV,
   NOTIFY_SCRIPT, type NotifyText, osascriptArgs, PLATFORM_ENV,
@@ -458,14 +458,25 @@ const approvedProject = (): string => {
   return root;
 };
 
-test("TH-5: a folder in place of an approved artifact gives lookup failed: EISDIR", () => {
-  // Design TH-5 (SR-4). It depends on how hashArtifact reads files today: the SR-8 bugfix must update this test.
+/** Replaces the approved docs/a.md with a file the owner cannot read: hashArtifact still opens it, and gets EACCES. */
+const unreadableArtifact = (root: string): void => {
+  rmSync(join(root, "docs", "a.md"), { recursive: true, force: true });
+  writeFileSync(join(root, "docs", "a.md"), "# A\n", { mode: 0o000 });
+};
+
+test("TH-5: a folder in place of an approved artifact is missing; an unreadable one gives lookup failed: EACCES", () => {
+  // Design TH-5 (SR-4), updated by the SR-8 bugfix d5ebde85: hashArtifact reads only regular files inside the root.
   const root = approvedProject();
-  eq(decisionText(root, GATE).title, GATE_LINE.title, "the lookup fails before the swap");
+  eq(decisionText(root, GATE).title, GATE_LINE.title, "the lookup works before the swap");
   rmSync(join(root, "docs", "a.md"));
   mkdirSync(join(root, "docs", "a.md"));
-  eq(captured(() => notifyDecision(root, GATE, stubEnv(STUB))), ["failed", "", `${NOT_SENT}lookup failed: EISDIR\n`]);
-  eq(lines(root), [{ id: GATE, title: null, command: null, outcome: "failed", reason: "lookup failed: EISDIR" }]);
+  eq(readGates(root).gates.get("design:alerts")?.state, "stale", "a folder counts as a changed artifact");
+  eq(captured(() => notifyDecision(root, GATE, stubEnv(STUB, { notify: "off" }))), ["off", "", ""]);
+  eq(lines(root), [{ ...GATE_LINE, outcome: "off" }], "the lookup gives the text");
+  if (process.getuid?.() === 0) return; // root ignores file modes, so the read would not fail
+  unreadableArtifact(root);
+  eq(captured(() => notifyDecision(root, GATE, stubEnv(STUB))), ["failed", "", `${NOT_SENT}lookup failed: EACCES\n`]);
+  eq(lines(root).slice(-1), [{ id: GATE, title: null, command: null, outcome: "failed", reason: "lookup failed: EACCES" }]);
 });
 
 /** Every line of every file in the project's event log, so any append, of any kind, changes the result. */
@@ -492,8 +503,11 @@ test("DA-02.5: the notifier appends no event", async () => {
   run("changed artifact", GATE, STUB, {}, "sent");
   rmSync(join(root, "docs", "a.md"));
   mkdirSync(join(root, "docs", "a.md"));
-  run("artifact is a folder", GATE, STUB, {}, "failed");
-  eq(lines(root).slice(-1), [{ id: GATE, title: null, command: null, outcome: "failed", reason: "lookup failed: EISDIR" }]);
+  run("artifact is a folder", GATE, STUB, {}, "sent"); // SR-8: a folder is a missing artifact, so the gate is stale
+  if (process.getuid?.() === 0) return; // root ignores file modes, so the lookup below would not fail
+  unreadableArtifact(root);
+  run("artifact is unreadable", GATE, STUB, {}, "failed");
+  eq(lines(root).slice(-1), [{ id: GATE, title: null, command: null, outcome: "failed", reason: "lookup failed: EACCES" }]);
 });
 
 test("notifyDecision: a file at .project-notify gives one 'record not written' line, after any 'not sent' line", () => {
@@ -811,7 +825,7 @@ cliTest("DA-03.3: linux and win32 give the same output as off", async () => {
   eq(readdirSync(STUB_OUT), [], "the stub ran");
 });
 
-cliTest("TH-5: a folder in place of an approved artifact gives one stderr line and output as with off", async () => {
+cliTest("TH-5: a folder in place of an approved artifact is sent; an unreadable one gives one stderr line and output as with off", async () => {
   const root = cliProject();
   eq(cli(root, ["gate", "request", "design", "alerts", "--artifact", "docs/a.md"], { notify: "off" }).code, 0, "setup: gate request");
   eq(cli(root, ["gate", "approve", "design", "alerts", "--via", "prompt:test"], { notify: "off" }).code, 0, "setup: gate approve");
@@ -819,8 +833,14 @@ cliTest("TH-5: a folder in place of an approved artifact gives one stderr line a
   mkdirSync(join(root, "docs", "a.md"));
   const off = cli(root, CARD_ARGS, { notify: "off" });
   const on = cli(root, CARD_ARGS);
-  eq([on.code, normalizeOut(on.out)], [off.code, normalizeOut(off.out)]);
-  eq([off.err, on.err], ["", "project-companion: notification not sent: lookup failed: EISDIR\n"]);
+  eq([on.code, normalizeOut(on.out)], [off.code, normalizeOut(off.out)], "folder");
+  eq([off.err, on.err], ["", ""], "folder: SR-8 reads a folder as a missing artifact, so the lookup works");
+  eq((await calls(1)).length, 1, "folder: stub calls");
+  if (process.getuid?.() === 0) return; // root ignores file modes, so the lookup below would not fail
+  unreadableArtifact(root);
+  const [off2, on2] = [cli(root, CARD_ARGS, { notify: "off" }), cli(root, CARD_ARGS)];
+  eq([on2.code, normalizeOut(on2.out)], [off2.code, normalizeOut(off2.out)], "unreadable");
+  eq([off2.err, on2.err], ["", "project-companion: notification not sent: lookup failed: EACCES\n"], "unreadable");
 });
 
 cliTest("TH-21: a symlinked record or folder gives one stderr line and output as with off", async () => {
