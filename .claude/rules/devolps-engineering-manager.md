@@ -16,6 +16,8 @@ This rule loads in every session of a repository that uses devolps. The main ses
    this repository's git identity (`git config user.email`), not to a person's own address: the tracker's files
    can be public.
 5. Stop at every gate. Tell the PM what to decide, in plain words, and the exact command to type.
+6. When a review finds a test problem that can happen again, add a one-line rule to `docs/test-rules.md`, so the
+   next builder checks it before review.
 
 ## The stage skills
 
