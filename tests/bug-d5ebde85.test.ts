@@ -18,11 +18,14 @@
  * bug; this test only needs one fast-failing case to prove it.
  */
 
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { mutateBundle } from "@/lib/project/bundle";
 import { hashArtifact } from "@/lib/project/gate";
+import { readRoadmap } from "@/lib/project/roadmap";
+import { initProject } from "@/lib/project/store";
 import { eq, test, runAll } from "./harness";
 
 test("d5ebde85: an artifact path outside the project root is not read", () => {
@@ -50,6 +53,26 @@ test("d5ebde85: a folder, a symlink out of the root and an escaped PRD source gi
     eq(hashArtifact(root, "docs"), null, "a folder inside the root is not a regular file");
     eq(hashArtifact(root, "docs/link.md"), null, "a symlink that leaves the root is not read");
     eq(hashArtifact(root, "prd-section:alerts", "../secret.md"), null, "a PRD source outside the root is not read");
+  } finally {
+    rmSync(parent, { recursive: true, force: true });
+  }
+});
+
+test("d5ebde85: a PRD source outside the project root or not a regular file is not read", () => {
+  const parent = realpathSync(mkdtempSync(join(tmpdir(), "pc-d5ebde85-")));
+  const root = join(parent, "project");
+  mkdirSync(join(root, "docs"), { recursive: true });
+  try {
+    initProject(root, "Demo");
+    writeFileSync(join(parent, "outside.md"), "# Outside\n\n## Phase: Alerts\n");
+    writeFileSync(join(root, "inside.md"), "# Inside\n\n## Phase: Alerts\n");
+    const present = (source: string) => {
+      mutateBundle(root, (b) => { b.prdSource = source; }); // as a merged .project could name it
+      return readRoadmap(root).present;
+    };
+    eq(present("../outside.md"), false, "a PRD source outside the root is not read");
+    eq(present("docs"), false, "a folder as the PRD source is not read");
+    eq(present("inside.md"), true, "a PRD source inside the root is still read (control)");
   } finally {
     rmSync(parent, { recursive: true, force: true });
   }

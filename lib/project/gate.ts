@@ -135,8 +135,9 @@ export const prdSection = (prd: string, epic: string): string | null => {
  *
  * A merged log names the path, so a `..` escape, a symlink out of the root, a
  * folder, a device or a FIFO counts as missing. Nothing here opens the file.
+ * The roadmap's PRD source read uses it too.
  */
-const regularFileIn = (root: string, path: string): string | null => {
+export const regularFileIn =(root: string, path: string): string | null => {
   try {
     const base = realpathSync(root);
     const file = realpathSync(join(base, path));

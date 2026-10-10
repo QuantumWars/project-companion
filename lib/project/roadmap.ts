@@ -14,7 +14,7 @@
  * assignee -- becomes a stored override.
  */
 
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 
 import {
@@ -26,6 +26,7 @@ import {
   type PrdOp,
 } from "./prd";
 import { mutateBundle, readBundle, withProjectLock } from "./bundle";
+import { regularFileIn } from "./gate";
 import { readJson, projectPaths, writeJson } from "./store";
 import {
   DEFAULT_PRD_PATH,
@@ -84,9 +85,10 @@ const readSidecar = (root: string): RoadmapFile => {
   return readJson<RoadmapFile | null>(projectPaths(root).roadmap, null) ?? emptyRoadmap();
 };
 
+/** The PRD text; null when the source is not a regular file inside the root, so it is never opened (SR-8). */
 const readPrdText = (root: string, source: string): string | null => {
-  const path = projectPaths(root).prd(source);
-  if (!existsSync(path)) return null;
+  const path = regularFileIn(root, source);
+  if (path === null) return null;
   try {
     return readFileSync(path, "utf8");
   } catch {
