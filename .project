@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-10T18:58:56.306Z",
-  "revision": 455,
+  "updatedAt": "2026-10-10T19:05:47.723Z",
+  "revision": 457,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2261,9 +2261,16 @@
       "kind": "task",
       "role": "devops-sre",
       "createdAt": "2026-10-10T09:01:44.335Z",
-      "updatedAt": "2026-10-10T18:58:56.305Z",
+      "updatedAt": "2026-10-10T18:59:25.474Z",
       "order": 0,
-      "points": 1
+      "points": 1,
+      "pr": {
+        "number": 26,
+        "url": "https://github.com/QuantumWars/project-companion/pull/26",
+        "state": "OPEN",
+        "headSha": "5c05d668f75cf0cd6ebbf382c8c82c79ac3cbab7",
+        "syncedAt": "2026-10-10T18:59:25.473Z"
+      }
     },
     {
       "id": "be08efcf",
@@ -2293,6 +2300,15 @@
       "createdAt": "2026-10-10T09:16:30.889Z",
       "updatedAt": "2026-10-10T09:16:30.889Z",
       "order": 7
+    },
+    {
+      "id": "e17ca1c9",
+      "title": "Bug: CLI test suites write the PM's real project index (~/.claude/project-companion/index.json)",
+      "description": "Not triaged; track not proposed yet. Found by the code-reviewer on PR 26 (finding 2, by code reading); EM checked the effect on 2026-10-11.\nObserved: some test suites run the CLI with the real environment, so the CLI registers each temporary test project in the PM's index under the real HOME (cli/index.ts registerProject at about lines 716 and 753). Examples: tests/devolps-phase3.test.ts (pc helper spreads process.env, about line 272) and tests/merge.test.ts (about line 90, no env given). EM check: the PM's index holds 2,420 entries, of which 2,399 are temporary test folders (names such as pc-sync-*, pc-merge-*, pc-gate-*).\nSecond risk, not observed: the same suites pass any CLAUDE_PROJECT_DIR to the CLI, which finds its project from it before the working folder (store.ts:129). In the EM's shell CLAUDE_PROJECT_DIR is unset (checked 2026-10-11); in other shells: UNKNOWN.\nExpected: test rule 5 (docs/test-rules.md): a CLI child gets a temporary HOME and no CLAUDE_PROJECT_DIR, as the cli helper in tests/notify.test.ts does.\nNote: cleaning the 2,399 stale entries from the PM's index is a separate, PM-owned step (it is the PM's home folder).",
+      "status": "backlog",
+      "createdAt": "2026-10-10T19:05:47.723Z",
+      "updatedAt": "2026-10-10T19:05:47.723Z",
+      "order": 6
     }
   ],
   "roadmap": {
