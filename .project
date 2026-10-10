@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-10T08:18:08.134Z",
-  "revision": 423,
+  "updatedAt": "2026-10-10T08:47:51.566Z",
+  "revision": 424,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2152,11 +2152,11 @@
       "status": "backlog",
       "componentId": "agent-tooling",
       "createdAt": "2026-10-08T20:33:57.663Z",
-      "updatedAt": "2026-10-08T20:34:11.431Z",
+      "updatedAt": "2026-10-10T08:47:51.566Z",
       "order": 17,
       "kind": "bug",
       "role": "backend-engineer",
-      "description": "Proposed track: Bugfix. Plan: after decision-alerts (sprint 2026-w43). Not ready to build: needs the PM's track confirmation, then `specs/bugs/ee2e49d6/bugfix.md` and a failing regression test from the qa-engineer.\n\nObserved (EM, 2026-10-09): `project-companion card list --open` shows `c-31ea34 open decision-alerts Which track should Decision alerts take?`, but `gate status` shows `track decision-alerts full`. The PM confirmed the track; the card still shows as open and stays in the PM's list.\nWhere: `cli/index.ts:1470` keeps a card when `c.answer === undefined`. A track is confirmed by a track gate event, not a `card.answered` event, so a track card never gets an answer (`foldCards` in `lib/project/decisions.ts`).\nExpected: a track card is closed when its subject's track is confirmed. Check the cockpit's \"needs you\" list too, if it uses the same rule. The requirement ID is for the qa-engineer to find; if none exists, write UNKNOWN and tell the EM."
+      "description": "Track: Bugfix (confirmed by the PM on 2026-10-10). Ready to build: bug spec `specs/bugs/ee2e49d6/bugfix.md` and failing regression test `tests/bug-ee2e49d6.test.ts` on branch `fix/ee2e49d6-spec` @ 4c37e22 (qa-engineer). EM re-ran `npm --prefix <worktree> test -- bug-ee2e49d6`: exit 1, 1/2 — \"FAIL ee2e49d6: card list --open still shows a track card after its track is confirmed: expected false, got true\"; the cockpit control passes.\n\nRequirement ID: UNKNOWN (no criterion says when a card closes; code comments name PC-01..PC-11 from commit 1a249a5, but no requirements doc for them exists in this repository).\nRoot cause (qa-engineer, checked in code): `card list --open` (`cli/index.ts:1448-1449,1474`) keeps a card while `answer === undefined`; `foldCards` (`lib/project/decisions.ts:36-61`) sets `answer` only from `card.answered`; `confirmTrack` (`lib/project/gate.ts:353-359`) appends `track.confirmed` with no card id. The cockpit already joins tracks (`lib/project/cockpit.ts:171-174`) and is correct.\nFix: share the cockpit's track rule with the `card` command (one helper), and print the plain `card list` line (`cli/index.ts:1483`) as closed for a confirmed track card. A read-side rule needs no data change for old cards.\nRole: backend-engineer."
     },
     {
       "id": "d5ebde85",
