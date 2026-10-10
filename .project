@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-10T19:21:18.213Z",
-  "revision": 464,
+  "updatedAt": "2026-10-10T19:21:31.266Z",
+  "revision": 465,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2243,13 +2243,13 @@
       "id": "1187698b",
       "title": "Write a short runbook for decision alerts (off switch, record, SR-8 rollback)",
       "description": "Track: Quick, epic repo-upkeep (bundled with the other two chores; PM card c-6e8bb6, 2026-10-10; track confirmed by the PM 2026-10-10). Role: devops-sre (it owns runbooks; `docs/runbooks/ci.md` is the model).\n\nSource: the release 0.3.0 launch checklist (`docs/releases/0.3.0-checklist.md`: \"A decision-alerts runbook is a backlog task\").\nScope: `docs/runbooks/decision-alerts.md`, short. Cover:\n1. The off switch (`PROJECT_COMPANION_NOTIFY=off`) and how to check that it works.\n2. The notification record (`.project-notify/record.jsonl`): what each line means, and that it is a local metric, not proof that the PM saw a banner (TH-18).\n3. Rollback: the off switch first, then reverting a release; the SR-8 fix (bug d5ebde85, PR 22) and its accepted residuals.\n4. Where to look when an alert does not appear (outcome `failed`, the stderr line).\nVerify: every command in the runbook was run once, and its output matches the text.\n\nReplaces task a9c34f46, which had no epic.\n\nSpec: specs/repo-upkeep/quick.md (d98ceb3), criteria RU-01.1 to RU-01.11; their Verify lines are the task's checks. Estimate: about 90 lines, 1 new file (exact count UNKNOWN until written; RU-01.1 caps it at 120).",
-      "status": "backlog",
+      "status": "in_progress",
       "phaseId": "repo-upkeep",
       "kind": "task",
       "role": "devops-sre",
       "createdAt": "2026-10-10T09:01:44.136Z",
-      "updatedAt": "2026-10-10T10:10:58.685Z",
-      "order": 7,
+      "updatedAt": "2026-10-10T19:21:31.266Z",
+      "order": 0,
       "points": 2
     },
     {
