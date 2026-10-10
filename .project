@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-10T00:00:06.813Z",
-  "revision": 382,
+  "updatedAt": "2026-10-10T00:07:25.572Z",
+  "revision": 384,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2188,6 +2188,22 @@
         "headSha": "cc56648aef8271a40b192db026d10063d68d1bbb",
         "syncedAt": "2026-10-09T23:42:09.659Z"
       }
+    },
+    {
+      "id": "a9c34f46",
+      "title": "Write a short runbook for decision alerts (off switch, record, SR-8 rollback)",
+      "status": "backlog",
+      "createdAt": "2026-10-10T00:07:24.502Z",
+      "updatedAt": "2026-10-10T00:07:24.502Z",
+      "order": 3
+    },
+    {
+      "id": "0375f5e8",
+      "title": "Fix package-lock.json name drift (board-video-tutorial vs project-companion)",
+      "status": "backlog",
+      "createdAt": "2026-10-10T00:07:25.572Z",
+      "updatedAt": "2026-10-10T00:07:25.572Z",
+      "order": 4
     }
   ],
   "roadmap": {
