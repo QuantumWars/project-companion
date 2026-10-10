@@ -3463,3 +3463,5 @@
 {"id":"2d96e8e4849c:3454","ts":1791610268622,"seq":3454,"actor":"2d96e8e4849c","prev":"32a64e04bcd7ab08","kind":"run.progress","data":{"runId":"9ef6702e","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
 {"id":"2d96e8e4849c:3455","ts":1791610273665,"seq":3455,"actor":"2d96e8e4849c","prev":"c07a3119e3233c01","kind":"run.progress","data":{"runId":"9ef6702e","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
 {"id":"2d96e8e4849c:3456","ts":1791610291485,"seq":3456,"actor":"2d96e8e4849c","prev":"26fe1ea9884a7f03","kind":"run.state","data":{"runId":"9ef6702e","state":"awaiting_review","reason":"the subagent finished"}}
+{"id":"2d96e8e4849c:3457","ts":1791610308783,"seq":3457,"actor":"2d96e8e4849c","prev":"6e58fd0ac0d3d6c1","kind":"run.progress","data":{"runId":"2f76b4be","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
+{"id":"2d96e8e4849c:3458","ts":1791610321480,"seq":3458,"actor":"2d96e8e4849c","prev":"11c7fce1469939e9","kind":"task.moved","data":{"taskId":"d5ebde85","from":"backlog","to":"in_progress"}}

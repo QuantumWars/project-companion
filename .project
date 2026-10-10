@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-10T05:24:33.461Z",
-  "revision": 397,
+  "updatedAt": "2026-10-10T05:32:01.472Z",
+  "revision": 398,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2161,10 +2161,10 @@
     {
       "id": "d5ebde85",
       "title": "Bug: the artifact text lookup can be slow without limit (SR-8)",
-      "status": "backlog",
+      "status": "in_progress",
       "createdAt": "2026-10-08T20:33:57.740Z",
-      "updatedAt": "2026-10-10T00:27:29.966Z",
-      "order": 18,
+      "updatedAt": "2026-10-10T05:32:01.472Z",
+      "order": 0,
       "kind": "bug",
       "role": "backend-engineer",
       "description": "Proposed track: Bugfix. Plan: after decision-alerts (sprint 2026-w43). It must come after the feature: design section 3 (`specs/decision-alerts/design.md:453`) says the SR-8 fix changes how `hashArtifact` reads files, and must update a decision-alerts test. Not ready to build: needs the PM's track confirmation, then `specs/bugs/d5ebde85/bugfix.md` and a failing regression test from the qa-engineer.\n\nPM at the release 0.3.0 gate (2026-10-10): \"Fix SR-8 next with bug d5ebde85.\" Since 0.3.0 the lookup is also reachable from `card open` (PR #17). The SR-8 fix must also update the tests `TH-5: a folder in place of an approved artifact gives lookup failed: EISDIR` (in process) and `TH-5: a folder in place of an approved artifact gives one stderr line and output as with off` (CLI), and the DA-02.5 approved-artifact case.\n\nSource: security review SR-8 (`specs/decision-alerts/reviews/security.md:108`), design section 6 step 5 (`specs/decision-alerts/design.md:513`), both approved at the design gate.\nObserved: the text lookup re-hashes every approved artifact. An artifact path from a merged log can name a very large file or a device such as `/dev/zero` (`join(root, ref)` accepts `..`). Then `gate request` (`lib/project/gate.ts:257`), and after da-t7 also `card open`, are slow without limit or never end.\nFix (from SR-8): accept only artifact paths and a PRD source that are regular files inside the project root.\nNote: `lib/project/gate.ts` belongs to no component."
