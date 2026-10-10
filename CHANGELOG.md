@@ -22,8 +22,9 @@ See `docs/releases/` for the full release notes.
   `PATH`.
 - The notification record file is written in a way that is safe even if a symlink is
   placed where the record file is expected.
-- A notifier problem never changes the command's exit code or its output, and a test run
-  can never trigger a real banner.
+- A notifier problem is designed not to change the command's exit code or its output,
+  and writes up to two lines to standard error; the test suite cannot reach the real
+  notifier.
 
 ### Known issues
 - SR-8: the artifact text lookup used by `gate request` and now also `card open` can be
