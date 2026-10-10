@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-10T19:07:59.745Z",
-  "revision": 461,
+  "updatedAt": "2026-10-10T19:21:18.213Z",
+  "revision": 464,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2313,28 +2313,28 @@
     {
       "id": "aa27f49a",
       "title": "Bug: appendEvent appends to an actor's shard through a planted symlink or FIFO",
-      "description": "Not triaged; track not proposed yet. Found by the backend-engineer while fixing 54b4e811 (2026-10-11); the security review of that fix rates it.\nObserved (by code reading): appendEvent (lib/project/events.ts, about line 357) appends to the actor's own shard with a plain appendFileSync. A merged symlink at a known actor's shard name (the file name is the actor id) can make the next append block on a FIFO, or append to a file outside the root. TH-7 residual 3 (fixed by 54b4e811) covers reads and temp writes, not this append.\nPossible fix: as appendRecord in lib/project/notify-record.ts does: O_NOFOLLOW and O_NONBLOCK, then check fstat().isFile(). Severity: UNKNOWN until the security review.",
+      "description": "Not triaged; track not proposed yet. Found by the backend-engineer while fixing 54b4e811 (2026-10-11).\nObserved (by code reading): appendEvent (lib/project/events.ts, about line 357) appends to the actor's own shard with a plain appendFileSync. A merged symlink at a known actor's shard name (the file name is the actor id) can make the next append block on a FIFO, or append to a file outside the root. TH-7 residual 3 (fixed by 54b4e811) covers reads and temp writes, not this append.\nPossible fix: as appendRecord in lib/project/notify-record.ts does: O_NOFOLLOW and O_NONBLOCK, then check fstat().isFile().\n\nFolded into 54b4e811 by the PM's answer to card c-c49806 (2026-10-11): the security review rated it medium (F1), because the 54b4e811 read fix makes it worse (a refused own shard makes appendEvent loop and append without limit). It is fixed in the 54b4e811 pull request. Close this task when that pull request merges with the F1 tests passing.",
       "status": "backlog",
       "createdAt": "2026-10-10T19:07:59.534Z",
-      "updatedAt": "2026-10-10T19:07:59.534Z",
+      "updatedAt": "2026-10-10T19:21:18.212Z",
       "order": 7
     },
     {
       "id": "d78ae4cf",
       "title": "verifyLog reports a planted non-regular shard as empty, not as a chain break",
-      "description": "Not triaged. Found by the backend-engineer while fixing 54b4e811 (2026-10-11).\nObserved: after 54b4e811, readShard treats a shard that is not a regular file inside the root as missing ([]). verifyLog and verifyShard read through readShard, so such a shard looks empty and reports no chain break. Proposal: report it as a break or a warning.\nRelated, low: when .project is not a regular file, findProject still finds the project (existsSync), and the error says 'No .project at <root>'; a clearer message would say it is not a regular file.",
+      "description": "Not triaged. Found by the backend-engineer while fixing 54b4e811 (2026-10-11).\nObserved: after 54b4e811, readShard treats a shard that is not a regular file inside the root as missing ([]). verifyLog and verifyShard read through readShard, so such a shard looks empty and reports no chain break. Proposal: report it as a break or a warning.\nRelated, low: when .project is not a regular file, findProject still finds the project (existsSync), and the error says 'No .project at <root>'; a clearer message would say it is not a regular file.\n\nAdded by the PM's answer to card c-a04935 (2026-10-11): security review of 54b4e811, finding F3 (low, TH-7 r3, D1 repudiation). A refused shard is dropped silently and verifyLog passes; before 54b4e811 a folder there gave a loud EISDIR. Low because deleting or truncating a shard already hides events, and a hidden gate.approved fails closed (gate.ts skips a decision with no request). Fix: verifyLog reports a refused shard as a break, for example reason \"not-a-file\" (about 6 lines, events.ts verifyLog).",
       "status": "backlog",
       "createdAt": "2026-10-10T19:07:59.639Z",
-      "updatedAt": "2026-10-10T19:07:59.639Z",
+      "updatedAt": "2026-10-10T19:21:15.279Z",
       "order": 8
     },
     {
       "id": "49c078ce",
       "title": "Bug: readJson reads the older store files with no regular-file check",
-      "description": "Not triaged. Found by the backend-engineer while fixing 54b4e811 (2026-10-11).\nObserved (by code reading): readJson (lib/project/store.ts) reads the older store layout (project.json, tasks.json, roadmap.json, diagrams, boards) with a plain readFileSync. A merged symlink to a device or FIFO hangs the read, as SR-8 did, for projects that still use the older layout. Not in 54b4e811's scope (TH-7 residual 3 names events.ts and bundle.ts).",
+      "description": "Not triaged. Found by the backend-engineer while fixing 54b4e811 (2026-10-11).\nObserved (by code reading): readJson (lib/project/store.ts) reads the older store layout (project.json, tasks.json, roadmap.json, diagrams, boards) with a plain readFileSync. A merged symlink to a device or FIFO hangs the read, as SR-8 did, for projects that still use the older layout. Not in 54b4e811's scope (TH-7 residual 3 names events.ts and bundle.ts).\n\nAdded by the PM's answer to card c-4936f7 (2026-10-11): security review of 54b4e811, finding F2 (low, existed before that fix). When a merged commit makes .project a folder, readBundle gives null and readSidecar (lib/project/roadmap.ts) reads .project/roadmap.json through readJson with no kind check, so a symlink there to /dev/zero hangs readCockpit (on the notify path); writeSidecar falls back to writeJson and can write outside the root through a linked folder. Fix (security review): use the legacy roadmap.json only when isLegacyStore(...) is true, else emptyRoadmap() on a read and \"No .project\" on a write; readJson returns the fallback unless statSync(path).isFile().",
       "status": "backlog",
       "createdAt": "2026-10-10T19:07:59.745Z",
-      "updatedAt": "2026-10-10T19:07:59.745Z",
+      "updatedAt": "2026-10-10T19:21:12.218Z",
       "order": 9
     }
   ],
