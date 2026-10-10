@@ -2,6 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
+  "updatedAt": "2026-10-10T08:18:08.134Z",
+  "revision": 423,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2199,24 +2201,33 @@
       "title": "Write a short runbook for decision alerts (off switch, record, SR-8 rollback)",
       "status": "backlog",
       "createdAt": "2026-10-10T00:07:24.502Z",
-      "updatedAt": "2026-10-10T00:07:24.502Z",
-      "order": 3
+      "updatedAt": "2026-10-10T08:18:08.133Z",
+      "order": 3,
+      "description": "Proposed track: Quick (needs the PM's confirmation). Role: devops-sre (it owns runbooks; `docs/runbooks/ci.md` is the model).\n\nSource: the release 0.3.0 launch checklist (`docs/releases/0.3.0-checklist.md`: \"A decision-alerts runbook is a backlog task\").\nScope: `docs/runbooks/decision-alerts.md`, short. Cover:\n1. The off switch (`PROJECT_COMPANION_NOTIFY=off`) and how to check that it works.\n2. The notification record (`.project-notify/record.jsonl`): what each line means, and that it is a local metric, not proof that the PM saw a banner (TH-18).\n3. Rollback: the off switch first, then reverting a release; the SR-8 fix (bug d5ebde85, PR 22) and its accepted residuals.\n4. Where to look when an alert does not appear (outcome `failed`, the stderr line).\nVerify: every command in the runbook was run once, and its output matches the text.",
+      "labels": [
+        "docs",
+        "decision-alerts"
+      ]
     },
     {
       "id": "0375f5e8",
       "title": "Fix package-lock.json name drift (board-video-tutorial vs project-companion)",
       "status": "backlog",
       "createdAt": "2026-10-10T00:07:25.572Z",
-      "updatedAt": "2026-10-10T00:07:25.572Z",
-      "order": 4
+      "updatedAt": "2026-10-10T08:18:04.233Z",
+      "order": 4,
+      "description": "Proposed track: Quick (needs the PM's confirmation). Role: devops-sre.\n\nObserved (EM, release 0.3.0 and again on master 848898a, 2026-10-10): `package.json` names the package `project-companion`, but `package-lock.json` names it `board-video-tutorial` (top-level `name` and `packages[\"\"].name`). The drift was there before release 0.3.0; that release changed only the `version` fields.\nFix: set both names in `package-lock.json` to `project-companion`, for example with `npm install --package-lock-only`, and check that no dependency entry changes.\nVerify: `node -e` check that the lock's two names equal `package.json`'s name; `npm ci` passes; `git diff package-lock.json` changes only the two name lines.",
+      "labels": [
+        "chore"
+      ]
     },
     {
       "id": "a726b659",
       "title": "Threat model: record TH-7 and TH-8 as mitigated with SR-8 as the residual (PM, release 0.3.0 gate)",
-      "status": "backlog",
+      "status": "done",
       "createdAt": "2026-10-10T00:27:19.879Z",
-      "updatedAt": "2026-10-10T00:27:19.879Z",
-      "order": 5
+      "updatedAt": "2026-10-10T08:17:55.598Z",
+      "order": 55
     },
     {
       "id": "54b4e811",
@@ -2231,6 +2242,19 @@
         "security",
         "decision-alerts"
       ]
+    },
+    {
+      "id": "d187f516",
+      "title": "Set \"root\": true in .eslintrc.json so lint runs in agent worktrees",
+      "status": "backlog",
+      "createdAt": "2026-10-10T08:17:56.658Z",
+      "updatedAt": "2026-10-10T08:18:01.185Z",
+      "order": 5,
+      "description": "Proposed track: Quick (needs the PM's confirmation). Role: devops-sre (UNKNOWN whether `.eslintrc.json` is in its write scope; no role scope names it).\n\nObserved (backend-engineer and qa-engineer, PR 22, 2026-10-10): `npm run lint` fails in every agent worktree under `.claude/worktrees/` with `Plugin \"@next/next\" was conflicted between \".eslintrc.json\" and \"../../../.eslintrc.json\"`. ESLint reads the worktree's config and the main checkout's, because `.eslintrc.json` has no `\"root\": true`. Builders cannot report lint from their own copy; the EM runs it in the main checkout.\nFix: add `\"root\": true` to `.eslintrc.json`.\nVerify: `npm run lint` passes in an agent worktree and in the main checkout.",
+      "labels": [
+        "chore",
+        "tooling"
+      ]
     }
   ],
   "roadmap": {
@@ -2242,7 +2266,5 @@
   "agents": {
     "byComponent": {}
   },
-  "wip": {},
-  "revision": 418,
-  "updatedAt": "2026-10-10T07:54:48.457Z"
+  "wip": {}
 }
