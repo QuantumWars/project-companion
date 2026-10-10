@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-10T06:15:45.690Z",
-  "revision": 403,
+  "updatedAt": "2026-10-10T07:37:31.579Z",
+  "revision": 405,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2219,6 +2219,20 @@
       "createdAt": "2026-10-10T00:27:19.879Z",
       "updatedAt": "2026-10-10T00:27:19.879Z",
       "order": 5
+    },
+    {
+      "id": "54b4e811",
+      "title": "Bug: log shards and .project read through a symlink or device (SR-8 residual 3)",
+      "status": "backlog",
+      "createdAt": "2026-10-10T07:37:24.550Z",
+      "updatedAt": "2026-10-10T07:37:31.579Z",
+      "order": 5,
+      "description": "Proposed track: Bugfix (needs the PM's confirmation: /devolps:approve track 54b4e811 bugfix). Opened by the PM's answer to card c-73ccab at the PR 22 merge: accept TH-7 residuals 1 and 2; open a separate bug for residual 3.\n\nSource: PR 22 security re-check (bug d5ebde85, SR-8) and `specs/decision-alerts/threat-model.md` TH-7 residual 3.\nObserved:\n1. Log shards (`lib/project/events.ts`) and `.project` (`lib/project/bundle.ts`) are read with no check. A merged commit can make them a symlink to a device such as `/dev/zero`, and the read never ends. This is the same hang SR-8 was opened for, reached through D1 and D2.\n2. The write-then-rename helpers write `<path>.<pid>.tmp` with a plain `writeFileSync`, which follows a symlink at that name: `writeText` (`lib/project/roadmap.ts:242-246`), `lib/project/bundle.ts:235-237`, and `writeJson` (`lib/project/store.ts:220-223`). Severity: low. A commit would need one planted symlink for each possible process id.\nFix (from the security re-check): read only a regular file, with lstat plus `isFile()`, or with `O_NOFOLLOW|O_NONBLOCK` plus `fstat`, as `lib/project/notify-record.ts:71-77` does. Write the temp file with `wx`. On EEXIST, remove the temp path (this removes a symlink, not its target) and write again with `wx`. Note: `lib/project/registry.ts:127` uses the same pattern, but it writes in the home folder, so a committed symlink cannot reach it.\nDocs: update TH-7 residual 3 and the D1 and D2 rows when it is fixed.",
+      "labels": [
+        "bug",
+        "security",
+        "decision-alerts"
+      ]
     }
   ],
   "roadmap": {
