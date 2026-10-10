@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-10T18:55:05.173Z",
-  "revision": 454,
+  "updatedAt": "2026-10-10T18:58:56.306Z",
+  "revision": 455,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2256,13 +2256,13 @@
       "id": "85e1d62b",
       "title": "Fix package-lock.json name drift (board-video-tutorial vs project-companion)",
       "description": "Track: Quick, epic repo-upkeep (bundled with the other two chores; PM card c-6e8bb6, 2026-10-10; track confirmed by the PM 2026-10-10). Role: devops-sre.\n\nObserved (EM, release 0.3.0 and again on master 848898a, 2026-10-10): `package.json` names the package `project-companion`, but `package-lock.json` names it `board-video-tutorial` (top-level `name` and `packages[\"\"].name`). The drift was there before release 0.3.0; that release changed only the `version` fields.\nFix: set both names in `package-lock.json` to `project-companion`, for example with `npm install --package-lock-only`, and check that no dependency entry changes.\nVerify: `node -e` check that the lock's two names equal `package.json`'s name; `npm ci` passes; `git diff package-lock.json` changes only the two name lines.\n\nReplaces task 0375f5e8, which had no epic.\n\nSpec: specs/repo-upkeep/quick.md (d98ceb3), criteria RU-02.1 to RU-02.3; their Verify lines are the task's checks. Estimate: 4 lines (2 removed, 2 added; product-manager's scratch run).",
-      "status": "in_progress",
+      "status": "review",
       "phaseId": "repo-upkeep",
       "kind": "task",
       "role": "devops-sre",
       "createdAt": "2026-10-10T09:01:44.335Z",
-      "updatedAt": "2026-10-10T18:55:05.173Z",
-      "order": 1,
+      "updatedAt": "2026-10-10T18:58:56.305Z",
+      "order": 0,
       "points": 1
     },
     {
