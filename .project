@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-10T19:05:47.723Z",
-  "revision": 457,
+  "updatedAt": "2026-10-10T19:07:59.745Z",
+  "revision": 461,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2209,10 +2209,10 @@
     {
       "id": "54b4e811",
       "title": "Bug: log shards and .project read through a symlink or device (SR-8 residual 3)",
-      "status": "in_progress",
+      "status": "review",
       "createdAt": "2026-10-10T07:37:24.550Z",
-      "updatedAt": "2026-10-10T18:55:05.073Z",
-      "order": 0,
+      "updatedAt": "2026-10-10T19:07:26.114Z",
+      "order": 1,
       "description": "Track: Bugfix (confirmed by the PM). Opened by the PM's answer to card c-73ccab at the PR 22 merge: accept TH-7 residuals 1 and 2; open a separate bug for residual 3.\n\nSpec ready to build (EM checked 2026-10-10): `specs/bugs/54b4e811/bugfix.md` and `tests/bug-54b4e811.test.ts` on branch `fix/54b4e811-bug-spec` @ c4c739e (from bb0df35). Build the fix from that branch (bugfix skill step 4).\nEM check on c4c739e: `npm test -- bug-54b4e811` -> exit 1, 5 of 6 fail, the control passes, 6 s, no hang. The two read tests use a FIFO with no writer, in a child process with a 3 s kill timeout (not /dev/zero, which grew memory to several GB in the qa-engineer's measurement).\n\nObserved 1: log shards (`lib/project/events.ts` readShard) and `.project` (`lib/project/bundle.ts` readBundle) are read with no regular-file check; a merged symlink to a device or FIFO makes the read never end.\nObserved 2 (low): `writeText` (roadmap.ts), `writeBundle` (bundle.ts) and `writeJson` (store.ts) write `<path>.<pid>.tmp` with a plain writeFileSync, which follows a symlink at that name.\nFix (spec): reuse `regularFileIn`/`isInside` (lib/project/gate.ts, from SR-8) for the reads; write temp files with `wx`, and on EEXIST unlink and retry with `wx` (model: notify-record.ts).\nEstimate: about 40-60 changed lines (qa-engineer, from the two landed examples of the same shapes; not checked).\nExpected: no requirement ID exists; the spec cites TH-7 residual 3 (threat-model.md) and card c-73ccab. Same gap as d5ebde85.\nDocs: update TH-7 residual 3 and the D1 and D2 rows when it is fixed.",
       "labels": [
         "bug",
@@ -2309,6 +2309,33 @@
       "createdAt": "2026-10-10T19:05:47.723Z",
       "updatedAt": "2026-10-10T19:05:47.723Z",
       "order": 6
+    },
+    {
+      "id": "aa27f49a",
+      "title": "Bug: appendEvent appends to an actor's shard through a planted symlink or FIFO",
+      "description": "Not triaged; track not proposed yet. Found by the backend-engineer while fixing 54b4e811 (2026-10-11); the security review of that fix rates it.\nObserved (by code reading): appendEvent (lib/project/events.ts, about line 357) appends to the actor's own shard with a plain appendFileSync. A merged symlink at a known actor's shard name (the file name is the actor id) can make the next append block on a FIFO, or append to a file outside the root. TH-7 residual 3 (fixed by 54b4e811) covers reads and temp writes, not this append.\nPossible fix: as appendRecord in lib/project/notify-record.ts does: O_NOFOLLOW and O_NONBLOCK, then check fstat().isFile(). Severity: UNKNOWN until the security review.",
+      "status": "backlog",
+      "createdAt": "2026-10-10T19:07:59.534Z",
+      "updatedAt": "2026-10-10T19:07:59.534Z",
+      "order": 7
+    },
+    {
+      "id": "d78ae4cf",
+      "title": "verifyLog reports a planted non-regular shard as empty, not as a chain break",
+      "description": "Not triaged. Found by the backend-engineer while fixing 54b4e811 (2026-10-11).\nObserved: after 54b4e811, readShard treats a shard that is not a regular file inside the root as missing ([]). verifyLog and verifyShard read through readShard, so such a shard looks empty and reports no chain break. Proposal: report it as a break or a warning.\nRelated, low: when .project is not a regular file, findProject still finds the project (existsSync), and the error says 'No .project at <root>'; a clearer message would say it is not a regular file.",
+      "status": "backlog",
+      "createdAt": "2026-10-10T19:07:59.639Z",
+      "updatedAt": "2026-10-10T19:07:59.639Z",
+      "order": 8
+    },
+    {
+      "id": "49c078ce",
+      "title": "Bug: readJson reads the older store files with no regular-file check",
+      "description": "Not triaged. Found by the backend-engineer while fixing 54b4e811 (2026-10-11).\nObserved (by code reading): readJson (lib/project/store.ts) reads the older store layout (project.json, tasks.json, roadmap.json, diagrams, boards) with a plain readFileSync. A merged symlink to a device or FIFO hangs the read, as SR-8 did, for projects that still use the older layout. Not in 54b4e811's scope (TH-7 residual 3 names events.ts and bundle.ts).",
+      "status": "backlog",
+      "createdAt": "2026-10-10T19:07:59.745Z",
+      "updatedAt": "2026-10-10T19:07:59.745Z",
+      "order": 9
     }
   ],
   "roadmap": {
