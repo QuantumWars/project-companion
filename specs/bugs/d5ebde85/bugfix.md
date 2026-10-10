@@ -22,6 +22,9 @@ read, and `requestGate` (`gate.ts:248`) calls it for every requested artifact. S
 
 Either command can become slow without limit, or never return, depending on what a merged log named.
 
+`readPrdText` (`lib/project/roadmap.ts:87-95`, reached by `cockpit` and `card open`) reads the PRD source named
+in `.project` the same unchecked way.
+
 ## Expected
 
 The approved fix, from security review SR-8 (`specs/decision-alerts/reviews/security.md:108-113,160-161`) and
@@ -70,7 +73,7 @@ opened and read in full. The same two gaps (no containment check, no file-kind/s
 in-project directory raise `EISDIR` from `readFileSync` instead of being rejected before the read
 (`tests/notify.test.ts`'s existing `TH-5: a folder in place of an approved artifact gives lookup failed: EISDIR`
 tests, in-process and CLI, depend on that `EISDIR` throw and must be updated by whoever builds this fix, per
-design.md:453 and the task's source note).
+design.md:453 and the task's source note). `readPrdText` (`lib/project/roadmap.ts:87-95`) has the same two gaps.
 
 ## Fix
 
@@ -90,6 +93,10 @@ EISDIR`, in-process and CLI) to match the new, non-throwing behaviour for a dire
 approved-artifact case, as noted in design.md:453 and the task description. Not done here: this bug spec adds
 only the regression test below; the code fix and the TH-5 test updates are for the build stage.
 
+`readPrdText` must use the same check: the builder exported `regularFileIn` from `gate.ts` and had
+`readPrdText` (`lib/project/roadmap.ts`) reuse it, so the PRD source gets the same in-root, regular-file rule
+(card c-3a9ce2).
+
 ## Regression test
 
 `d5ebde85: an artifact path outside the project root is not read` (in `tests/bug-d5ebde85.test.ts`).
@@ -103,6 +110,9 @@ must pass.
 A second test in the same file, `d5ebde85: an artifact path inside the project root is still read (control)`,
 checks that an ordinary in-root artifact is still hashed, so the fix does not overcorrect. It passes today and
 must keep passing after the fix.
+
+A third test, for the PRD-source gap: `d5ebde85: a PRD source outside the project root or not a regular file is
+not read`.
 
 Confirmed failing now:
 
