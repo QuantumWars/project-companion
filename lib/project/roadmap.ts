@@ -322,7 +322,6 @@ export const setPhase = (root: string, phase: Partial<Phase> & { id: string }): 
   return readRoadmap(root).phases.find((p) => p.id === phase.id) ?? null;
 };
 
-/** Points the project at a different PRD file. */
 /**
  * Writes a new PRD at the source path (`prd init`); returns the source (SR-8).
  *
@@ -347,6 +346,7 @@ export const createPrd = (root: string, text: string): string => {
   return source;
 };
 
+/** Points the project at a different PRD file. */
 export const setPrdSource = (root: string, source: string): Roadmap => {
   writeSidecar(root, { ...readSidecar(root), source });
   return readRoadmap(root);

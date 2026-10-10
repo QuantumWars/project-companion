@@ -19,7 +19,7 @@
  * bug; this test only needs one fast-failing case to prove it.
  */
 
-import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -121,6 +121,7 @@ const prdProject = (source: string): { parent: string; root: string } => {
 test("d5ebde85: prd init never writes outside the root or over a file or a symlink", () => {
   const escaped = prdProject("../outside.md");
   const linked = prdProject("docs/prd.md");
+  const dirLinked = prdProject("docs/prd.md");
   const fresh = prdProject("docs/prd.md");
   try {
     writeFileSync(join(escaped.parent, "outside.md"), "keep\n");
@@ -133,11 +134,18 @@ test("d5ebde85: prd init never writes outside the root or over a file or a symli
     throws(() => createPrd(linked.root, "# PRD\n"), /is not a regular file inside the project/);
     eq(readFileSync(join(linked.parent, "target.md"), "utf8"), "keep\n", "the symlink's target changed");
 
+    // docs is a symlink to a folder outside the root: the realpath check must refuse it.
+    const outsideDir = join(dirLinked.parent, "outside-docs");
+    mkdirSync(outsideDir);
+    symlinkSync(outsideDir, join(dirLinked.root, "docs"));
+    throws(() => createPrd(dirLinked.root, "# PRD\n"), /is not inside the project/);
+    eq(readdirSync(outsideDir), [], "a file was written in the folder outside the root");
+
     eq(createPrd(fresh.root, "# PRD\n"), "docs/prd.md", "a missing docs/prd.md is created");
     eq(readFileSync(join(fresh.root, "docs", "prd.md"), "utf8"), "# PRD\n");
     throws(() => createPrd(fresh.root, "# PRD\n"), /already exists/);
   } finally {
-    for (const p of [escaped, linked, fresh]) rmSync(p.parent, { recursive: true, force: true });
+    for (const p of [escaped, linked, dirLinked, fresh]) rmSync(p.parent, { recursive: true, force: true });
   }
 });
 
