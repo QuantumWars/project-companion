@@ -111,7 +111,10 @@ approved-artifact case; both the code and these test updates landed in this pull
 - `d5ebde85: a Unix socket inside the project root gives null`
 - `d5ebde85: prd init never writes outside the root or over a file or a symlink`
 
-Before the fix (only the first two existed, the second narrower):
+Before the fix, only two of these six tests existed: the first
+(`d5ebde85: an artifact path outside the project root is not read`) and the fourth
+(`d5ebde85: an artifact path inside the project root is still read (control)`); the control did not yet cover
+an in-root symlink.
 
 ```
 $ npm test -- bug-d5ebde85
