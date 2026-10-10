@@ -39,11 +39,13 @@
  */
 
 import { createHash } from "node:crypto";
-import { readFileSync, realpathSync, statSync } from "node:fs";
-import { isAbsolute, join, relative, sep } from "node:path";
+import { readFileSync } from "node:fs";
 
 import { appendEvent, readEvents, type ProjectEvent } from "./events";
 import { slug } from "./prd";
+import { regularFileIn } from "./safe-file";
+
+export { isInside, regularFileIn } from "./safe-file";
 
 export const GATE_KINDS = ["prd", "design", "sprint", "merge", "release"] as const;
 export type GateKind = (typeof GATE_KINDS)[number];
@@ -128,30 +130,6 @@ export const prdSection = (prd: string, epic: string): string | null => {
     .slice(start, end)
     .map((l) => l.replace(/^(\s*[-*+]\s+)\[[ xX]\]/, "$1[ ]"))
     .join("\n");
-};
-
-/** Whether the real path `file` is the real path `base` or inside it (SR-8). */
-export const isInside = (base: string, file: string): boolean => {
-  const rel = relative(base, file);
-  return !isAbsolute(rel) && rel.split(sep)[0] !== "..";
-};
-
-/**
- * The real path of `path` when it is a regular file inside `root`; null otherwise (SR-8).
- *
- * A merged log names the path, so a `..` escape, a symlink out of the root, a
- * folder, a device or a FIFO counts as missing. Nothing here opens the file.
- * The roadmap's PRD source read uses it too.
- */
-export const regularFileIn = (root: string, path: string): string | null => {
-  try {
-    const base = realpathSync(root);
-    const file = realpathSync(join(base, path));
-    if (!isInside(base, file)) return null;
-    return statSync(file).isFile() ? file : null;
-  } catch {
-    return null; // as existsSync did: a path that cannot be resolved is missing
-  }
 };
 
 /** sha256 of an artifact's current bytes; null when it is not a regular file inside the root. */

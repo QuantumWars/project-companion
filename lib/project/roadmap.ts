@@ -14,7 +14,7 @@
  * assignee -- becomes a stored override.
  */
 
-import { existsSync, mkdirSync, readFileSync, realpathSync, renameSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 import {
@@ -26,7 +26,7 @@ import {
   type PrdOp,
 } from "./prd";
 import { mutateBundle, readBundle, withProjectLock } from "./bundle";
-import { isInside, regularFileIn } from "./gate";
+import { isInside, regularFileIn, replaceFile } from "./safe-file";
 import { readJson, projectPaths, writeJson } from "./store";
 import {
   DEFAULT_PRD_PATH,
@@ -241,9 +241,7 @@ export const editPrd = (root: string, baseHash: string | undefined, ops: PrdOp[]
 /** Write-then-rename, matching how every other file in the store is written. */
 const writeText = (path: string, value: string) => {
   mkdirSync(dirname(path), { recursive: true });
-  const tmp = `${path}.${process.pid}.tmp`;
-  writeFileSync(tmp, value, "utf8");
-  renameSync(tmp, path);
+  replaceFile(path, value);
 };
 
 const writeSidecar = (root: string, file: RoadmapFile) => {

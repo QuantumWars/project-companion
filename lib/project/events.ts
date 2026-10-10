@@ -49,6 +49,8 @@ import {
 import { hostname, userInfo } from "node:os";
 import { join } from "node:path";
 
+import { regularFileIn } from "./safe-file";
+
 export const LOG_DIR = ".project-log";
 const SHARD_SUFFIX = ".jsonl";
 
@@ -238,10 +240,14 @@ const shardFiles = (root: string): string[] => {
  * committed, which means a bad merge or a truncated write can leave one broken
  * record in the middle of an otherwise fine history -- refusing to read the
  * whole project because of it would turn a cosmetic problem into an outage.
+ *
+ * A merge can put a symlink, a device or a FIFO at a shard's name, so a shard
+ * that is not a regular file inside the root is never opened: it counts as
+ * missing (bug 54b4e811).
  */
 export const readShard = (root: string, actor: string): ProjectEvent[] => {
-  const path = shardPath(root, actor);
-  if (!existsSync(path)) return [];
+  const path = regularFileIn(root, join(LOG_DIR, `${actor}${SHARD_SUFFIX}`));
+  if (path === null) return [];
 
   const events: ProjectEvent[] = [];
   for (const line of readFileSync(path, "utf8").split("\n")) {
