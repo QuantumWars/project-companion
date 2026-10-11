@@ -27,14 +27,13 @@ import {
   existsSync,
   openSync,
   readFileSync,
-  renameSync,
   rmSync,
   statSync,
-  writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
 
 import type { Component } from "./component";
+import { regularFileIn, replaceFile } from "./safe-file";
 import type {
   DiagramFile, DiagramRef, Feature, FeatureOverride, Phase, Task, TaskStatus, WhiteboardFile,
 } from "./types";
@@ -177,9 +176,12 @@ const looksLikeBundle = (value: unknown): value is ProjectBundle => {
   return bundle.diagrams !== undefined;
 };
 
+/** The bundle; null when `.project` is missing, malformed, or not a regular file inside the root (bug 54b4e811). */
 export const readBundle = (root: string): ProjectBundle | null => {
+  const file = regularFileIn(root, BUNDLE_FILE);
+  if (file === null) return null;
   try {
-    const parsed: unknown = JSON.parse(readFileSync(bundlePath(root), "utf8"));
+    const parsed: unknown = JSON.parse(readFileSync(file, "utf8"));
     if (!looksLikeBundle(parsed)) return null;
     // Older files may predate a field; fill rather than fail.
     return {
@@ -232,9 +234,7 @@ export const writeBundle = (
   };
 
   // Same write-then-rename as everywhere else: a reader never sees half a file.
-  const tmp = `${path}.${process.pid}.tmp`;
-  writeFileSync(tmp, `${JSON.stringify(next, null, 2)}\n`, "utf8");
-  renameSync(tmp, path);
+  replaceFile(path, `${JSON.stringify(next, null, 2)}\n`);
   return next;
 };
 
