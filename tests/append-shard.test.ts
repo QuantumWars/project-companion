@@ -22,7 +22,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { appendEvent, readShard, verifyShard } from "@/lib/project/events";
-import { eq, ok, runAll, test } from "./harness";
+import { eq, ok, runAll, test, throws } from "./harness";
 
 const HELPER_FLAG = "--append-shard-helper";
 const TIMEOUT_MS = 3000;
@@ -140,6 +140,31 @@ if (process.argv[2] === HELPER_FLAG) {
 
       refused(append(root), ".project-log is a symlink to a folder outside the root", /is not a real folder/);
       eq(readdirSync(elsewhere), [], "a shard was created in the folder outside the root");
+    } finally {
+      cleanup();
+    }
+  });
+
+  // The cases below cannot block (a folder, a long name and a missing folder never wait), so they run in-process.
+
+  test("54b4e811 F1: an own shard that is a folder (EISDIR) makes appendEvent refuse clearly", () => {
+    const { root, shard, cleanup } = tmpProject();
+    try {
+      mkdirSync(join(shard, "inside"), { recursive: true }); // what a merged `<shard>/inside/x` leaves
+      throws(() => appendEvent(root, { kind: "task.created" }, ACTOR), NOT_A_FILE, "a folder at the shard's name");
+    } finally {
+      cleanup();
+    }
+  });
+
+  test("54b4e811 F1: any other open or lstat error passes through unchanged", () => {
+    const { parent, root, cleanup } = tmpProject();
+    try {
+      const longActor = { ...ACTOR, id: "a".repeat(300) }; // a shard name longer than any filesystem allows
+      throws(() => appendEvent(root, { kind: "task.created" }, longActor), /ENAMETOOLONG/, "the open error");
+      const fileRoot = join(parent, "not-a-folder");
+      writeFileSync(fileRoot, "");
+      throws(() => appendEvent(fileRoot, { kind: "task.created" }, ACTOR), /ENOTDIR/, "the lstat error");
     } finally {
       cleanup();
     }

@@ -379,7 +379,7 @@ const requireLogFolder = (root: string): void => {
   }
 };
 
-// A symlink gives ELOOP (EMLINK on FreeBSD), and a FIFO with no reader gives ENXIO, not a wait.
+// A symlink gives ELOOP (EMLINK on FreeBSD), a folder EISDIR, and a FIFO with no reader ENXIO, not a wait.
 // Windows has no O_NOFOLLOW or O_NONBLOCK: there only the folder and `fstat` checks guard.
 const APPEND_FLAGS = constants.O_WRONLY | constants.O_APPEND | constants.O_CREAT |
   (constants.O_NOFOLLOW ?? 0) | (constants.O_NONBLOCK ?? 0);
@@ -393,7 +393,7 @@ const writeRecords = (root: string, actor: string, records: ProjectEvent[]): voi
   try {
     fd = openSync(path, APPEND_FLAGS, 0o666);
   } catch (error) {
-    if (["ELOOP", "EMLINK", "ENXIO"].includes((error as NodeJS.ErrnoException).code ?? "")) throw notAFile();
+    if (["ELOOP", "EMLINK", "EISDIR", "ENXIO"].includes((error as NodeJS.ErrnoException).code ?? "")) throw notAFile();
     throw error;
   }
   try {
