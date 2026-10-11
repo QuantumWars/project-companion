@@ -150,12 +150,12 @@ when the fix lands. Not in this spec step.
 - A symlink, a folder or a FIFO gives "Refused to write the event log: <path> is not a regular
   file (bug 54b4e811). Remove it and try again." Nothing is written.
 
-**PM decisions on the other review findings** (card c-c49806):
+**PM decisions on the other review findings**:
 
-- F1: fix it in this pull request (above).
-- F2 (the `.project` folder fallback in the roadmap read and write): task 49c078ce.
-- F3 (`verifyLog` does not report a refused shard): task d78ae4cf.
-- F4 (the check-then-read window): accepted under TH-7 residual 2.
+- F1: fix it in this pull request (above). Card c-c49806.
+- F2 (the `.project` folder fallback in the roadmap read and write): task 49c078ce. Card c-4936f7.
+- F3 (`verifyLog` does not report a refused shard): task d78ae4cf. Card c-a04935.
+- F4 (the check-then-read window): accepted under TH-7 residual 2. Card c-f3e53a.
 
 ## Regression test
 
