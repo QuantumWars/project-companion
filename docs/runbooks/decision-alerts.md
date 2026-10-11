@@ -13,15 +13,18 @@ Only the exact value `off` of `PROJECT_COMPANION_NOTIFY` turns alerts off
 
 Set it in one of 2 places:
 
-- A shell: `export PROJECT_COMPANION_NOTIFY=off` before the command.
-- The `env` block of `.claude/settings.json`, which covers every command the
-  EM runs (design section 6, step 4). Only the PM edits `.claude/`.
+- A shell: `export PROJECT_COMPANION_NOTIFY=off`. It covers only later
+  commands in that same shell. Each Claude Code Bash call starts a new
+  shell, so an export does not reach the EM's commands.
+- The `env` block of `.claude/settings.json`. This is the only way to cover
+  the EM's commands (design section 6, step 4). Only the PM edits `.claude/`.
 
 Drill (proves the switch; touches nothing of this repository's own data):
 
 ```sh
-npm run build:tools                 # only if dist/ is missing
+( set -eu
 repo=$(pwd)
+test -f dist/project-companion.mjs || npm run build:tools
 drill=$(mktemp -d)
 scratch_home=$(mktemp -d)
 cd "$drill"
@@ -29,10 +32,14 @@ env -u CLAUDE_PROJECT_DIR HOME="$scratch_home" PROJECT_COMPANION_NOTIFY=off \
   node "$repo/dist/project-companion.mjs" init "Drill"
 env -u CLAUDE_PROJECT_DIR HOME="$scratch_home" PROJECT_COMPANION_NOTIFY=off \
   node "$repo/dist/project-companion.mjs" card open --subject drill --ask "Off switch drill?"
-cat .project-notify/record.jsonl    # one line, with "outcome":"off"
+cat .project-notify/record.jsonl
 cd "$repo"
 rm -rf "$drill" "$scratch_home"
+)
 ```
+
+The drill stops at the first failure. Run it from the repository root. The
+last command prints one line, with `"outcome":"off"`.
 
 No banner shows. Nothing is written to this repository's `.project-log/`,
 and the drill project never reaches `~/.claude/project-companion/index.json`:
@@ -60,14 +67,18 @@ file loses only metric history.
 
 ## Rollback
 
-1. Off switch, no code: set `PROJECT_COMPANION_NOTIFY=off` as above. This
-   takes effect at once and needs no pull request. It does not stop the
-   text lookup that builds the title and command — see below.
+1. Off switch, no code: the PM sets `PROJECT_COMPANION_NOTIFY=off` in the
+   `env` block, as above. This needs no pull request. Confirm that the next
+   record line for a new decision shows `off`. It does not stop the text
+   lookup that builds the title and command — see below. Both rollback
+   steps need the PM.
 2. Remove the 2 CLI calls, only if step 1 is not enough. PR #17 (squash
    commit `4ad07e9` on `master`) added them to `cli/index.ts`. Open a pull
-   request that reverses only that file's change, removes the CLI tests
-   that expect a notification (DA-01.1 and DA-01.2 in `tests/notify.test.ts`),
-   and updates the README paragraph (DA-03.4). Take it through the PM's
+   request that reverses only that file's change, removes or changes every
+   CLI test in `tests/notify.test.ts` that expects a record line, a notifier
+   call or a stderr line from the CLI (every one except DA-01.4, including
+   DA-01.1 and DA-01.2), and updates the README paragraph and its DA-03.4
+   test. Take it through the PM's
    merge gate. Never revert the whole of `4ad07e9`: it also holds tracker
    log lines, PRD ticks and a QA report, and it no longer reverts cleanly.
 
@@ -75,9 +86,11 @@ file loses only metric history.
    d=$(mktemp -d)
    git clone -q "$(git remote get-url origin)" "$d"
    git -C "$d" show 4ad07e9 -- cli/index.ts | git -C "$d" apply -R --check
-   echo "exit=$?"    # 0: the cli/index.ts change still reverses cleanly
+   echo "exit=$?"
    rm -rf "$d"
    ```
+
+   An exit of 0 means the `cli/index.ts` change still reverses cleanly.
 
 The off switch does not stop the text lookup: every `gate request` or
 `card open` still re-reads the cockpit, the gate artifacts and the PRD
@@ -89,23 +102,38 @@ device — is open as bug 54b4e811.
 
 ## When an alert does not appear
 
-Read the last line of `.project-notify/record.jsonl` for the decision's id.
+Find the last line of `.project-notify/record.jsonl` for the decision's id.
+A card's id is its `c-` id. A gate's id is `gate:<kind>:<subject>`. For
+example:
+
+```sh
+grep -F '{"id":"c-08caca",' .project-notify/record.jsonl | tail -n 1
+```
 
 | Last line for this id | Next step |
 |---|---|
-| `"outcome":"failed"` | Read `reason`, and match it to the standard error line below. It names a step and an error code, never the title, the command or the project name (TH-5). |
-| `"outcome":"off"` | The off switch is set somewhere in this command's environment. Check the shell and `.claude/settings.json`. |
-| `"outcome":"unsupported"` | The machine that ran the command is not macOS. |
+| `"outcome":"failed"` | Read `reason`. It has 3 forms, and it never holds the title, the command or the project name (TH-5). See "Reasons" below. |
+| `"outcome":"off"` | The off switch is set somewhere in this command's environment. Check the shell and `.claude/settings.json`. On the PM's Mac, the command's own environment may also have silenced the alert (TH-20). Find the command that made the decision, and tell the PM. |
+| `"outcome":"unsupported"` | The machine that ran the command is not macOS. On the PM's Mac, the command's own environment may have caused it (TH-20). Find the command that made the decision, and tell the PM. |
 | `"outcome":"sent"` | `osascript` started. Check macOS's Notification settings and Focus; both decide whether a banner shows on screen (TH-18). Which app macOS lists for `osascript` is UNKNOWN (design section 6, step 3). |
 | No line at all, or none for this id | The command may have failed before the alert ran, or the record write itself failed. Check the command's own output first, then the standard error line below. |
 
 Standard error, exactly as the code writes it (`lib/project/notify.ts`):
 
-- `project-companion: notification not sent: ` — the notifier did not
-  start; the rest of the line names a step and a code.
-- `project-companion: notification record not written: ` — the line above
-  was decided, but writing it to `.project-notify/record.jsonl` failed; the
-  rest of the line names a code and the path.
+- `project-companion: notification not sent: ` — no alert was sent; the rest
+  of the line is the `reason`.
+- `project-companion: notification record not written: ` — the outcome was
+  decided, but the record step failed; the rest of the line names a code and
+  the path.
+
+Reasons, in 3 groups:
+
+- `lookup failed: <code>` or `not in the cockpit: <id>` — the decision text
+  could not be read, so the notifier was not tried. Run
+  `project-companion cockpit` and check that the decision is listed.
+- `<code> <path>`, `did not start <path>` or `not an absolute path: <path>`
+  — the notifier could not start.
+- `<code>` alone — spawn refused the text, for example a NUL character.
 
 A reason on either line never holds the title, the command or the project
 name (TH-5): it is safe to paste into a message to the PM.
