@@ -41,9 +41,9 @@ this repository's `.project-log/` or `~/.claude/project-companion/index.json`:
 
 ## Notification record
 
-Each attempt appends one JSON line to `.project-notify/record.jsonl`. The
-keys, in order: `id`, `at`, `title`, `command`, `outcome`, then `reason`,
-only when `outcome` is `failed` (`appendRecord` in
+Each attempt appends one JSON line to `.project-notify/record.jsonl`, which
+git ignores. The keys, in order: `id`, `at`, `title`, `command`, `outcome`,
+then `reason`, only when `outcome` is `failed` (`appendRecord` in
 `lib/project/notify-record.ts`). `outcome` is one of:
 
 - `sent` — `/usr/bin/osascript` started.
