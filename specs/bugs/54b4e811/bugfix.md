@@ -141,6 +141,20 @@ to 60 once tests and the two read sites' error handling are counted.
 **Docs.** TH-7 residual 3 and the D1/D2 rows of `specs/decision-alerts/threat-model.md` are updated
 when the fix lands. Not in this spec step.
 
+**Built (cea9f52).** The plan above is kept as history. What landed:
+
+- New module `lib/project/safe-file.ts`. `isInside` and `regularFileIn` moved there from `gate.ts`
+  (cea9f52). The `gate.ts` re-export was removed in e965154, so the `gate.ts:134-155` reference above
+  is out of date. The module also adds `replaceFile`, the "`wx`, on `EEXIST` remove and retry" write.
+- Reads: `readShard` (`events.ts`) and `readBundle` (`bundle.ts`) use the module.
+- Temp writes: `writeText` (`roadmap.ts`), `writeBundle` (`bundle.ts`) and `writeJson` (`store.ts`)
+  use `replaceFile`.
+- Actual size, from `git diff --numstat origin/master...fix/54b4e811-safe-reads -- lib tests`:
+  `lib` 139 added and 60 removed (6 files, including the 52-line `safe-file.ts` and the Part 2
+  changes in `events.ts`); `tests` 494 added and 0 removed (3 new files). The "about 40-60 lines"
+  estimate was low.
+- Docs: TH-7 (1823270, b42ff75) and design section 6, step 5 (bb236fe).
+
 **Part 2 (F1): safe append** (266ebaa, 14a3c2f), all in `lib/project/events.ts`:
 
 - `appendEvent` writes the identity line and the event in one append, so it never calls itself.
@@ -210,6 +224,14 @@ bug-54b4e811.test.ts
 
 Exit code: 1. Run time: ~6.5 s (the two FIFO probes each wait out their 3 s kill timeout before
 reporting the hang; the fix should bring this back down to about 1 s).
+
+`tests/safe-file.test.ts`, 5 tests (the module's own tests):
+
+- `54b4e811: a shard or .project that is a symlink to a regular file outside the root is not read`
+- `54b4e811: a shard that is a folder counts as missing, not an error`
+- `54b4e811: replaceFile removes a symlink at its temp path and still writes the target`
+- `54b4e811: replaceFile passes on an error that is not EEXIST`
+- `54b4e811: replaceFile stops when it cannot remove its temp path, and leaves the target as it was`
 
 ### Part 2 (F1): `tests/append-shard.test.ts`, 8 tests
 
