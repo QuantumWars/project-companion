@@ -40,11 +40,17 @@
 
 import { createHash } from "node:crypto";
 import {
-  appendFileSync,
+  closeSync,
+  constants,
   existsSync,
+  fstatSync,
+  lstatSync,
   mkdirSync,
+  openSync,
   readFileSync,
   readdirSync,
+  writeSync,
+  type Stats,
 } from "node:fs";
 import { hostname, userInfo } from "node:os";
 import { join } from "node:path";
@@ -299,9 +305,9 @@ const tailOf = (root: string, actor: string): ProjectEvent | null => {
  * work sorts after it, rather than interleaving into their history because your
  * clock happens to run slow.
  *
- * Written with a single `appendFileSync`. One `write` of a short line is atomic
- * on every filesystem this runs on, so a concurrent append from another process
- * lands before or after -- never inside.
+ * Written with a single append (`writeRecords`). One `write` of a short line is
+ * atomic on every filesystem this runs on, so a concurrent append from another
+ * process lands before or after -- never inside.
  */
 export const appendEvent = (
   root: string,
@@ -309,11 +315,10 @@ export const appendEvent = (
   identity?: ActorIdentity,
 ): ProjectEvent => {
   const actor = identity ?? resolveActor(root);
-  const dir = logDir(root);
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+  requireLogFolder(root);
 
   const own = readShard(root, actor.id);
-  const previous = own.length ? own[own.length - 1] : null;
+  let previous = own.length ? own[own.length - 1] : null;
 
   // Lamport bump: never behind anything already written, anywhere.
   let seen = previous?.ts ?? 0;
@@ -324,9 +329,12 @@ export const appendEvent = (
   }
 
   // A shard's first event states who owns it, so the identity lives in the log
-  // rather than in a shared file that would conflict on every merge.
-  if (!own.length) {
-    writeRecord(root, actor.id, {
+  // rather than in a shared file that would conflict on every merge. It goes in
+  // the same write as the event: a shard that `readShard` refuses also reads as
+  // empty, so asking it again would never end (bug 54b4e811, F1).
+  const records: ProjectEvent[] = [];
+  if (!previous) {
+    previous = {
       id: `${actor.id}:0`,
       ts: Math.max(seen + 1, Date.now()),
       seq: 0,
@@ -334,27 +342,68 @@ export const appendEvent = (
       prev: null,
       kind: "actor.identified",
       data: { email: actor.email, name: actor.name, host: actor.host },
-    });
-    return appendEvent(root, event, actor);
+    };
+    records.push(previous);
+    seen = previous.ts;
   }
 
   const record: ProjectEvent = {
-    id: `${actor.id}:${previous!.seq + 1}`,
+    id: `${actor.id}:${previous.seq + 1}`,
     ts: Math.max(seen + 1, Date.now()),
-    seq: previous!.seq + 1,
+    seq: previous.seq + 1,
     actor: actor.id,
     prev: hashRecord(JSON.stringify(previous)),
     ...(event.componentId ? { componentId: event.componentId } : {}),
     kind: event.kind,
     data: event.data ?? {},
   };
+  records.push(record);
 
-  writeRecord(root, actor.id, record);
+  writeRecords(root, actor.id, records);
   return record;
 };
 
-const writeRecord = (root: string, actor: string, record: ProjectEvent): void => {
-  appendFileSync(shardPath(root, actor), `${JSON.stringify(record)}\n`, "utf8");
+/** `.project-log` must be a real folder: a merged symlink there would put the shard outside the root. */
+const requireLogFolder = (root: string): void => {
+  const dir = logDir(root);
+  let stat: Stats;
+  try {
+    stat = lstatSync(dir);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    mkdirSync(dir, { recursive: true });
+    return;
+  }
+  if (!stat.isDirectory()) {
+    throw new Error(`Refused to write the event log: ${dir} is not a real folder (bug 54b4e811). Remove it and try again.`);
+  }
+};
+
+// A symlink gives ELOOP (EMLINK on FreeBSD), and a FIFO with no reader gives ENXIO, not a wait.
+// Windows has no O_NOFOLLOW or O_NONBLOCK: there only the folder and `fstat` checks guard.
+const APPEND_FLAGS = constants.O_WRONLY | constants.O_APPEND | constants.O_CREAT |
+  (constants.O_NOFOLLOW ?? 0) | (constants.O_NONBLOCK ?? 0);
+
+/** Appends `records` to the actor's shard in one write, only when the shard is a regular file. */
+const writeRecords = (root: string, actor: string, records: ProjectEvent[]): void => {
+  const path = shardPath(root, actor);
+  const notAFile = () =>
+    new Error(`Refused to write the event log: ${path} is not a regular file (bug 54b4e811). Remove it and try again.`);
+  let fd: number;
+  try {
+    fd = openSync(path, APPEND_FLAGS, 0o666);
+  } catch (error) {
+    if (["ELOOP", "EMLINK", "ENXIO"].includes((error as NodeJS.ErrnoException).code ?? "")) throw notAFile();
+    throw error;
+  }
+  try {
+    // A FIFO with a reader, or a device, opens without error. It is not a shard: write nothing.
+    if (!fstatSync(fd).isFile()) throw notAFile();
+    const bytes = Buffer.from(records.map((r) => `${JSON.stringify(r)}\n`).join(""), "utf8");
+    for (let at = 0; at < bytes.length; ) at += writeSync(fd, bytes, at);
+  } finally {
+    closeSync(fd);
+  }
 };
 
 /* ------------------------------- verification ------------------------------ */
