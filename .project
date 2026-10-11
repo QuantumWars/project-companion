@@ -2,8 +2,6 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-10T19:07:59.745Z",
-  "revision": 461,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1953,14 +1951,14 @@
       "points": 1,
       "role": "devops-sre",
       "createdAt": "2026-10-08T16:42:12.477Z",
-      "updatedAt": "2026-10-10T07:54:40.872Z",
+      "updatedAt": "2026-10-11T17:35:05.407Z",
       "order": 39,
       "pr": {
         "number": 10,
         "url": "https://github.com/QuantumWars/project-companion/pull/10",
         "state": "MERGED",
         "headSha": "9f0d1accc72ef0b42722a4c4444528a449e96615",
-        "syncedAt": "2026-10-10T07:54:40.870Z"
+        "syncedAt": "2026-10-11T17:35:05.405Z"
       }
     },
     {
@@ -1976,14 +1974,14 @@
       "points": 1,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.579Z",
-      "updatedAt": "2026-10-10T07:54:41.470Z",
+      "updatedAt": "2026-10-11T17:35:05.984Z",
       "order": 40,
       "pr": {
         "number": 11,
         "url": "https://github.com/QuantumWars/project-companion/pull/11",
         "state": "MERGED",
         "headSha": "a7018441c070d605e6372bef65b2079ac2ccd4eb",
-        "syncedAt": "2026-10-10T07:54:41.469Z"
+        "syncedAt": "2026-10-11T17:35:05.982Z"
       }
     },
     {
@@ -1999,14 +1997,14 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.680Z",
-      "updatedAt": "2026-10-10T07:54:42.401Z",
+      "updatedAt": "2026-10-11T17:35:06.567Z",
       "order": 41,
       "pr": {
         "number": 12,
         "url": "https://github.com/QuantumWars/project-companion/pull/12",
         "state": "MERGED",
         "headSha": "d40d5237e42c6e109a809950bffa6dac50831dd7",
-        "syncedAt": "2026-10-10T07:54:42.400Z"
+        "syncedAt": "2026-10-11T17:35:06.563Z"
       }
     },
     {
@@ -2022,14 +2020,14 @@
       "points": 2,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.781Z",
-      "updatedAt": "2026-10-10T07:54:43.060Z",
+      "updatedAt": "2026-10-11T17:35:07.083Z",
       "order": 42,
       "pr": {
         "number": 14,
         "url": "https://github.com/QuantumWars/project-companion/pull/14",
         "state": "MERGED",
         "headSha": "c83bd383f8aee3f5555e7e14e428c38a676a9ef5",
-        "syncedAt": "2026-10-10T07:54:43.058Z"
+        "syncedAt": "2026-10-11T17:35:07.082Z"
       }
     },
     {
@@ -2045,14 +2043,14 @@
       "points": 2,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.883Z",
-      "updatedAt": "2026-10-10T07:54:43.579Z",
+      "updatedAt": "2026-10-11T17:35:07.628Z",
       "order": 43,
       "pr": {
         "number": 15,
         "url": "https://github.com/QuantumWars/project-companion/pull/15",
         "state": "MERGED",
         "headSha": "24563c227b039384a5d0060c3c48a44f3ce3cd15",
-        "syncedAt": "2026-10-10T07:54:43.579Z"
+        "syncedAt": "2026-10-11T17:35:07.627Z"
       }
     },
     {
@@ -2068,14 +2066,14 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.986Z",
-      "updatedAt": "2026-10-10T07:54:44.120Z",
+      "updatedAt": "2026-10-11T17:35:09.182Z",
       "order": 44,
       "pr": {
         "number": 16,
         "url": "https://github.com/QuantumWars/project-companion/pull/16",
         "state": "MERGED",
         "headSha": "b92eb6a987d8a0588f7c574a76ad22ad780993d4",
-        "syncedAt": "2026-10-10T07:54:44.119Z"
+        "syncedAt": "2026-10-11T17:35:09.181Z"
       }
     },
     {
@@ -2091,14 +2089,14 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:13.087Z",
-      "updatedAt": "2026-10-10T07:54:44.645Z",
+      "updatedAt": "2026-10-11T17:35:09.725Z",
       "order": 45,
       "pr": {
         "number": 17,
         "url": "https://github.com/QuantumWars/project-companion/pull/17",
         "state": "MERGED",
         "headSha": "2519dd4c6e53881bd3b4be3a44c9c6aab3a24078",
-        "syncedAt": "2026-10-10T07:54:44.644Z"
+        "syncedAt": "2026-10-11T17:35:09.724Z"
       }
     },
     {
@@ -2114,14 +2112,14 @@
       "points": 3,
       "role": "qa-engineer",
       "createdAt": "2026-10-08T16:42:13.187Z",
-      "updatedAt": "2026-10-10T07:54:45.402Z",
+      "updatedAt": "2026-10-11T17:35:10.259Z",
       "order": 46,
       "pr": {
         "number": 18,
         "url": "https://github.com/QuantumWars/project-companion/pull/18",
         "state": "MERGED",
         "headSha": "c20b099d25281a7bcf88c97aa2c1cad4b2f30a36",
-        "syncedAt": "2026-10-10T07:54:45.400Z"
+        "syncedAt": "2026-10-11T17:35:10.257Z"
       }
     },
     {
@@ -2137,14 +2135,14 @@
       "points": 1,
       "role": "qa-engineer",
       "createdAt": "2026-10-08T16:42:13.291Z",
-      "updatedAt": "2026-10-10T07:54:46.008Z",
+      "updatedAt": "2026-10-11T17:35:10.796Z",
       "order": 47,
       "pr": {
         "number": 19,
         "url": "https://github.com/QuantumWars/project-companion/pull/19",
         "state": "MERGED",
         "headSha": "88d236f2eda9ee4531322742d31b1db96478c9c4",
-        "syncedAt": "2026-10-10T07:54:46.007Z"
+        "syncedAt": "2026-10-11T17:35:10.795Z"
       }
     },
     {
@@ -2165,7 +2163,7 @@
       "title": "Bug: the artifact text lookup can be slow without limit (SR-8)",
       "status": "done",
       "createdAt": "2026-10-08T20:33:57.740Z",
-      "updatedAt": "2026-10-10T07:54:46.619Z",
+      "updatedAt": "2026-10-11T17:35:11.354Z",
       "order": 54,
       "kind": "bug",
       "role": "backend-engineer",
@@ -2175,7 +2173,7 @@
         "url": "https://github.com/QuantumWars/project-companion/pull/22",
         "state": "MERGED",
         "headSha": "d4bd59b3773296af25e8381a6bab449e4bd7e840",
-        "syncedAt": "2026-10-10T07:54:46.618Z"
+        "syncedAt": "2026-10-11T17:35:11.352Z"
       }
     },
     {
@@ -2187,7 +2185,7 @@
       "kind": "task",
       "role": "devops-sre",
       "createdAt": "2026-10-08T20:52:59.167Z",
-      "updatedAt": "2026-10-10T07:54:47.177Z",
+      "updatedAt": "2026-10-11T17:35:11.913Z",
       "order": 38,
       "points": 2,
       "pr": {
@@ -2195,7 +2193,7 @@
         "url": "https://github.com/QuantumWars/project-companion/pull/8",
         "state": "MERGED",
         "headSha": "cc56648aef8271a40b192db026d10063d68d1bbb",
-        "syncedAt": "2026-10-10T07:54:47.176Z"
+        "syncedAt": "2026-10-11T17:35:11.911Z"
       }
     },
     {
@@ -2243,33 +2241,33 @@
       "id": "1187698b",
       "title": "Write a short runbook for decision alerts (off switch, record, SR-8 rollback)",
       "description": "Track: Quick, epic repo-upkeep (bundled with the other two chores; PM card c-6e8bb6, 2026-10-10; track confirmed by the PM 2026-10-10). Role: devops-sre (it owns runbooks; `docs/runbooks/ci.md` is the model).\n\nSource: the release 0.3.0 launch checklist (`docs/releases/0.3.0-checklist.md`: \"A decision-alerts runbook is a backlog task\").\nScope: `docs/runbooks/decision-alerts.md`, short. Cover:\n1. The off switch (`PROJECT_COMPANION_NOTIFY=off`) and how to check that it works.\n2. The notification record (`.project-notify/record.jsonl`): what each line means, and that it is a local metric, not proof that the PM saw a banner (TH-18).\n3. Rollback: the off switch first, then reverting a release; the SR-8 fix (bug d5ebde85, PR 22) and its accepted residuals.\n4. Where to look when an alert does not appear (outcome `failed`, the stderr line).\nVerify: every command in the runbook was run once, and its output matches the text.\n\nReplaces task a9c34f46, which had no epic.\n\nSpec: specs/repo-upkeep/quick.md (d98ceb3), criteria RU-01.1 to RU-01.11; their Verify lines are the task's checks. Estimate: about 90 lines, 1 new file (exact count UNKNOWN until written; RU-01.1 caps it at 120).",
-      "status": "backlog",
+      "status": "in_progress",
       "phaseId": "repo-upkeep",
       "kind": "task",
       "role": "devops-sre",
       "createdAt": "2026-10-10T09:01:44.136Z",
-      "updatedAt": "2026-10-10T10:10:58.685Z",
-      "order": 7,
+      "updatedAt": "2026-10-10T19:21:31.266Z",
+      "order": 0,
       "points": 2
     },
     {
       "id": "85e1d62b",
       "title": "Fix package-lock.json name drift (board-video-tutorial vs project-companion)",
       "description": "Track: Quick, epic repo-upkeep (bundled with the other two chores; PM card c-6e8bb6, 2026-10-10; track confirmed by the PM 2026-10-10). Role: devops-sre.\n\nObserved (EM, release 0.3.0 and again on master 848898a, 2026-10-10): `package.json` names the package `project-companion`, but `package-lock.json` names it `board-video-tutorial` (top-level `name` and `packages[\"\"].name`). The drift was there before release 0.3.0; that release changed only the `version` fields.\nFix: set both names in `package-lock.json` to `project-companion`, for example with `npm install --package-lock-only`, and check that no dependency entry changes.\nVerify: `node -e` check that the lock's two names equal `package.json`'s name; `npm ci` passes; `git diff package-lock.json` changes only the two name lines.\n\nReplaces task 0375f5e8, which had no epic.\n\nSpec: specs/repo-upkeep/quick.md (d98ceb3), criteria RU-02.1 to RU-02.3; their Verify lines are the task's checks. Estimate: 4 lines (2 removed, 2 added; product-manager's scratch run).",
-      "status": "review",
+      "status": "done",
       "phaseId": "repo-upkeep",
       "kind": "task",
       "role": "devops-sre",
       "createdAt": "2026-10-10T09:01:44.335Z",
-      "updatedAt": "2026-10-10T18:59:25.474Z",
-      "order": 0,
+      "updatedAt": "2026-10-11T17:35:12.716Z",
+      "order": 56,
       "points": 1,
       "pr": {
         "number": 26,
         "url": "https://github.com/QuantumWars/project-companion/pull/26",
-        "state": "OPEN",
-        "headSha": "5c05d668f75cf0cd6ebbf382c8c82c79ac3cbab7",
-        "syncedAt": "2026-10-10T18:59:25.473Z"
+        "state": "MERGED",
+        "headSha": "a9fd7930bae7ebbf81d4e3ca088e60862b119e41",
+        "syncedAt": "2026-10-11T17:35:12.553Z"
       }
     },
     {
@@ -2313,28 +2311,28 @@
     {
       "id": "aa27f49a",
       "title": "Bug: appendEvent appends to an actor's shard through a planted symlink or FIFO",
-      "description": "Not triaged; track not proposed yet. Found by the backend-engineer while fixing 54b4e811 (2026-10-11); the security review of that fix rates it.\nObserved (by code reading): appendEvent (lib/project/events.ts, about line 357) appends to the actor's own shard with a plain appendFileSync. A merged symlink at a known actor's shard name (the file name is the actor id) can make the next append block on a FIFO, or append to a file outside the root. TH-7 residual 3 (fixed by 54b4e811) covers reads and temp writes, not this append.\nPossible fix: as appendRecord in lib/project/notify-record.ts does: O_NOFOLLOW and O_NONBLOCK, then check fstat().isFile(). Severity: UNKNOWN until the security review.",
+      "description": "Not triaged; track not proposed yet. Found by the backend-engineer while fixing 54b4e811 (2026-10-11).\nObserved (by code reading): appendEvent (lib/project/events.ts, about line 357) appends to the actor's own shard with a plain appendFileSync. A merged symlink at a known actor's shard name (the file name is the actor id) can make the next append block on a FIFO, or append to a file outside the root. TH-7 residual 3 (fixed by 54b4e811) covers reads and temp writes, not this append.\nPossible fix: as appendRecord in lib/project/notify-record.ts does: O_NOFOLLOW and O_NONBLOCK, then check fstat().isFile().\n\nFolded into 54b4e811 by the PM's answer to card c-c49806 (2026-10-11): the security review rated it medium (F1), because the 54b4e811 read fix makes it worse (a refused own shard makes appendEvent loop and append without limit). It is fixed in the 54b4e811 pull request. Close this task when that pull request merges with the F1 tests passing.",
       "status": "backlog",
       "createdAt": "2026-10-10T19:07:59.534Z",
-      "updatedAt": "2026-10-10T19:07:59.534Z",
+      "updatedAt": "2026-10-10T19:21:18.212Z",
       "order": 7
     },
     {
       "id": "d78ae4cf",
       "title": "verifyLog reports a planted non-regular shard as empty, not as a chain break",
-      "description": "Not triaged. Found by the backend-engineer while fixing 54b4e811 (2026-10-11).\nObserved: after 54b4e811, readShard treats a shard that is not a regular file inside the root as missing ([]). verifyLog and verifyShard read through readShard, so such a shard looks empty and reports no chain break. Proposal: report it as a break or a warning.\nRelated, low: when .project is not a regular file, findProject still finds the project (existsSync), and the error says 'No .project at <root>'; a clearer message would say it is not a regular file.",
+      "description": "Not triaged. Found by the backend-engineer while fixing 54b4e811 (2026-10-11).\nObserved: after 54b4e811, readShard treats a shard that is not a regular file inside the root as missing ([]). verifyLog and verifyShard read through readShard, so such a shard looks empty and reports no chain break. Proposal: report it as a break or a warning.\nRelated, low: when .project is not a regular file, findProject still finds the project (existsSync), and the error says 'No .project at <root>'; a clearer message would say it is not a regular file.\n\nAdded by the PM's answer to card c-a04935 (2026-10-11): security review of 54b4e811, finding F3 (low, TH-7 r3, D1 repudiation). A refused shard is dropped silently and verifyLog passes; before 54b4e811 a folder there gave a loud EISDIR. Low because deleting or truncating a shard already hides events, and a hidden gate.approved fails closed (gate.ts skips a decision with no request). Fix: verifyLog reports a refused shard as a break, for example reason \"not-a-file\" (about 6 lines, events.ts verifyLog).",
       "status": "backlog",
       "createdAt": "2026-10-10T19:07:59.639Z",
-      "updatedAt": "2026-10-10T19:07:59.639Z",
+      "updatedAt": "2026-10-10T19:21:15.279Z",
       "order": 8
     },
     {
       "id": "49c078ce",
       "title": "Bug: readJson reads the older store files with no regular-file check",
-      "description": "Not triaged. Found by the backend-engineer while fixing 54b4e811 (2026-10-11).\nObserved (by code reading): readJson (lib/project/store.ts) reads the older store layout (project.json, tasks.json, roadmap.json, diagrams, boards) with a plain readFileSync. A merged symlink to a device or FIFO hangs the read, as SR-8 did, for projects that still use the older layout. Not in 54b4e811's scope (TH-7 residual 3 names events.ts and bundle.ts).",
+      "description": "Not triaged. Found by the backend-engineer while fixing 54b4e811 (2026-10-11).\nObserved (by code reading): readJson (lib/project/store.ts) reads the older store layout (project.json, tasks.json, roadmap.json, diagrams, boards) with a plain readFileSync. A merged symlink to a device or FIFO hangs the read, as SR-8 did, for projects that still use the older layout. Not in 54b4e811's scope (TH-7 residual 3 names events.ts and bundle.ts).\n\nAdded by the PM's answer to card c-4936f7 (2026-10-11): security review of 54b4e811, finding F2 (low, existed before that fix). When a merged commit makes .project a folder, readBundle gives null and readSidecar (lib/project/roadmap.ts) reads .project/roadmap.json through readJson with no kind check, so a symlink there to /dev/zero hangs readCockpit (on the notify path); writeSidecar falls back to writeJson and can write outside the root through a linked folder. Fix (security review): use the legacy roadmap.json only when isLegacyStore(...) is true, else emptyRoadmap() on a read and \"No .project\" on a write; readJson returns the fallback unless statSync(path).isFile().",
       "status": "backlog",
       "createdAt": "2026-10-10T19:07:59.745Z",
-      "updatedAt": "2026-10-10T19:07:59.745Z",
+      "updatedAt": "2026-10-10T19:21:12.218Z",
       "order": 9
     }
   ],
@@ -2347,5 +2345,7 @@
   "agents": {
     "byComponent": {}
   },
-  "wip": {}
+  "wip": {},
+  "revision": 479,
+  "updatedAt": "2026-10-11T17:35:42.688Z"
 }
