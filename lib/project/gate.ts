@@ -45,8 +45,6 @@ import { appendEvent, readEvents, type ProjectEvent } from "./events";
 import { slug } from "./prd";
 import { regularFileIn } from "./safe-file";
 
-export { isInside, regularFileIn } from "./safe-file";
-
 export const GATE_KINDS = ["prd", "design", "sprint", "merge", "release"] as const;
 export type GateKind = (typeof GATE_KINDS)[number];
 

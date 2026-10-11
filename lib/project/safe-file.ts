@@ -20,7 +20,7 @@ export const isInside = (base: string, file: string): boolean => {
  *
  * A merged log names the path, so a `..` escape, a symlink out of the root, a
  * folder, a device or a FIFO counts as missing. Nothing here opens the file.
- * The roadmap's PRD source read uses it too.
+ * Gate artifacts, the PRD source, log shards and `.project` use it.
  */
 export const regularFileIn = (root: string, path: string): string | null => {
   try {
