@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-10T07:37:31.579Z",
-  "revision": 405,
+  "updatedAt": "2026-10-10T19:07:59.745Z",
+  "revision": 461,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1426,11 +1426,12 @@
       "status": "backlog",
       "componentId": "agent-tooling",
       "createdAt": "2026-10-08T20:33:57.586Z",
-      "updatedAt": "2026-10-08T20:34:08.103Z",
+      "updatedAt": "2026-10-10T10:10:58.599Z",
       "order": 16,
       "kind": "bug",
       "role": "backend-engineer",
-      "description": "Proposed track: Bugfix. Plan: after decision-alerts (sprint 2026-w43). Not ready to build: needs the PM's track confirmation, then `specs/bugs/15753492/bugfix.md` and a failing regression test from the qa-engineer.\n\nObserved (EM, 2026-10-09): every `run.progress` event in `.project-log/*.jsonl` stores `touched` as a full path, for example `/Users/…/project-companion/specs/decision-alerts/design.md`.\nEffect: `lib/project/git-link.ts:152` compares `run.touched` with the commit's paths, which are relative to the root. So a run never links to its commits.\nWhere: the `ingest` path in `cli/index.ts` (~line 1184) passes the harness `touched` list to `reportRun` in `lib/project/store.ts` (~line 1489) unchanged.\nExpected: each touched path is stored relative to the project root. The requirement ID is for the qa-engineer to find; if none exists, write UNKNOWN and tell the EM.\nOpen for the spec: what to do with the full paths already in the log (read-time normalising, or leave them)."
+      "description": "Track: Bugfix (confirmed by the PM on 2026-10-10). Ready to build: bug spec `specs/bugs/15753492/bugfix.md` and failing regression test `tests/bug-15753492.test.ts` on branch `fix/15753492-spec` @ 79df5ef (qa-engineer). EM re-ran `npm --prefix <worktree> test -- bug-15753492`: exit 1, 0/1 — \"a run that wrote this exact file, inside its open window, must be the match: expected \\\"run\\\", got undefined\".\n\nRequirement: `run-attribution` (`docs/prd.md:213`), \"A commit matching a run's files and window attributes to that run's task\".\nRoot cause (qa-engineer, checked in code; EM spot-checked git-link.ts:152, run.ts:179-180, cli/index.ts:515): `writtenPaths` (`lib/project/ingest.ts:62-78`) takes the harness's absolute `file_path`; `cli/index.ts:1181-1187` passes it to `reportRun` (`lib/project/store.ts:1482-1512`), which logs it unchanged; `runFor` (`lib/project/git-link.ts:152`) compares it with the commit's relative paths, so it never matches.\nFix: store each touched path relative to the project root; keep a path outside the root as its absolute string, never `../..`. Also covers `mayWrite` (`lib/project/run.ts:179-180`), which compares absolute paths with relative write globs, so today every write of a component with a write boundary counts as outside it.\nDecided by the PM (card c-a1704f): also normalise the full paths already in the log when they are read, so old runs link to their commits.\nFollow-up: 37f9fbce (the CLI's git log never passes runs).\nRole: backend-engineer.",
+      "points": 2
     },
     {
       "id": "978ce4d6",
@@ -1952,14 +1953,14 @@
       "points": 1,
       "role": "devops-sre",
       "createdAt": "2026-10-08T16:42:12.477Z",
-      "updatedAt": "2026-10-10T05:24:28.138Z",
+      "updatedAt": "2026-10-10T07:54:40.872Z",
       "order": 39,
       "pr": {
         "number": 10,
         "url": "https://github.com/QuantumWars/project-companion/pull/10",
         "state": "MERGED",
         "headSha": "9f0d1accc72ef0b42722a4c4444528a449e96615",
-        "syncedAt": "2026-10-10T05:24:28.136Z"
+        "syncedAt": "2026-10-10T07:54:40.870Z"
       }
     },
     {
@@ -1975,14 +1976,14 @@
       "points": 1,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.579Z",
-      "updatedAt": "2026-10-10T05:24:28.696Z",
+      "updatedAt": "2026-10-10T07:54:41.470Z",
       "order": 40,
       "pr": {
         "number": 11,
         "url": "https://github.com/QuantumWars/project-companion/pull/11",
         "state": "MERGED",
         "headSha": "a7018441c070d605e6372bef65b2079ac2ccd4eb",
-        "syncedAt": "2026-10-10T05:24:28.695Z"
+        "syncedAt": "2026-10-10T07:54:41.469Z"
       }
     },
     {
@@ -1998,14 +1999,14 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.680Z",
-      "updatedAt": "2026-10-10T05:24:29.247Z",
+      "updatedAt": "2026-10-10T07:54:42.401Z",
       "order": 41,
       "pr": {
         "number": 12,
         "url": "https://github.com/QuantumWars/project-companion/pull/12",
         "state": "MERGED",
         "headSha": "d40d5237e42c6e109a809950bffa6dac50831dd7",
-        "syncedAt": "2026-10-10T05:24:29.246Z"
+        "syncedAt": "2026-10-10T07:54:42.400Z"
       }
     },
     {
@@ -2021,14 +2022,14 @@
       "points": 2,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.781Z",
-      "updatedAt": "2026-10-10T05:24:29.770Z",
+      "updatedAt": "2026-10-10T07:54:43.060Z",
       "order": 42,
       "pr": {
         "number": 14,
         "url": "https://github.com/QuantumWars/project-companion/pull/14",
         "state": "MERGED",
         "headSha": "c83bd383f8aee3f5555e7e14e428c38a676a9ef5",
-        "syncedAt": "2026-10-10T05:24:29.765Z"
+        "syncedAt": "2026-10-10T07:54:43.058Z"
       }
     },
     {
@@ -2044,14 +2045,14 @@
       "points": 2,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.883Z",
-      "updatedAt": "2026-10-10T05:24:30.270Z",
+      "updatedAt": "2026-10-10T07:54:43.579Z",
       "order": 43,
       "pr": {
         "number": 15,
         "url": "https://github.com/QuantumWars/project-companion/pull/15",
         "state": "MERGED",
         "headSha": "24563c227b039384a5d0060c3c48a44f3ce3cd15",
-        "syncedAt": "2026-10-10T05:24:30.270Z"
+        "syncedAt": "2026-10-10T07:54:43.579Z"
       }
     },
     {
@@ -2067,14 +2068,14 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.986Z",
-      "updatedAt": "2026-10-10T05:24:30.887Z",
+      "updatedAt": "2026-10-10T07:54:44.120Z",
       "order": 44,
       "pr": {
         "number": 16,
         "url": "https://github.com/QuantumWars/project-companion/pull/16",
         "state": "MERGED",
         "headSha": "b92eb6a987d8a0588f7c574a76ad22ad780993d4",
-        "syncedAt": "2026-10-10T05:24:30.886Z"
+        "syncedAt": "2026-10-10T07:54:44.119Z"
       }
     },
     {
@@ -2090,14 +2091,14 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:13.087Z",
-      "updatedAt": "2026-10-10T05:24:31.433Z",
+      "updatedAt": "2026-10-10T07:54:44.645Z",
       "order": 45,
       "pr": {
         "number": 17,
         "url": "https://github.com/QuantumWars/project-companion/pull/17",
         "state": "MERGED",
         "headSha": "2519dd4c6e53881bd3b4be3a44c9c6aab3a24078",
-        "syncedAt": "2026-10-10T05:24:31.432Z"
+        "syncedAt": "2026-10-10T07:54:44.644Z"
       }
     },
     {
@@ -2113,14 +2114,14 @@
       "points": 3,
       "role": "qa-engineer",
       "createdAt": "2026-10-08T16:42:13.187Z",
-      "updatedAt": "2026-10-10T05:24:32.352Z",
+      "updatedAt": "2026-10-10T07:54:45.402Z",
       "order": 46,
       "pr": {
         "number": 18,
         "url": "https://github.com/QuantumWars/project-companion/pull/18",
         "state": "MERGED",
         "headSha": "c20b099d25281a7bcf88c97aa2c1cad4b2f30a36",
-        "syncedAt": "2026-10-10T05:24:32.351Z"
+        "syncedAt": "2026-10-10T07:54:45.400Z"
       }
     },
     {
@@ -2136,14 +2137,14 @@
       "points": 1,
       "role": "qa-engineer",
       "createdAt": "2026-10-08T16:42:13.291Z",
-      "updatedAt": "2026-10-10T05:24:32.871Z",
+      "updatedAt": "2026-10-10T07:54:46.008Z",
       "order": 47,
       "pr": {
         "number": 19,
         "url": "https://github.com/QuantumWars/project-companion/pull/19",
         "state": "MERGED",
         "headSha": "88d236f2eda9ee4531322742d31b1db96478c9c4",
-        "syncedAt": "2026-10-10T05:24:32.870Z"
+        "syncedAt": "2026-10-10T07:54:46.007Z"
       }
     },
     {
@@ -2152,28 +2153,29 @@
       "status": "backlog",
       "componentId": "agent-tooling",
       "createdAt": "2026-10-08T20:33:57.663Z",
-      "updatedAt": "2026-10-08T20:34:11.431Z",
+      "updatedAt": "2026-10-10T10:10:58.858Z",
       "order": 17,
       "kind": "bug",
       "role": "backend-engineer",
-      "description": "Proposed track: Bugfix. Plan: after decision-alerts (sprint 2026-w43). Not ready to build: needs the PM's track confirmation, then `specs/bugs/ee2e49d6/bugfix.md` and a failing regression test from the qa-engineer.\n\nObserved (EM, 2026-10-09): `project-companion card list --open` shows `c-31ea34 open decision-alerts Which track should Decision alerts take?`, but `gate status` shows `track decision-alerts full`. The PM confirmed the track; the card still shows as open and stays in the PM's list.\nWhere: `cli/index.ts:1470` keeps a card when `c.answer === undefined`. A track is confirmed by a track gate event, not a `card.answered` event, so a track card never gets an answer (`foldCards` in `lib/project/decisions.ts`).\nExpected: a track card is closed when its subject's track is confirmed. Check the cockpit's \"needs you\" list too, if it uses the same rule. The requirement ID is for the qa-engineer to find; if none exists, write UNKNOWN and tell the EM."
+      "description": "Track: Bugfix (confirmed by the PM on 2026-10-10). Ready to build: bug spec `specs/bugs/ee2e49d6/bugfix.md` and failing regression test `tests/bug-ee2e49d6.test.ts` on branch `fix/ee2e49d6-spec` @ 4c37e22 (qa-engineer). EM re-ran `npm --prefix <worktree> test -- bug-ee2e49d6`: exit 1, 1/2 — \"FAIL ee2e49d6: card list --open still shows a track card after its track is confirmed: expected false, got true\"; the cockpit control passes.\n\nRequirement ID: UNKNOWN (no criterion says when a card closes; code comments name PC-01..PC-11 from commit 1a249a5, but no requirements doc for them exists in this repository).\nRoot cause (qa-engineer, checked in code): `card list --open` (`cli/index.ts:1448-1449,1474`) keeps a card while `answer === undefined`; `foldCards` (`lib/project/decisions.ts:36-61`) sets `answer` only from `card.answered`; `confirmTrack` (`lib/project/gate.ts:353-359`) appends `track.confirmed` with no card id. The cockpit already joins tracks (`lib/project/cockpit.ts:171-174`) and is correct.\nFix: share the cockpit's track rule with the `card` command (one helper), and print the plain `card list` line (`cli/index.ts:1483`) as closed for a confirmed track card. A read-side rule needs no data change for old cards.\nRole: backend-engineer.",
+      "points": 2
     },
     {
       "id": "d5ebde85",
       "title": "Bug: the artifact text lookup can be slow without limit (SR-8)",
-      "status": "review",
+      "status": "done",
       "createdAt": "2026-10-08T20:33:57.740Z",
-      "updatedAt": "2026-10-10T06:15:45.689Z",
-      "order": 0,
+      "updatedAt": "2026-10-10T07:54:46.619Z",
+      "order": 54,
       "kind": "bug",
       "role": "backend-engineer",
       "description": "Proposed track: Bugfix. Plan: after decision-alerts (sprint 2026-w43). It must come after the feature: design section 3 (`specs/decision-alerts/design.md:453`) says the SR-8 fix changes how `hashArtifact` reads files, and must update a decision-alerts test. Not ready to build: needs the PM's track confirmation, then `specs/bugs/d5ebde85/bugfix.md` and a failing regression test from the qa-engineer.\n\nPM at the release 0.3.0 gate (2026-10-10): \"Fix SR-8 next with bug d5ebde85.\" Since 0.3.0 the lookup is also reachable from `card open` (PR #17). The SR-8 fix must also update the tests `TH-5: a folder in place of an approved artifact gives lookup failed: EISDIR` (in process) and `TH-5: a folder in place of an approved artifact gives one stderr line and output as with off` (CLI), and the DA-02.5 approved-artifact case.\n\nSource: security review SR-8 (`specs/decision-alerts/reviews/security.md:108`), design section 6 step 5 (`specs/decision-alerts/design.md:513`), both approved at the design gate.\nObserved: the text lookup re-hashes every approved artifact. An artifact path from a merged log can name a very large file or a device such as `/dev/zero` (`join(root, ref)` accepts `..`). Then `gate request` (`lib/project/gate.ts:257`), and after da-t7 also `card open`, are slow without limit or never end.\nFix (from SR-8): accept only artifact paths and a PRD source that are regular files inside the project root.\nNote: `lib/project/gate.ts` belongs to no component.",
       "pr": {
         "number": 22,
         "url": "https://github.com/QuantumWars/project-companion/pull/22",
-        "state": "OPEN",
-        "headSha": "f3b52297a7e9ccdbff88b09bfad32e2127720d5e",
-        "syncedAt": "2026-10-10T05:55:25.151Z"
+        "state": "MERGED",
+        "headSha": "d4bd59b3773296af25e8381a6bab449e4bd7e840",
+        "syncedAt": "2026-10-10T07:54:46.618Z"
       }
     },
     {
@@ -2185,7 +2187,7 @@
       "kind": "task",
       "role": "devops-sre",
       "createdAt": "2026-10-08T20:52:59.167Z",
-      "updatedAt": "2026-10-10T05:24:33.461Z",
+      "updatedAt": "2026-10-10T07:54:47.177Z",
       "order": 38,
       "points": 2,
       "pr": {
@@ -2193,46 +2195,147 @@
         "url": "https://github.com/QuantumWars/project-companion/pull/8",
         "state": "MERGED",
         "headSha": "cc56648aef8271a40b192db026d10063d68d1bbb",
-        "syncedAt": "2026-10-10T05:24:33.460Z"
+        "syncedAt": "2026-10-10T07:54:47.176Z"
       }
-    },
-    {
-      "id": "a9c34f46",
-      "title": "Write a short runbook for decision alerts (off switch, record, SR-8 rollback)",
-      "status": "backlog",
-      "createdAt": "2026-10-10T00:07:24.502Z",
-      "updatedAt": "2026-10-10T00:07:24.502Z",
-      "order": 3
-    },
-    {
-      "id": "0375f5e8",
-      "title": "Fix package-lock.json name drift (board-video-tutorial vs project-companion)",
-      "status": "backlog",
-      "createdAt": "2026-10-10T00:07:25.572Z",
-      "updatedAt": "2026-10-10T00:07:25.572Z",
-      "order": 4
     },
     {
       "id": "a726b659",
       "title": "Threat model: record TH-7 and TH-8 as mitigated with SR-8 as the residual (PM, release 0.3.0 gate)",
-      "status": "backlog",
+      "status": "done",
       "createdAt": "2026-10-10T00:27:19.879Z",
-      "updatedAt": "2026-10-10T00:27:19.879Z",
-      "order": 5
+      "updatedAt": "2026-10-10T08:17:55.598Z",
+      "order": 55
     },
     {
       "id": "54b4e811",
       "title": "Bug: log shards and .project read through a symlink or device (SR-8 residual 3)",
-      "status": "backlog",
+      "status": "review",
       "createdAt": "2026-10-10T07:37:24.550Z",
-      "updatedAt": "2026-10-10T07:37:31.579Z",
-      "order": 5,
-      "description": "Proposed track: Bugfix (needs the PM's confirmation: /devolps:approve track 54b4e811 bugfix). Opened by the PM's answer to card c-73ccab at the PR 22 merge: accept TH-7 residuals 1 and 2; open a separate bug for residual 3.\n\nSource: PR 22 security re-check (bug d5ebde85, SR-8) and `specs/decision-alerts/threat-model.md` TH-7 residual 3.\nObserved:\n1. Log shards (`lib/project/events.ts`) and `.project` (`lib/project/bundle.ts`) are read with no check. A merged commit can make them a symlink to a device such as `/dev/zero`, and the read never ends. This is the same hang SR-8 was opened for, reached through D1 and D2.\n2. The write-then-rename helpers write `<path>.<pid>.tmp` with a plain `writeFileSync`, which follows a symlink at that name: `writeText` (`lib/project/roadmap.ts:242-246`), `lib/project/bundle.ts:235-237`, and `writeJson` (`lib/project/store.ts:220-223`). Severity: low. A commit would need one planted symlink for each possible process id.\nFix (from the security re-check): read only a regular file, with lstat plus `isFile()`, or with `O_NOFOLLOW|O_NONBLOCK` plus `fstat`, as `lib/project/notify-record.ts:71-77` does. Write the temp file with `wx`. On EEXIST, remove the temp path (this removes a symlink, not its target) and write again with `wx`. Note: `lib/project/registry.ts:127` uses the same pattern, but it writes in the home folder, so a committed symlink cannot reach it.\nDocs: update TH-7 residual 3 and the D1 and D2 rows when it is fixed.",
+      "updatedAt": "2026-10-10T19:07:26.114Z",
+      "order": 1,
+      "description": "Track: Bugfix (confirmed by the PM). Opened by the PM's answer to card c-73ccab at the PR 22 merge: accept TH-7 residuals 1 and 2; open a separate bug for residual 3.\n\nSpec ready to build (EM checked 2026-10-10): `specs/bugs/54b4e811/bugfix.md` and `tests/bug-54b4e811.test.ts` on branch `fix/54b4e811-bug-spec` @ c4c739e (from bb0df35). Build the fix from that branch (bugfix skill step 4).\nEM check on c4c739e: `npm test -- bug-54b4e811` -> exit 1, 5 of 6 fail, the control passes, 6 s, no hang. The two read tests use a FIFO with no writer, in a child process with a 3 s kill timeout (not /dev/zero, which grew memory to several GB in the qa-engineer's measurement).\n\nObserved 1: log shards (`lib/project/events.ts` readShard) and `.project` (`lib/project/bundle.ts` readBundle) are read with no regular-file check; a merged symlink to a device or FIFO makes the read never end.\nObserved 2 (low): `writeText` (roadmap.ts), `writeBundle` (bundle.ts) and `writeJson` (store.ts) write `<path>.<pid>.tmp` with a plain writeFileSync, which follows a symlink at that name.\nFix (spec): reuse `regularFileIn`/`isInside` (lib/project/gate.ts, from SR-8) for the reads; write temp files with `wx`, and on EEXIST unlink and retry with `wx` (model: notify-record.ts).\nEstimate: about 40-60 changed lines (qa-engineer, from the two landed examples of the same shapes; not checked).\nExpected: no requirement ID exists; the spec cites TH-7 residual 3 (threat-model.md) and card c-73ccab. Same gap as d5ebde85.\nDocs: update TH-7 residual 3 and the D1 and D2 rows when it is fixed.",
       "labels": [
         "bug",
         "security",
         "decision-alerts"
-      ]
+      ],
+      "kind": "bug",
+      "role": "backend-engineer",
+      "points": 3
+    },
+    {
+      "id": "37f9fbce",
+      "title": "CLI git log and git unlinked never attribute commits to agent runs",
+      "status": "backlog",
+      "createdAt": "2026-10-10T08:49:22.341Z",
+      "updatedAt": "2026-10-10T10:10:58.771Z",
+      "order": 6,
+      "description": "Track: Bugfix (confirmed by the PM, 2026-10-10). Found by the qa-engineer while writing the 15753492 spec.\n\nSpec ready to build (EM checked 2026-10-10): `specs/bugs/37f9fbce/bugfix.md` and `tests/bug-37f9fbce.test.ts` on branch `fix/37f9fbce-bug-spec` @ 495a8b9 (from 58f85bc). Build the fix from that branch (bugfix skill step 4).\nEM check on 495a8b9: `npm test -- bug-37f9fbce` -> exit 1, 1 of 3 pass (the control: linkRepository WITH runs attributes the commit), the 2 CLI tests fail (git log shows no run signal; git unlinked lists a commit a run covers), 2 s.\n\nObserved: `cli/index.ts:515` calls `linkRepository(repo, tasks, features, limit)` without the agent runs, so `project-companion git log` and `git unlinked` never try run-based attribution. Only the app's Git view (`lib/project/git-view.ts:87`) passes runs.\nExpected: PRD feature run-attribution (`docs/prd.md:222`): \"A commit matching a run's files and window attributes to that run's task.\"\nFix (spec): pass `readRuns(root)` as the 5th argument (readRuns is already imported in cli/index.ts). About 1 changed line (qa-engineer; not checked).\nOrder: independent of 15753492; the test uses root-relative touched paths, so it can merge before or after it (evidence in the spec's Fix section).\nNote (qa-engineer): the PRD box for run-attribution is ticked on the strength of the app's code path alone; the CLI never met it until this test.",
+      "labels": [
+        "bug",
+        "agent-tooling"
+      ],
+      "kind": "bug",
+      "role": "backend-engineer",
+      "points": 1
+    },
+    {
+      "id": "1187698b",
+      "title": "Write a short runbook for decision alerts (off switch, record, SR-8 rollback)",
+      "description": "Track: Quick, epic repo-upkeep (bundled with the other two chores; PM card c-6e8bb6, 2026-10-10; track confirmed by the PM 2026-10-10). Role: devops-sre (it owns runbooks; `docs/runbooks/ci.md` is the model).\n\nSource: the release 0.3.0 launch checklist (`docs/releases/0.3.0-checklist.md`: \"A decision-alerts runbook is a backlog task\").\nScope: `docs/runbooks/decision-alerts.md`, short. Cover:\n1. The off switch (`PROJECT_COMPANION_NOTIFY=off`) and how to check that it works.\n2. The notification record (`.project-notify/record.jsonl`): what each line means, and that it is a local metric, not proof that the PM saw a banner (TH-18).\n3. Rollback: the off switch first, then reverting a release; the SR-8 fix (bug d5ebde85, PR 22) and its accepted residuals.\n4. Where to look when an alert does not appear (outcome `failed`, the stderr line).\nVerify: every command in the runbook was run once, and its output matches the text.\n\nReplaces task a9c34f46, which had no epic.\n\nSpec: specs/repo-upkeep/quick.md (d98ceb3), criteria RU-01.1 to RU-01.11; their Verify lines are the task's checks. Estimate: about 90 lines, 1 new file (exact count UNKNOWN until written; RU-01.1 caps it at 120).",
+      "status": "backlog",
+      "phaseId": "repo-upkeep",
+      "kind": "task",
+      "role": "devops-sre",
+      "createdAt": "2026-10-10T09:01:44.136Z",
+      "updatedAt": "2026-10-10T10:10:58.685Z",
+      "order": 7,
+      "points": 2
+    },
+    {
+      "id": "85e1d62b",
+      "title": "Fix package-lock.json name drift (board-video-tutorial vs project-companion)",
+      "description": "Track: Quick, epic repo-upkeep (bundled with the other two chores; PM card c-6e8bb6, 2026-10-10; track confirmed by the PM 2026-10-10). Role: devops-sre.\n\nObserved (EM, release 0.3.0 and again on master 848898a, 2026-10-10): `package.json` names the package `project-companion`, but `package-lock.json` names it `board-video-tutorial` (top-level `name` and `packages[\"\"].name`). The drift was there before release 0.3.0; that release changed only the `version` fields.\nFix: set both names in `package-lock.json` to `project-companion`, for example with `npm install --package-lock-only`, and check that no dependency entry changes.\nVerify: `node -e` check that the lock's two names equal `package.json`'s name; `npm ci` passes; `git diff package-lock.json` changes only the two name lines.\n\nReplaces task 0375f5e8, which had no epic.\n\nSpec: specs/repo-upkeep/quick.md (d98ceb3), criteria RU-02.1 to RU-02.3; their Verify lines are the task's checks. Estimate: 4 lines (2 removed, 2 added; product-manager's scratch run).",
+      "status": "review",
+      "phaseId": "repo-upkeep",
+      "kind": "task",
+      "role": "devops-sre",
+      "createdAt": "2026-10-10T09:01:44.335Z",
+      "updatedAt": "2026-10-10T18:59:25.474Z",
+      "order": 0,
+      "points": 1,
+      "pr": {
+        "number": 26,
+        "url": "https://github.com/QuantumWars/project-companion/pull/26",
+        "state": "OPEN",
+        "headSha": "5c05d668f75cf0cd6ebbf382c8c82c79ac3cbab7",
+        "syncedAt": "2026-10-10T18:59:25.473Z"
+      }
+    },
+    {
+      "id": "be08efcf",
+      "title": "Set \"root\": true in .eslintrc.json so lint runs in agent worktrees",
+      "description": "Track: Quick, epic repo-upkeep (bundled with the other two chores; PM card c-6e8bb6, 2026-10-10; track confirmed by the PM 2026-10-10). Role: devops-sre (the PM widens its scope to `.eslintrc.json`, card c-b9efd8).\n\nObserved (backend-engineer and qa-engineer, PR 22, 2026-10-10): `npm run lint` fails in every agent worktree under `.claude/worktrees/` with `Plugin \"@next/next\" was conflicted between \".eslintrc.json\" and \"../../../.eslintrc.json\"`. ESLint reads the worktree's config and the main checkout's, because `.eslintrc.json` has no `\"root\": true`. Builders cannot report lint from their own copy; the EM runs it in the main checkout.\nFix: add `\"root\": true` to `.eslintrc.json`.\nVerify: `npm run lint` passes in an agent worktree and in the main checkout.\n\nReplaces task d187f516, which had no epic.\n\nSpec: specs/repo-upkeep/quick.md (d98ceb3), criteria RU-03.1 to RU-03.3; their Verify lines are the task's checks. Estimate: 1 line; starts only after the PM's .claude/harness.json scope PR has merged (card c-b9efd8).",
+      "status": "backlog",
+      "phaseId": "repo-upkeep",
+      "kind": "task",
+      "role": "devops-sre",
+      "createdAt": "2026-10-10T09:01:44.528Z",
+      "updatedAt": "2026-10-10T10:10:58.942Z",
+      "order": 7,
+      "blocked": {
+        "reason": "Waits for the PM's 1-line .claude/harness.json pull request that adds .eslintrc.json to the devops-sre write scope (card c-b9efd8). Only the PM edits .claude/.",
+        "cause": "decision",
+        "unblocker": "PM",
+        "since": "2026-10-10T10:08:10.027Z"
+      },
+      "points": 1
+    },
+    {
+      "id": "1d22facd",
+      "title": "Bug: readRecord reads .project-notify/record.jsonl without a regular-file check",
+      "description": "Not triaged; track not proposed yet. Found by the qa-engineer while writing the 54b4e811 spec (2026-10-10).\nObserved: lib/project/notify-record.ts readRecord (about lines 88-95) reads .project-notify/record.jsonl with a plain readFileSync and no regular-file check: the same read-side gap as 54b4e811 Observed 1, on a third file. TH-7 residual 3 names only events.ts and bundle.ts, so 54b4e811 does not cover it.\nNote: .project-notify/ is git-ignored (DA-04.2), so a merged commit cannot plant a symlink there the way it can for .project-log/ and .project. Severity: UNKNOWN until triaged.",
+      "status": "backlog",
+      "componentId": "notifier",
+      "createdAt": "2026-10-10T09:16:30.889Z",
+      "updatedAt": "2026-10-10T09:16:30.889Z",
+      "order": 7
+    },
+    {
+      "id": "e17ca1c9",
+      "title": "Bug: CLI test suites write the PM's real project index (~/.claude/project-companion/index.json)",
+      "description": "Not triaged; track not proposed yet. Found by the code-reviewer on PR 26 (finding 2, by code reading); EM checked the effect on 2026-10-11.\nObserved: some test suites run the CLI with the real environment, so the CLI registers each temporary test project in the PM's index under the real HOME (cli/index.ts registerProject at about lines 716 and 753). Examples: tests/devolps-phase3.test.ts (pc helper spreads process.env, about line 272) and tests/merge.test.ts (about line 90, no env given). EM check: the PM's index holds 2,420 entries, of which 2,399 are temporary test folders (names such as pc-sync-*, pc-merge-*, pc-gate-*).\nSecond risk, not observed: the same suites pass any CLAUDE_PROJECT_DIR to the CLI, which finds its project from it before the working folder (store.ts:129). In the EM's shell CLAUDE_PROJECT_DIR is unset (checked 2026-10-11); in other shells: UNKNOWN.\nExpected: test rule 5 (docs/test-rules.md): a CLI child gets a temporary HOME and no CLAUDE_PROJECT_DIR, as the cli helper in tests/notify.test.ts does.\nNote: cleaning the 2,399 stale entries from the PM's index is a separate, PM-owned step (it is the PM's home folder).",
+      "status": "backlog",
+      "createdAt": "2026-10-10T19:05:47.723Z",
+      "updatedAt": "2026-10-10T19:05:47.723Z",
+      "order": 6
+    },
+    {
+      "id": "aa27f49a",
+      "title": "Bug: appendEvent appends to an actor's shard through a planted symlink or FIFO",
+      "description": "Not triaged; track not proposed yet. Found by the backend-engineer while fixing 54b4e811 (2026-10-11); the security review of that fix rates it.\nObserved (by code reading): appendEvent (lib/project/events.ts, about line 357) appends to the actor's own shard with a plain appendFileSync. A merged symlink at a known actor's shard name (the file name is the actor id) can make the next append block on a FIFO, or append to a file outside the root. TH-7 residual 3 (fixed by 54b4e811) covers reads and temp writes, not this append.\nPossible fix: as appendRecord in lib/project/notify-record.ts does: O_NOFOLLOW and O_NONBLOCK, then check fstat().isFile(). Severity: UNKNOWN until the security review.",
+      "status": "backlog",
+      "createdAt": "2026-10-10T19:07:59.534Z",
+      "updatedAt": "2026-10-10T19:07:59.534Z",
+      "order": 7
+    },
+    {
+      "id": "d78ae4cf",
+      "title": "verifyLog reports a planted non-regular shard as empty, not as a chain break",
+      "description": "Not triaged. Found by the backend-engineer while fixing 54b4e811 (2026-10-11).\nObserved: after 54b4e811, readShard treats a shard that is not a regular file inside the root as missing ([]). verifyLog and verifyShard read through readShard, so such a shard looks empty and reports no chain break. Proposal: report it as a break or a warning.\nRelated, low: when .project is not a regular file, findProject still finds the project (existsSync), and the error says 'No .project at <root>'; a clearer message would say it is not a regular file.",
+      "status": "backlog",
+      "createdAt": "2026-10-10T19:07:59.639Z",
+      "updatedAt": "2026-10-10T19:07:59.639Z",
+      "order": 8
+    },
+    {
+      "id": "49c078ce",
+      "title": "Bug: readJson reads the older store files with no regular-file check",
+      "description": "Not triaged. Found by the backend-engineer while fixing 54b4e811 (2026-10-11).\nObserved (by code reading): readJson (lib/project/store.ts) reads the older store layout (project.json, tasks.json, roadmap.json, diagrams, boards) with a plain readFileSync. A merged symlink to a device or FIFO hangs the read, as SR-8 did, for projects that still use the older layout. Not in 54b4e811's scope (TH-7 residual 3 names events.ts and bundle.ts).",
+      "status": "backlog",
+      "createdAt": "2026-10-10T19:07:59.745Z",
+      "updatedAt": "2026-10-10T19:07:59.745Z",
+      "order": 9
     }
   ],
   "roadmap": {
