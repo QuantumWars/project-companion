@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-11T18:07:54.103Z",
-  "revision": 484,
+  "updatedAt": "2026-10-11T18:09:15.555Z",
+  "revision": 485,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2211,7 +2211,7 @@
       "title": "Bug: log shards and .project read through a symlink or device (SR-8 residual 3)",
       "status": "review",
       "createdAt": "2026-10-10T07:37:24.550Z",
-      "updatedAt": "2026-10-10T19:07:26.114Z",
+      "updatedAt": "2026-10-11T18:09:15.554Z",
       "order": 1,
       "description": "Track: Bugfix (confirmed by the PM). Opened by the PM's answer to card c-73ccab at the PR 22 merge: accept TH-7 residuals 1 and 2; open a separate bug for residual 3.\n\nSpec ready to build (EM checked 2026-10-10): `specs/bugs/54b4e811/bugfix.md` and `tests/bug-54b4e811.test.ts` on branch `fix/54b4e811-bug-spec` @ c4c739e (from bb0df35). Build the fix from that branch (bugfix skill step 4).\nEM check on c4c739e: `npm test -- bug-54b4e811` -> exit 1, 5 of 6 fail, the control passes, 6 s, no hang. The two read tests use a FIFO with no writer, in a child process with a 3 s kill timeout (not /dev/zero, which grew memory to several GB in the qa-engineer's measurement).\n\nObserved 1: log shards (`lib/project/events.ts` readShard) and `.project` (`lib/project/bundle.ts` readBundle) are read with no regular-file check; a merged symlink to a device or FIFO makes the read never end.\nObserved 2 (low): `writeText` (roadmap.ts), `writeBundle` (bundle.ts) and `writeJson` (store.ts) write `<path>.<pid>.tmp` with a plain writeFileSync, which follows a symlink at that name.\nFix (spec): reuse `regularFileIn`/`isInside` (lib/project/gate.ts, from SR-8) for the reads; write temp files with `wx`, and on EEXIST unlink and retry with `wx` (model: notify-record.ts).\nEstimate: about 40-60 changed lines (qa-engineer, from the two landed examples of the same shapes; not checked).\nExpected: no requirement ID exists; the spec cites TH-7 residual 3 (threat-model.md) and card c-73ccab. Same gap as d5ebde85.\nDocs: update TH-7 residual 3 and the D1 and D2 rows when it is fixed.",
       "labels": [
@@ -2221,7 +2221,14 @@
       ],
       "kind": "bug",
       "role": "backend-engineer",
-      "points": 3
+      "points": 3,
+      "pr": {
+        "number": 28,
+        "url": "https://github.com/QuantumWars/project-companion/pull/28",
+        "state": "OPEN",
+        "headSha": "8dcc72eb57038557be090495e9a4e684f8dd0799",
+        "syncedAt": "2026-10-11T18:09:15.551Z"
+      }
     },
     {
       "id": "37f9fbce",
