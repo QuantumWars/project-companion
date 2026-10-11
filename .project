@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-11T17:45:09.674Z",
-  "revision": 481,
+  "updatedAt": "2026-10-11T17:48:40.908Z",
+  "revision": 483,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2343,6 +2343,24 @@
       "createdAt": "2026-10-10T19:07:59.745Z",
       "updatedAt": "2026-10-10T19:21:12.218Z",
       "order": 9
+    },
+    {
+      "id": "ce914d26",
+      "title": "logEvent skips the event log silently when a planted shard is refused",
+      "description": "Not triaged. Found by the backend-engineer while building the 54b4e811 F1 fix (2026-10-11).\nObserved (built CLI, temp project): with the actor's own shard planted, 'task add' exits 0 and saves the task, but logEvent (lib/project/store.ts, about lines 236-242) catches the appendEvent refusal and writes no log line and no warning. The outside file is unchanged (the F1 fix holds).\nProposal: logEvent writes one stderr warning when the event log refuses a write, so a task edit does not skip the log without a trace.",
+      "status": "backlog",
+      "createdAt": "2026-10-11T17:48:40.772Z",
+      "updatedAt": "2026-10-11T17:48:40.772Z",
+      "order": 9
+    },
+    {
+      "id": "f6864c33",
+      "title": "CLI prints a Node stack trace for an event-log refusal on gate and card commands",
+      "description": "Not triaged; low. Found by the backend-engineer while building the 54b4e811 F1 fix (2026-10-11).\nObserved: with a planted shard, 'card open' and 'gate request' exit 1 and record nothing (correct), but print the refusal with a Node stack trace, because the CLI turns only GateError into a clean message.\nProposal: print the refusal through die (no stack trace) for gate, card, sprint and update commands.",
+      "status": "backlog",
+      "createdAt": "2026-10-11T17:48:40.908Z",
+      "updatedAt": "2026-10-11T17:48:40.908Z",
+      "order": 10
     }
   ],
   "roadmap": {
