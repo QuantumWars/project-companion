@@ -511,13 +511,16 @@ Test notes for the QA engineer:
    example, the PM adds it to the `env` block of `.claude/settings.json` (only the PM edits `.claude/`). This stops
    the banners, but not the text lookup. Rollback with code: revert T4. That removes the 2 calls, and the new library
    files stay unused.
-5. Known problem, not fixed in this epic (SR-8): the text lookup re-hashes every approved artifact, and an artifact
-   path from a merged log can name a very large file or a device such as `/dev/zero` (`join(root, ref)` accepts
-   `..`). Then the command is slow without limit, or never ends. `gate request` already has this problem
-   (`gate.ts:257`). With T4, `card open` gets it too. The off switch does not avoid it, so the rollback is to revert
-   T4. The fix is the separate bugfix d5ebde85 (PR #22): accept only artifact paths and a PRD source that are regular
-   files inside the project root. Its residuals (for example, no size limit for a regular file inside the root) are in
-   the threat model, TH-7, and wait for the PM's decision at the PR #22 merge.
+5. Known limit, fixed in part outside this epic (SR-8): the text lookup re-hashes every approved artifact
+   (`readGates`, `gate.ts:238`). `gate request` already does this. With T4, `card open` does it too. Since bugfix
+   d5ebde85 (PR #22), the artifact reads and the PRD source read go through `regularFileIn`, so a device such as
+   `/dev/zero` or a `..` escape is refused. Two cases can still make the command slow without limit: a very large
+   regular file inside the root (threat model TH-7, residual 1, accepted on card c-73ccab), and, when `.project` is a
+   folder, the read of `.project/roadmap.json`, which has no check on its kind (task 49c078ce). The off switch does
+   not avoid the lookup, so the rollback is to revert T4. The PM decided the TH-7 residuals at the PR #22 merge
+   (card c-73ccab). Residual 2 also covers the shard and `.project` reads and the `.project-log` folder check of
+   bugfix 54b4e811 (card c-f3e53a). Residual 3 is partly fixed by bugfix 54b4e811. Its 2 open parts are in tasks
+   49c078ce and d78ae4cf.
 6. The record file can be deleted at any time. That only loses metric history.
 
 ## 7. Open questions
