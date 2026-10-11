@@ -31,6 +31,21 @@ at that exact name: `writeText` (`lib/project/roadmap.ts:242-246`, reached throu
 inline write in `writeBundle` (`lib/project/bundle.ts:235-237`), and `writeJson`
 (`lib/project/store.ts:219-223`, used directly and by `writeSidecar`).
 
+### Part 2: the append followed a planted shard and looped (finding F1, medium)
+
+Found by the security review of the first fix (cea9f52). After cea9f52, `readShard` treats a refused
+shard (a symlink, a device or a FIFO) as missing. `appendEvent` then treated the actor's own planted
+shard as new. It wrote the `actor.identified` line through the symlink with `appendFileSync`, and
+called itself again with no limit. Before cea9f52 the same case wrote 2 lines and stopped.
+
+The builder reproduced it on 6400e7a:
+
+- One `appendEvent` call wrote 4,170 lines (746,256 bytes) into a file outside the root, then
+  stopped with "Maximum call stack size exceeded".
+- With `.project-log` itself symlinked to a folder outside the root, 4,169 lines went into that
+  outside folder.
+- A FIFO with no reader blocked the call until a 3 s kill.
+
 ## Expected
 
 TH-7 residual 3 (`specs/decision-alerts/threat-model.md:117-123`):
@@ -54,6 +69,8 @@ states a kind or location rule for the tracker's own files (log shards, `.projec
 or their temp-file writes). TH-7 residual 3 and card c-73ccab are the nearest approved source, and
 stand in for a requirement ID here. This should be flagged to the PM/architect again when this bug
 is built, same as bugfix d5ebde85 flagged it for SR-8.
+
+The append must not follow a planted shard or loop.
 
 ## Steps to reproduce
 
@@ -83,6 +100,13 @@ is built, same as bugfix d5ebde85 flagged it for SR-8.
 files that fix did not touch. `writeText`, `writeBundle`'s inline write, and `writeJson` build a
 temp path from the current pid and open it with a plain `writeFileSync`, which (like any `open()`
 with no `O_NOFOLLOW` or `wx`) follows a symlink already sitting there instead of refusing it.
+
+
+**Part 2 (F1).** Three things combined. (1) "Refused counts as missing": the read fix made a refused
+shard look like no shard. (2) The recursive identity write: when the actor had no shard,
+`appendEvent` wrote `actor.identified` and called itself again, and it relied on the next call
+finding the shard. A refused shard never appears as present, so the recursion never ended. (3)
+`appendFileSync` follows a symlink, so each pass wrote into the file outside the root.
 
 ## Fix
 
@@ -116,6 +140,22 @@ to 60 once tests and the two read sites' error handling are counted.
 
 **Docs.** TH-7 residual 3 and the D1/D2 rows of `specs/decision-alerts/threat-model.md` are updated
 when the fix lands. Not in this spec step.
+
+**Part 2 (F1): safe append** (266ebaa, 14a3c2f), all in `lib/project/events.ts`:
+
+- `appendEvent` writes the identity line and the event in one append, so it never calls itself.
+- `requireLogFolder` uses `lstat` and requires `.project-log` to be a real folder.
+- `writeRecords` opens the shard with `O_WRONLY|O_APPEND|O_CREAT|O_NOFOLLOW|O_NONBLOCK`, checks
+  `fstat().isFile()`, then writes.
+- A symlink, a folder or a FIFO gives "Refused to write the event log: <path> is not a regular
+  file (bug 54b4e811). Remove it and try again." Nothing is written.
+
+**PM decisions on the other review findings**:
+
+- F1: fix it in this pull request (above). Card c-c49806.
+- F2 (the `.project` folder fallback in the roadmap read and write): task 49c078ce. Card c-4936f7.
+- F3 (`verifyLog` does not report a refused shard): task d78ae4cf. Card c-a04935.
+- F4 (the check-then-read window): accepted under TH-7 residual 2. Card c-f3e53a.
 
 ## Regression test
 
@@ -170,3 +210,17 @@ bug-54b4e811.test.ts
 
 Exit code: 1. Run time: ~6.5 s (the two FIFO probes each wait out their 3 s kill timeout before
 reporting the hang; the fix should bring this back down to about 1 s).
+
+### Part 2 (F1): `tests/append-shard.test.ts`, 8 tests
+
+- `54b4e811 F1: an own shard that is a symlink to /dev/null makes appendEvent throw, not loop`
+- `54b4e811 F1: an own shard that is a symlink to a file outside the root leaves that file unchanged`
+- `54b4e811 F1: an own shard that is a symlink to a FIFO with no reader makes appendEvent throw, not block`
+- `54b4e811 F1: an own shard that is a FIFO, with no reader (ENXIO) or with one (fstat), makes appendEvent throw`
+- `54b4e811 F1: a .project-log that is a symlink to a folder outside the root gets no shard`
+- `54b4e811 F1: an own shard that is a folder (EISDIR) makes appendEvent refuse clearly`
+- `54b4e811 F1: any other open or lstat error passes through unchanged`
+- `54b4e811 F1: a plain shard still opens with the identity, then each event, in one chain (control)`
+
+Results: 2 of 8 pass on 6400e7a (before the fix) and 8 of 8 pass on the fix. The 6 tests above in
+`tests/bug-54b4e811.test.ts` stay as they are.
