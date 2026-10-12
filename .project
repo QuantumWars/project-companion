@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-12T10:59:46.085Z",
-  "revision": 611,
+  "updatedAt": "2026-10-12T11:18:27.507Z",
+  "revision": 612,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2371,8 +2371,10 @@
       "description": "Not triaged. Found by the backend-engineer while fixing 54b4e811 (2026-10-11).\nObserved (by code reading): readJson (lib/project/store.ts) reads the older store layout (project.json, tasks.json, roadmap.json, diagrams, boards) with a plain readFileSync. A merged symlink to a device or FIFO hangs the read, as SR-8 did, for projects that still use the older layout. Not in 54b4e811's scope (TH-7 residual 3 names events.ts and bundle.ts).\n\nAdded by the PM's answer to card c-4936f7 (2026-10-11): security review of 54b4e811, finding F2 (low, existed before that fix). When a merged commit makes .project a folder, readBundle gives null and readSidecar (lib/project/roadmap.ts) reads .project/roadmap.json through readJson with no kind check, so a symlink there to /dev/zero hangs readCockpit (on the notify path); writeSidecar falls back to writeJson and can write outside the root through a linked folder. Fix (security review): use the legacy roadmap.json only when isLegacyStore(...) is true, else emptyRoadmap() on a read and \"No .project\" on a write; readJson returns the fallback unless statSync(path).isFile().",
       "status": "backlog",
       "createdAt": "2026-10-10T19:07:59.745Z",
-      "updatedAt": "2026-10-10T19:21:12.218Z",
-      "order": 9
+      "updatedAt": "2026-10-12T11:18:27.507Z",
+      "order": 9,
+      "kind": "bug",
+      "role": "backend-engineer"
     },
     {
       "id": "ce914d26",
