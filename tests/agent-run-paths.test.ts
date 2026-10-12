@@ -3,9 +3,9 @@
  * and old absolute paths in the log are read the same way.
  */
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 import { linkRepository } from "@/lib/project/git-link";
 import { relativeToRoot } from "@/lib/project/rel-path";
@@ -186,6 +186,7 @@ test("15753492: a path in a sibling repository stays absolute and never links to
     git("commit", "-q", "-m", "Add foo", "--date", new Date(Date.now() + 60_000).toISOString());
     const linked = await linkRepository(dir, [task], [], 50, readRuns(dir));
     const commit = linked.commits.find((c) => c.subject === "Add foo");
+    eq(commit !== undefined, true, "commit found");
     eq(commit?.signal === "run", false, "no run signal");
   } finally {
     rmSync(other, { recursive: true, force: true });
@@ -227,8 +228,20 @@ test("15753492: a path in a submodule of the project stays absolute", () => {
   }
 });
 
+const gitAbove = (dir: string): boolean => {
+  for (let d = dir; ; d = dirname(d)) {
+    if (existsSync(join(d, ".git"))) return true;
+    if (dirname(d) === d) return false;
+  }
+};
+
 test("15753492: with no git repository, a symlinked root still gives a relative path", () => {
   const dir = realpathSync(mkdtempSync(join(tmpdir(), "pc-runpaths-nogit-")));
+  if (gitAbove(dir)) {
+    console.log("skipped: a .git exists above the temp folder");
+    rmSync(dir, { recursive: true, force: true });
+    return;
+  }
   const link = join(tmpdir(), `pc-runpaths-nogit-link-${process.pid}`);
   try {
     symlinkSync(dir, link);
@@ -285,6 +298,78 @@ test("15753492: the worktrees folder, a worktree folder itself and an empty rest
     eq(relativeToRoot(dir, sideways), "a.ts", "a resolved path under another worktree folder is a worktree path");
   } finally {
     cleanup();
+  }
+});
+
+test("15753492: a still-existing folder under .claude/worktrees without a .git keeps its full relative path", () => {
+  const { dir, cleanup } = project();
+  try {
+    const folder = join(dir, ".claude", "worktrees", "foo");
+    mkdirSync(folder, { recursive: true });
+    writeFileSync(join(folder, "bar.ts"), "x\n");
+    eq(relativeToRoot(dir, join(folder, "bar.ts")), ".claude/worktrees/foo/bar.ts", "not shortened to bar.ts");
+  } finally {
+    cleanup();
+  }
+});
+
+test("15753492: a symlinked .claude/worktrees folder still gives the deleted-worktree path, never a wrong one", () => {
+  const { dir, cleanup } = project();
+  try {
+    mkdirSync(join(dir, ".claude"));
+    mkdirSync(join(dir, "store"));
+    symlinkSync(join(dir, "store"), join(dir, ".claude", "worktrees"));
+    const gone = join(dir, ".claude", "worktrees", "agent-gone", "lib", "a.ts");
+    eq(relativeToRoot(dir, gone), "lib/a.ts", "expects the worktree prefix removed through the link");
+  } finally {
+    cleanup();
+  }
+});
+
+const mkRepo = (prefix: string) => {
+  const root = realpathSync(mkdtempSync(join(tmpdir(), prefix)));
+  const g = (...args: string[]) => execFileSync("git", args, { cwd: root, stdio: "pipe" });
+  g("init", "-q", "-b", "main");
+  g("config", "user.email", "dev@example.com");
+  g("config", "user.name", "A Dev");
+  g("config", "commit.gpgsign", "false");
+  writeFileSync(join(root, "README.md"), "x\n");
+  g("add", "README.md");
+  g("commit", "-q", "-m", "init");
+  return { root, g };
+};
+
+test("15753492: a root inside a linked worktree makes paths in the main checkout and a sibling worktree relative", () => {
+  const { root, g } = mkRepo("pc-runpaths-lw-");
+  const parent = realpathSync(mkdtempSync(join(tmpdir(), "pc-runpaths-lwt-")));
+  try {
+    const a = join(parent, "a");
+    const b = join(parent, "b");
+    g("worktree", "add", "-q", "-b", "wa", a);
+    g("worktree", "add", "-q", "-b", "wb", b);
+    eq(relativeToRoot(a, join(root, "lib", "x.ts")), "lib/x.ts", "main checkout");
+    eq(relativeToRoot(a, join(b, "lib", "y.ts")), "lib/y.ts", "another worktree");
+    eq(relativeToRoot(a, join(a, "lib", "z.ts")), "lib/z.ts", "own worktree");
+  } finally {
+    rmSync(parent, { recursive: true, force: true });
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("15753492: a worktree of another repository stays absolute", () => {
+  const mine = mkRepo("pc-runpaths-mine-");
+  const theirs = mkRepo("pc-runpaths-theirs-");
+  const parent = realpathSync(mkdtempSync(join(tmpdir(), "pc-runpaths-fwt-")));
+  try {
+    const wt = join(parent, "w");
+    theirs.g("worktree", "add", "-q", "-b", "wt", wt);
+    const file = join(wt, "lib", "x.ts");
+    eq(relativeToRoot(mine.root, file), file, "foreign worktree stays absolute");
+    eq(relativeToRoot(wt, join(mine.root, "lib", "x.ts")), join(mine.root, "lib", "x.ts"), "and the reverse");
+  } finally {
+    rmSync(parent, { recursive: true, force: true });
+    rmSync(mine.root, { recursive: true, force: true });
+    rmSync(theirs.root, { recursive: true, force: true });
   }
 });
 
