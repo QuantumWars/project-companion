@@ -41,7 +41,7 @@ import {
   type ComponentLifecycle,
   type Reconciliation,
 } from "./component";
-import { appendEvent, readEvents, type NewEvent } from "./events";
+import { appendEvent, readEvents, warnLogRefused, type NewEvent } from "./events";
 import { checkWip, taskFlow, type WipVerdict } from "./flow";
 import { readGates } from "./gate";
 import { findingId, findingsFrom, type Finding, type StoredFinding } from "./review";
@@ -237,8 +237,10 @@ const now = () => new Date().toISOString();
 const logEvent = (root: string, event: NewEvent): void => {
   try {
     appendEvent(root, event);
-  } catch {
-    // Deliberately silent; see above.
+  } catch (error) {
+    // Silent for a read-only checkout or a full disk; see above. The 54b4e811 refusal
+    // gets one fixed warning line (bug ce914d26).
+    warnLogRefused(error);
   }
 };
 

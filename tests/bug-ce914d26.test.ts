@@ -162,6 +162,24 @@ test("ce914d26: the ingest hook prints one warning, not two, for a session.start
   eq(warnings(r.err).length, 1, `exactly one warning per command, got: ${JSON.stringify(r.err)}`);
 });
 
+test("ce914d26: a tool.use hook that finds no run because the shard was planted after run start warns once and exits 0", async () => {
+  const dir = await project();
+  const started = await pc(dir, ["run", "start", "--session", "s3"]);
+  eq(started.code, 0, started.err);
+  const target = join(outside(), "target.txt");
+  writeFileSync(target, "OUTSIDE\n");
+  plantShard(dir, target);
+
+  const payload = { session_id: "s3", hook_event_name: "PostToolUse", tool_name: "Edit" };
+  const r = await pc(dir, ["ingest"], JSON.stringify(payload));
+
+  eq(r.code, 0, `a hook must never exit non-zero: ${r.err}`);
+  eq(readFileSync(target, "utf8"), "OUTSIDE\n", "the outside file must be unchanged");
+  const found = warnings(r.err);
+  eq(found.length, 1, `exactly one warning, got: ${JSON.stringify(r.err)}`);
+  clean(found[0], [target, "s3"]);
+});
+
 runAll().then((failed) => {
   rmSync(TMP, { recursive: true, force: true });
   process.exit(failed ? 1 : 0);
