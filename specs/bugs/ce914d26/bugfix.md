@@ -73,73 +73,48 @@ means something is wrong or hostile (a merged symlink). Bug 54b4e811 added the r
 silent, which turned a loud failure into a silent loss. The `ingest` hook and `recordSpawnRequest` have the same
 shape, with their own empty `catch` and a direct `appendEvent`.
 
-## Fix
+## Fix (as built, commit 9b8f21e)
 
-Places that swallow the refusal (each found by reading):
+PM decisions: card c-20c120 chose one fixed line on stderr with no event text, no task or card text, no symlink
+target and no absolute path. Card c-e9c7ce chose to warn only for the bug-54b4e811 refusal, not for a read-only
+checkout or a full disk.
 
-- `lib/project/store.ts:237-243`, `logEvent`'s `catch` (covers items 1, 2 and 4, and `startRun`).
-- `cli/index.ts:1207-1209`, the `ingest` handler's `catch` (covers `recordSpawnRequest`, item 3).
-- `lib/project/subagent.ts:19-21`, `recordSpawnRequest` (no catch of its own; it relies on the hook's).
-- `cli/index.ts:1180`, `if (!run) return;` (item 5(d)): the early return that skips the budget and boundary checks.
-
-Proposed change: one shared helper, for example `warnLogRefused(error)` next to `appendEvent` in `events.ts`.
-It writes the fixed one-line message to `process.stderr` when the error is the 54b4e811 refusal (match on a
-dedicated error class or code, not on message text), and does nothing for other errors that `logEvent` is meant to
-absorb (a read-only checkout, a full disk); the builder and the PM may decide to warn for those too. `logEvent`,
-the `ingest` catch and `recordSpawnRequest` call it. For 5(d), when the hook finds no run for the session and the
-own shard is not a regular file, it uses the same helper once, so the skipped checks are no longer silent.
-
-Line estimate: about 40 to 70 changed lines (the helper and an error class about 15 to 20, three call sites about
-10, a once-per-process guard about 5, test and doc updates the rest). Basis: the three sites above and the
-existing test file's size; this is an estimate, not a measurement.
-
-The fix must NOT:
-
-- make a task, feature or component edit fail, or change an exit code, because the log refused;
-- print twice per command: one process prints at most one warning, so a command with several `logEvent` calls
-  (and a hook that fails in `startRun` and then again at `if (!run)`) uses a once-per-process flag in the helper;
-- put event text, card text, a task title, the symlink target or an absolute path in the warning;
-- write to the log or to the target, or change `appendEvent`'s refusal;
-- make a hook exit non-zero (`ingest` stays silent on an unknown event and never non-zero).
-
-Docs in the same change (rule 12): `specs/decision-alerts/threat-model.md`, TH-7 residual 3. Remove the
-"silent loss of events after a refused append (task ce914d26)" item from the open list (lines 111-113), and
-change the D1 row ("An event whose append is refused can be lost with no message (task ce914d26)") and the F2 row
-(the "ce914d26" clause) to say the event is still lost, but the user gets one warning line. Record the
-accepted residual: the event itself is not recovered; the log is an audit trail, and `.project` has the state. The
-architect owns that edit.
+- `LogRefusedError` (`lib/project/events.ts`, `code = "LOG_REFUSED"`): `appendEvent` throws it for a planted shard
+  and for a planted `.project-log`. Callers match on the class, not on the message.
+- `warnLogRefused(error)` (`events.ts:171`): writes `LOG_REFUSED_WARNING` to stderr only when `error` is a
+  `LogRefusedError`, and only once per process (module flag `warned`). Any other error: nothing, and the flag is
+  not used up.
+- `warnIfLogPlanted(root)` (`events.ts:181`): for the hook that finds no run. It checks with `lstat` whether
+  `.project-log` is not a folder, or the actor's own shard is not a regular file. If so it calls `warnLogRefused`.
+  It never throws.
+- Call sites: `logEvent` catch (`store.ts:243`); the `ingest` handler's catch (`cli/index.ts:1209`, covers
+  `recordSpawnRequest`); the `if (!run)` skip (`cli/index.ts:1180`, calls `warnIfLogPlanted`).
+- Exact warning text (one line, ends with a newline):
+  `project-companion: the event log refused a write (not a regular file or not a real folder); events are not being recorded. Fix: remove the planted file in .project-log/.`
+- Exit code, standard output and the saved result do not change. `appendEvent`'s refusal is unchanged.
 
 ## Regression test
 
-`tests/bug-ce914d26.test.ts`, 5 tests. They drive the real built CLI in a temporary git project, with a temporary
-`HOME`, no `CLAUDE_PROJECT_DIR`, a 10 s timeout on every child and `PROJECT_COMPANION_NOTIFY=off` (test rules 1, 2,
-3, 5). The planted shard is a symlink to a regular file in a separate temporary folder, so it cannot block.
+`tests/bug-ce914d26.test.ts` (6 tests, built CLI, temporary project, temporary `HOME`, no `CLAUDE_PROJECT_DIR`,
+10 s timeout on each child, `PROJECT_COMPANION_NOTIFY=off`; test rules 1, 2, 3, 5):
 
-- `ce914d26: task add after a planted own shard says the event log refused a write`: exit 0 and the task saved
-  (pass before and after); outside file unchanged; exactly one stderr line that says the log refused a write, with
-  no title and no outside path (fails today).
-- `ce914d26: task add with a working log prints no warning (control)`: passes today and after.
-- `ce914d26: a planted .project-log gives the same one warning and writes nothing outside` (fails today).
-- `ce914d26: the ingest hook says so when it cannot record run.requested, and still exits 0` (fails today).
-- `ce914d26: the ingest hook prints one warning, not two, for a session.start that logEvent cannot record`
-  (fails today; after the fix it also guards the once-per-command rule).
+1. `ce914d26: task add after a planted own shard says the event log refused a write`
+2. `ce914d26: task add with a working log prints no warning (control)`
+3. `ce914d26: a planted .project-log gives the same one warning and writes nothing outside`
+4. `ce914d26: the ingest hook says so when it cannot record run.requested, and still exits 0`
+5. `ce914d26: the ingest hook prints one warning, not two, for a session.start that logEvent cannot record`
+6. `ce914d26: a tool.use hook that finds no run because the shard was planted after run start warns once and exits 0`
 
-Not covered by a test: the `if (!run) return;` skip of item 5(d) with a running run in a planted shard, because a
-run cannot be created while the shard is planted; the builder should add a test that plants the shard after
-`run start`, then sends a `tool.use` hook and expects one warning.
+`tests/log-refused-warning.test.ts` (5 unit tests):
 
-```
-$ npm test -- bug-ce914d26
-bug-ce914d26.test.ts
-  FAIL ce914d26: task add after a planted own shard says the event log refused a write
-       stderr must carry exactly one line that says the event log refused a write, got: "": expected 1, got 0
-  ok   ce914d26: task add with a working log prints no warning (control)
-  FAIL ce914d26: a planted .project-log gives the same one warning and writes nothing outside
-       stderr must carry exactly one line that says the event log refused a write, got: "": expected 1, got 0
-  FAIL ce914d26: the ingest hook says so when it cannot record run.requested, and still exits 0
-       stderr must carry exactly one line that says the event log refused a write, got: "": expected 1, got 0
-  FAIL ce914d26: the ingest hook prints one warning, not two, for a session.start that logEvent cannot record
-       exactly one warning per command, got: "": expected 1, got 0
+1. `ce914d26: warnLogRefused prints the fixed line once for the refusal, not twice`
+2. `ce914d26: warnLogRefused prints nothing for other errors`
+3. `ce914d26: a non-refusal error does not use up the once-per-process flag`
+4. `ce914d26: the warning holds no event text, path or message of the error`
+5. `ce914d26: appendEvent throws the dedicated class for a log folder that is a file`
 
-1/5 passed
-```
+Result at head 6798024: `npm test -- ce914d26` 6 of 6; `npm test -- log-refused` 5 of 5. Before the fix (branch
+`fix/ce914d26-bug-spec`) the CLI test file gives 1 of 5 (the control passes, 4 fail).
+
+Note: removing the once-per-process flag fails only unit test 1, because no CLI command reaches two refused writes
+in one process (the builder's finding; QA did not re-run this).
