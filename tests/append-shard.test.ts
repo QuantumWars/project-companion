@@ -184,8 +184,8 @@ if (process.argv[2] === HELPER_FLAG) {
     }
   });
 
-  // Windows has no O_NOFOLLOW. These tests run writeRecords with a flag set that lacks it (N2, task 97012dae).
-  const NO_NOFOLLOW = constants.O_WRONLY | constants.O_APPEND | constants.O_CREAT;
+  // Windows has no O_NOFOLLOW. These tests run writeRecords with noFollow false to model it (N2, task 97012dae).
+  const NO_NOFOLLOW = false;
   const rec = { id: `${ACTOR.id}:0`, ts: 1, seq: 0, actor: ACTOR.id, prev: null, kind: "actor.identified", data: {} } as never;
 
   test("54b4e811 N2: without O_NOFOLLOW, a shard that is a symlink to a regular file is refused, target unchanged", () => {
@@ -223,7 +223,7 @@ if (process.argv[2] === HELPER_FLAG) {
     }
   });
 
-  test("54b4e811 N2: without O_NOFOLLOW, an lstat error other than ENOENT passes through", () => {
+  test("54b4e811 N2: without O_NOFOLLOW, an ENOTDIR on the shard path reaches the caller", () => {
     const { root, cleanup } = tmpProject();
     try {
       rmSync(join(root, ".project-log"), { recursive: true });
