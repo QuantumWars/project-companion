@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-12T07:09:53.590Z",
-  "revision": 568,
+  "updatedAt": "2026-10-12T07:13:48.089Z",
+  "revision": 569,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2157,10 +2157,10 @@
     {
       "id": "ee2e49d6",
       "title": "Bug: card list --open shows a track card as open after the PM confirmed the track",
-      "status": "in_progress",
+      "status": "review",
       "componentId": "agent-tooling",
       "createdAt": "2026-10-08T20:33:57.663Z",
-      "updatedAt": "2026-10-12T07:09:53.589Z",
+      "updatedAt": "2026-10-12T07:13:48.089Z",
       "order": 0,
       "kind": "bug",
       "role": "backend-engineer",
