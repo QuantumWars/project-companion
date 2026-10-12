@@ -170,4 +170,73 @@ test("15753492: a project in a sub-folder of its repository stores paths relativ
   }
 });
 
+test("15753492: a path in a sibling repository stays absolute and never links to a commit here", async () => {
+  const { dir, git, cleanup } = project();
+  const other = realpathSync(mkdtempSync(join(tmpdir(), "pc-runpaths-other-")));
+  try {
+    execFileSync("git", ["init", "-q", "-b", "main"], { cwd: other, stdio: "pipe" });
+    const task = createTask(dir, { title: "Rotate keys", status: "in_progress" });
+    const run = startRun(dir, { taskId: task.id, actor: { model: "m" } });
+    const foreign = join(other, "lib", "foo.ts");
+    reportRun(dir, run.id, { touched: [foreign] });
+    eq(readRun(dir, run.id)?.touched, [foreign], "stays absolute");
+    mkdirSync(join(dir, "lib"));
+    writeFileSync(join(dir, "lib", "foo.ts"), "export const a = 1;\n");
+    git("add", "lib/foo.ts");
+    git("commit", "-q", "-m", "Add foo", "--date", new Date(Date.now() + 60_000).toISOString());
+    const linked = await linkRepository(dir, [task], [], 50, readRuns(dir));
+    const commit = linked.commits.find((c) => c.subject === "Add foo");
+    eq(commit?.signal === "run", false, "no run signal");
+  } finally {
+    rmSync(other, { recursive: true, force: true });
+    cleanup();
+  }
+});
+
+test("15753492: a path in a nested repository inside the project stays absolute", () => {
+  const { dir, cleanup } = project();
+  try {
+    const nested = join(dir, "vendor", "lib");
+    mkdirSync(nested, { recursive: true });
+    execFileSync("git", ["init", "-q", "-b", "main"], { cwd: nested, stdio: "pipe" });
+    const file = join(nested, "x.ts");
+    eq(relativeToRoot(dir, file), file, "nested repository path stays absolute");
+  } finally {
+    cleanup();
+  }
+});
+
+test("15753492: a path in a submodule of the project stays absolute", () => {
+  const { dir, git, cleanup } = project();
+  const sub = realpathSync(mkdtempSync(join(tmpdir(), "pc-runpaths-sub-")));
+  try {
+    const inSub = (...args: string[]) => execFileSync("git", args, { cwd: sub, stdio: "pipe" });
+    inSub("init", "-q", "-b", "main");
+    inSub("config", "user.email", "dev@example.com");
+    inSub("config", "user.name", "A Dev");
+    inSub("config", "commit.gpgsign", "false");
+    writeFileSync(join(sub, "a.txt"), "a\n");
+    inSub("add", "a.txt");
+    inSub("commit", "-q", "-m", "init");
+    git("-c", "protocol.file.allow=always", "submodule", "add", "-q", sub, "mod");
+    const file = join(dir, "mod", "lib", "x.ts");
+    eq(relativeToRoot(dir, file), file, "submodule path stays absolute");
+  } finally {
+    rmSync(sub, { recursive: true, force: true });
+    cleanup();
+  }
+});
+
+test("15753492: with no git repository, a symlinked root still gives a relative path", () => {
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "pc-runpaths-nogit-")));
+  const link = join(tmpdir(), `pc-runpaths-nogit-link-${process.pid}`);
+  try {
+    symlinkSync(dir, link);
+    eq(relativeToRoot(link, join(dir, "lib", "a.ts")), "lib/a.ts", "falls back to the root");
+  } finally {
+    rmSync(link, { force: true });
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 runAll().then((failed) => process.exit(failed ? 1 : 0));
