@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-12T07:13:48.089Z",
-  "revision": 569,
+  "updatedAt": "2026-10-12T07:18:54.940Z",
+  "revision": 571,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2436,6 +2436,24 @@
       "createdAt": "2026-10-12T07:01:56.583Z",
       "updatedAt": "2026-10-12T07:01:56.583Z",
       "order": 12
+    },
+    {
+      "id": "14361e8f",
+      "title": "Add a computed closed field to card list --json",
+      "description": "Not triaged; low. Raised by the code review of ee2e49d6 (2026-10-12).\nObserved: card list --json has no status field. Without --open, a confirmed track card shows no answer in JSON but 'answered' in plain text, so a script that reads the JSON treats it as open. No current consumer in this repository or in the devolps 0.4.0 plugin calls card list. Proposal: add a computed closed field (isCardClosed), not stored, so it fits the PM's decision on c-0fe3e6 (no data change). It is an additive output change.",
+      "status": "backlog",
+      "createdAt": "2026-10-12T07:18:54.802Z",
+      "updatedAt": "2026-10-12T07:18:54.802Z",
+      "order": 12
+    },
+    {
+      "id": "625211ac",
+      "title": "card answer still records an answer for a track card that a confirmation already closed",
+      "description": "Not triaged; low idea. Raised by the code review of ee2e49d6 (2026-10-12). card answer refuses only a card that already has a stored answer, so an answer given to a closed track card is recorded but does not set the track. Decide whether card answer should refuse, or point to gate track.",
+      "status": "backlog",
+      "createdAt": "2026-10-12T07:18:54.939Z",
+      "updatedAt": "2026-10-12T07:18:54.939Z",
+      "order": 13
     }
   ],
   "roadmap": {
