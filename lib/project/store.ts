@@ -16,6 +16,7 @@ import {
   realpathSync,
   renameSync,
   rmSync,
+  statSync,
 } from "node:fs";
 import { dirname, join, resolve as resolvePath } from "node:path";
 
@@ -208,8 +209,13 @@ export const projectPaths = (root: string, storeDir?: string) => {
 
 /* ---------------------------------- io ------------------------------------ */
 
+/**
+ * Reads a JSON file; any failure gives `fallback`. Only a regular file is opened: a FIFO, a device or a folder
+ * (also behind a symlink) would block or fail, so it gives `fallback` (bug 49c078ce, TH-7).
+ */
 export const readJson = <T,>(path: string, fallback: T): T => {
   try {
+    if (!statSync(path).isFile()) return fallback;
     return JSON.parse(readFileSync(path, "utf8")) as T;
   } catch {
     return fallback;
