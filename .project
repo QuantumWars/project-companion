@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-12T05:52:26.559Z",
-  "revision": 524,
+  "updatedAt": "2026-10-12T06:08:35.552Z",
+  "revision": 525,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2386,6 +2386,15 @@
       "createdAt": "2026-10-12T05:29:48.913Z",
       "updatedAt": "2026-10-12T05:29:48.913Z",
       "order": 11
+    },
+    {
+      "id": "fa805b55",
+      "title": "Git rename paths drop their prefix, so a renamed file may not match a run",
+      "description": "Not triaged; unverified. Raised by the code re-review of 15753492 (2026-10-12), outside that diff.\nObserved (by code reading, not run): parseCommit (lib/project/git.ts) turns a rename shown by git as lib/{a => b}/c.ts into b/c.ts and drops the lib/ prefix, so a renamed file would not match a run's path. Check with a real rename in a temp repo, and with git log --numstat -M settings.",
+      "status": "backlog",
+      "createdAt": "2026-10-12T06:08:35.552Z",
+      "updatedAt": "2026-10-12T06:08:35.552Z",
+      "order": 10
     }
   ],
   "roadmap": {
