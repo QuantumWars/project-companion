@@ -82,6 +82,10 @@ non-matching run list by returning `undefined`. The CLI's two reads of attributi
 `git unlinked`'s `linked.unattributed`, both derived from the one call) get this for free from the same
 change, since both currently share the single call at line 515.
 
+**Also changed: the MCP `git_log` tool.** `mcp/server.ts` (about line 897) makes the same call to
+`linkRepository` and now also passes `readRuns(root)` as the fifth argument, so `git_log` attributes commits to
+runs like the CLI and the app. **This part has no test** (task 2cb8cdff). QA read the code and did not run it.
+
 **Relation to bug 15753492**: independent, and buildable/mergeable in either order.
 
 - This fix changes only which arguments the CLI passes to `linkRepository`; it does not touch how a run's
@@ -131,6 +135,11 @@ mirroring `git-view.ts`) goes through the real CLI process, as `tests/cli.test.t
 phase3.test.ts` do: `init`, `task add`, `run start`, `ingest` (piped on stdin), then `git log`/`git unlinked`.
 It never touches the real `.project`/`.project-log` of this repository -- each test opens its own temporary
 directory and git repository and removes it in a `finally`.
+
+Result with the fix, at head 56fef4c (QA, `docs/qa/37f9fbce.md`): `npm test -- bug-37f9fbce` -> 3/3 passed.
+The two CLI tests fail without the fix (1/3 passed). The MCP `git_log` change has no test (task 2cb8cdff).
+
+Output before the fix:
 
 ```
 $ npm test -- bug-37f9fbce
