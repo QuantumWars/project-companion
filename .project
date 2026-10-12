@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-12T12:37:33.459Z",
-  "revision": 619,
+  "updatedAt": "2026-10-12T12:46:53.095Z",
+  "revision": 620,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2342,11 +2342,18 @@
       "description": "Not triaged; track not proposed yet. Found by the code-reviewer on PR 26 (finding 2, by code reading); EM checked the effect on 2026-10-11.\nObserved: some test suites run the CLI with the real environment, so the CLI registers each temporary test project in the PM's index under the real HOME (cli/index.ts registerProject at about lines 716 and 753). Examples: tests/devolps-phase3.test.ts (pc helper spreads process.env, about line 272) and tests/merge.test.ts (about line 90, no env given). EM check: the PM's index holds 2,420 entries, of which 2,399 are temporary test folders (names such as pc-sync-*, pc-merge-*, pc-gate-*).\nSecond risk, not observed: the same suites pass any CLAUDE_PROJECT_DIR to the CLI, which finds its project from it before the working folder (store.ts:129). In the EM's shell CLAUDE_PROJECT_DIR is unset (checked 2026-10-11); in other shells: UNKNOWN.\nExpected: test rule 5 (docs/test-rules.md): a CLI child gets a temporary HOME and no CLAUDE_PROJECT_DIR, as the cli helper in tests/notify.test.ts does.\nNote: cleaning the 2,399 stale entries from the PM's index is a separate, PM-owned step (it is the PM's home folder).",
       "status": "review",
       "createdAt": "2026-10-10T19:05:47.723Z",
-      "updatedAt": "2026-10-12T12:37:33.458Z",
+      "updatedAt": "2026-10-12T12:46:53.094Z",
       "order": 0,
       "kind": "bug",
       "role": "devops-sre",
-      "points": 1
+      "points": 1,
+      "pr": {
+        "number": 33,
+        "url": "https://github.com/QuantumWars/project-companion/pull/33",
+        "state": "OPEN",
+        "headSha": "2658f2dbf96444092b6ee8cde25e460e369b7e71",
+        "syncedAt": "2026-10-12T12:46:53.093Z"
+      }
     },
     {
       "id": "aa27f49a",
