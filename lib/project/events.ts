@@ -385,13 +385,21 @@ const APPEND_FLAGS = constants.O_WRONLY | constants.O_APPEND | constants.O_CREAT
   (constants.O_NOFOLLOW ?? 0) | (constants.O_NONBLOCK ?? 0);
 
 /** Appends `records` to the actor's shard in one write, only when the shard is a regular file. */
-const writeRecords = (root: string, actor: string, records: ProjectEvent[]): void => {
+export const writeRecords = (root: string, actor: string, records: ProjectEvent[], flags: number = APPEND_FLAGS): void => {
   const path = shardPath(root, actor);
   const notAFile = () =>
     new Error(`Refused to write the event log: ${path} is not a regular file (bug 54b4e811). Remove it and try again.`);
+  // Without O_NOFOLLOW (Windows) the open follows a merged symlink: check the path first (security re-check N2).
+  if (constants.O_NOFOLLOW === undefined || (flags & constants.O_NOFOLLOW) === 0) {
+    try {
+      if (lstatSync(path).isSymbolicLink()) throw notAFile();
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    }
+  }
   let fd: number;
   try {
-    fd = openSync(path, APPEND_FLAGS, 0o666);
+    fd = openSync(path, flags, 0o666);
   } catch (error) {
     if (["ELOOP", "EMLINK", "EISDIR", "ENXIO"].includes((error as NodeJS.ErrnoException).code ?? "")) throw notAFile();
     throw error;

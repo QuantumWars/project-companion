@@ -21,7 +21,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { appendEvent, readShard, verifyShard } from "@/lib/project/events";
+import { appendEvent, readShard, verifyShard, writeRecords } from "@/lib/project/events";
 import { eq, ok, runAll, test, throws } from "./harness";
 
 const HELPER_FLAG = "--append-shard-helper";
@@ -179,6 +179,56 @@ if (process.argv[2] === HELPER_FLAG) {
       eq(shard.map((e) => [e.seq, e.kind]), [[0, "actor.identified"], [1, "task.created"], [2, "task.moved"]]);
       ok(shard[1].ts > shard[0].ts, "the event sorts after the identity");
       eq(verifyShard(root, ACTOR.id), [], "the hash chain is intact");
+    } finally {
+      cleanup();
+    }
+  });
+
+  // Windows has no O_NOFOLLOW. These tests run writeRecords with a flag set that lacks it (N2, task 97012dae).
+  const NO_NOFOLLOW = constants.O_WRONLY | constants.O_APPEND | constants.O_CREAT;
+  const rec = { id: `${ACTOR.id}:0`, ts: 1, seq: 0, actor: ACTOR.id, prev: null, kind: "actor.identified", data: {} } as never;
+
+  test("54b4e811 N2: without O_NOFOLLOW, a shard that is a symlink to a regular file is refused, target unchanged", () => {
+    const { parent, root, shard, cleanup } = tmpProject();
+    try {
+      const outside = join(parent, "outside.sh");
+      writeFileSync(outside, "keep\n");
+      const before = readFileSync(outside);
+      symlinkSync(outside, shard);
+      throws(() => writeRecords(root, ACTOR.id, [rec], NO_NOFOLLOW), NOT_A_FILE);
+      ok(readFileSync(outside).equals(before), "the symlink target changed");
+    } finally {
+      cleanup();
+    }
+  });
+
+  test("54b4e811 N2: without O_NOFOLLOW, a missing shard is created", () => {
+    const { root, shard, cleanup } = tmpProject();
+    try {
+      writeRecords(root, ACTOR.id, [rec], NO_NOFOLLOW);
+      eq(readFileSync(shard, "utf8").split("\n").length, 2, "one line and a final newline");
+    } finally {
+      cleanup();
+    }
+  });
+
+  test("54b4e811 N2: without O_NOFOLLOW, a regular shard is appended to", () => {
+    const { root, shard, cleanup } = tmpProject();
+    try {
+      writeFileSync(shard, "old\n");
+      writeRecords(root, ACTOR.id, [rec], NO_NOFOLLOW);
+      ok(readFileSync(shard, "utf8").startsWith("old\n{"), "old line kept, new line after it");
+    } finally {
+      cleanup();
+    }
+  });
+
+  test("54b4e811 N2: without O_NOFOLLOW, an lstat error other than ENOENT passes through", () => {
+    const { root, cleanup } = tmpProject();
+    try {
+      rmSync(join(root, ".project-log"), { recursive: true });
+      writeFileSync(join(root, ".project-log"), "not a folder"); // a path below a file gives ENOTDIR
+      throws(() => writeRecords(root, ACTOR.id, [rec], NO_NOFOLLOW), /ENOTDIR/);
     } finally {
       cleanup();
     }
