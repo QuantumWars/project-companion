@@ -121,7 +121,7 @@ Open threats: mitigated by the design, but open until the named test passes. The
      - `requireLogFolder` checks `.project-log` with `lstat`, then `writeRecords` opens the shard. An append can
        follow a `.project-log` symlink that was swapped in out of the root. Accepted (PM, card c-40cf2e).
      - Where Node has no `O_NOFOLLOW` (Windows), `writeRecords` checks the shard with `lstat`, then opens it. An
-       append can follow a shard symlink that was swapped in. No card yet: the PM decides it at this design gate.
+       append can follow a shard symlink that was swapped in. Accepted (PM, card c-c43904).
   3. A merged commit puts a symlink, a folder, a device or a FIFO at a log shard, at `.project` or at a temp path of
      the write-then-rename helpers. Partly fixed by bugfix 54b4e811:
      - Reads (cea9f52). `readShard` (`lib/project/events.ts`) and `readBundle` (`lib/project/bundle.ts`) read only
