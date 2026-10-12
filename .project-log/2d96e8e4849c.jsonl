@@ -6864,3 +6864,4 @@
 {"id":"2d96e8e4849c:6840","ts":1791812585273,"seq":6840,"actor":"2d96e8e4849c","prev":"b58b48c2e8166a20","kind":"run.progress","data":{"runId":"789190d5","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
 {"id":"2d96e8e4849c:6841","ts":1791812588921,"seq":6841,"actor":"2d96e8e4849c","prev":"e6daf467fb31bfaa","kind":"run.progress","data":{"runId":"789190d5","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
 {"id":"2d96e8e4849c:6842","ts":1791812606795,"seq":6842,"actor":"2d96e8e4849c","prev":"3e12322d9bbbfafc","kind":"run.state","data":{"runId":"789190d5","state":"awaiting_review","reason":"the subagent finished"}}
+{"id":"2d96e8e4849c:6843","ts":1791812618830,"seq":6843,"actor":"2d96e8e4849c","prev":"1fd65df4b594b526","kind":"task.moved","data":{"taskId":"ce914d26","from":"in_progress","to":"review"}}

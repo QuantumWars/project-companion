@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-12T13:38:48.504Z",
-  "revision": 641,
+  "updatedAt": "2026-10-12T13:43:38.818Z",
+  "revision": 642,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2389,9 +2389,9 @@
       "id": "ce914d26",
       "title": "logEvent skips the event log silently when a planted shard is refused",
       "description": "Not triaged. Found by the backend-engineer while building the 54b4e811 F1 fix (2026-10-11); scope widened by the security re-check of 54b4e811 (N3, 2026-10-12).\nObserved (built CLI, temp project): with the actor's own shard planted, 'task add' exits 0 and saves the task, but logEvent (lib/project/store.ts, about lines 236-242) catches the appendEvent refusal and writes no log line and no warning. The outside file is unchanged (the F1 fix holds).\nProposal: logEvent writes one stderr warning when the event log refuses a write, so a task edit does not skip the log without a trace.\n\nWidened scope (security re-check N3):\n(a) logEvent also writes criterion.verified;\n(b) the ingest hook catches every error (cli/index.ts, about lines 1206-1208), and recordSpawnRequest (lib/project/subagent.ts, about lines 19-21) calls appendEvent directly, so run.requested is lost with no message too; a warning in logEvent alone would not reach it;\n(c) the same silence follows a planted .project-log, not only a planted shard;\n(d) runs exist only as events in the log (store.ts, about line 1389), so with the actor's own shard planted its runs read as missing, and the hook returns early (about cli/index.ts:1179) and skips its budget and boundary checks with no message.\nFix idea: one shared warning when the log refuses a write, used by logEvent, the ingest catch and recordSpawnRequest.",
-      "status": "in_progress",
+      "status": "review",
       "createdAt": "2026-10-11T17:48:40.772Z",
-      "updatedAt": "2026-10-12T13:38:48.504Z",
+      "updatedAt": "2026-10-12T13:43:38.817Z",
       "order": 0,
       "kind": "bug",
       "role": "backend-engineer",
