@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-12T14:40:41.680Z",
-  "revision": 646,
+  "updatedAt": "2026-10-12T14:47:49.436Z",
+  "revision": 649,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2509,6 +2509,30 @@
       "createdAt": "2026-10-12T13:51:34.423Z",
       "updatedAt": "2026-10-12T13:51:34.423Z",
       "order": 13
+    },
+    {
+      "id": "f767c2b0",
+      "title": "Bug: writes and recursive deletes follow a linked folder in the older store layout and .project-cache; add a race-free open-and-check read helper",
+      "status": "backlog",
+      "createdAt": "2026-10-12T14:47:49.156Z",
+      "updatedAt": "2026-10-12T14:47:49.156Z",
+      "order": 14
+    },
+    {
+      "id": "4d1a4494",
+      "title": "Bug: deps.ts source read and the .gitattributes read hang on a planted FIFO",
+      "status": "backlog",
+      "createdAt": "2026-10-12T14:47:49.296Z",
+      "updatedAt": "2026-10-12T14:47:49.296Z",
+      "order": 15
+    },
+    {
+      "id": "3335c1f0",
+      "title": "Bug: editPrd changes the PRD before writeSidecar refuses; migrate copies a followed out-of-root link",
+      "status": "backlog",
+      "createdAt": "2026-10-12T14:47:49.435Z",
+      "updatedAt": "2026-10-12T14:47:49.435Z",
+      "order": 16
     }
   ],
   "roadmap": {
