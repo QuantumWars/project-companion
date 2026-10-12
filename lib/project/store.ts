@@ -16,7 +16,6 @@ import {
   realpathSync,
   renameSync,
   rmSync,
-  writeFileSync,
 } from "node:fs";
 import { dirname, join, resolve as resolvePath } from "node:path";
 
@@ -56,6 +55,7 @@ import {
   type RunActor,
   type RunState,
 } from "./run";
+import { replaceFile } from "./safe-file";
 import {
   DEFAULT_STORE_DIR,
   DEFAULT_PRD_PATH,
@@ -218,9 +218,7 @@ export const readJson = <T,>(path: string, fallback: T): T => {
 /** Write-then-rename so a reader never observes a partial file. */
 export const writeJson = (path: string, value: unknown) => {
   mkdirSync(dirname(path), { recursive: true });
-  const tmp = `${path}.${process.pid}.tmp`;
-  writeFileSync(tmp, `${JSON.stringify(value, null, 2)}\n`, "utf8");
-  renameSync(tmp, path);
+  replaceFile(path, `${JSON.stringify(value, null, 2)}\n`);
 };
 
 const now = () => new Date().toISOString();

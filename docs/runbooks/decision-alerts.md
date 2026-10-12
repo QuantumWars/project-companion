@@ -80,12 +80,13 @@ splitting on `\n` only (TH-15). Deleting the file loses only history.
    rm -rf "$d"
    ```
 
-The off switch does not stop the text lookup: every `gate request` or
-`card open` still reads the cockpit, the gate artifacts and the PRD source.
-The SR-8 fix (bug d5ebde85, PR #22) reads them only as regular files inside
-the project root. Of its 3 residuals (TH-7), 1 and 2 are accepted (card
-c-73ccab). Residual 3 (log shards and `.project` read through a symlink or
-a device) is open as bug 54b4e811.
+The off switch does not stop the text lookup: `gate request` and `card open`
+still read the cockpit, gate artifacts and PRD source. The SR-8 fix (bug
+d5ebde85, PR #22) reads them only as regular files in the project root,
+except residual 3. Residuals 1, 2 are accepted. Bugfix 54b4e811 (PR 28) fixed
+residual 3: shard and `.project` reads, temp writes, appends. Open: `.project`
+folder fallback (task 49c078ce); unreported refused shard (task d78ae4cf);
+events lost with no message after a refused append (task ce914d26).
 
 ## When an alert does not appear
 
@@ -103,10 +104,9 @@ tail -n 1`.
 
 Standard error lines (`lib/project/notify.ts`):
 
-- `project-companion: notification not sent: ` — no alert was sent; the rest
-  is the `reason`.
+- `project-companion: notification not sent: ` — no alert; the rest is the `reason`.
 - `project-companion: notification record not written: ` — the outcome was
-  decided, but the record step failed; the rest is a code and the path.
+  decided, but the record step failed; the rest is a code, and usually the path.
 
 Reasons, in 3 groups:
 
