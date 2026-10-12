@@ -70,12 +70,12 @@ flowchart LR
 | P2 Notifier child | Process | TH-3: a fake `osascript` on `PATH`. TH-2: the override program. | TH-1: text could become AppleScript. Mitigated: fixed script, `--`, argument list, and a required real-osascript test. | n/a: the notifier keeps no record. P1 records the outcome before the CLI exits. | TH-17: the arguments are visible in the process list, and the child gets the CLI's whole environment. | A stuck osascript keeps one process alive. The CLI does not wait (TH-7). How long osascript runs is UNKNOWN. | The fixed script calls only `display notification`; it has no `do shell script`. It runs as the PM's user. | Whether macOS 27.0.1 asks for notification permission on first use is UNKNOWN. |
 | P3 Notification Center | Process (macOS) | TH-11: banners from other scripts look the same. | n/a: an Apple component. It gets text only and changes none of our data. | n/a: outside our system. See TH-18. | TH-6: text on the lock screen, during screen sharing, and in the copy that macOS keeps. | TH-9: a runaway agent can flood the PM with banners. Focus or the notification settings can hide every banner. The cockpit still lists the decision. Accepted by the PM's answer to Q3. | n/a: we ask for no entitlement and send no action. | Boundary B3. Outside our code. |
 | D1 Event log `.project-log/` | Data store | n/a: a data store has no identity. Actor ids are claims (existing; see `gate.ts`). | TH-16: the notify path must never write a decision event (DA-02.5). Content merged from other clones is not trusted (B4). | Unchanged hash chain. No notification events, by design (PM's answer to Q5). A shard that is not a regular file is left out, and `verifyLog` does not report it (task d78ae4cf). An event whose append is refused is lost, and it is not recovered. Since bugfix ce914d26, `logEvent` and the `ingest` hook write one fixed warning line to standard error, once per refusal episode in a process; see TH-7, residual 3, for its limits. | Card text is committed today. This epic adds nothing to the log. | The notify path adds one read of all shards per decision command. It writes nothing. Since bugfix 54b4e811, a shard is read only when it is a regular file inside the root; any other shard counts as missing. The append to the actor's own shard requires a real `.project-log` folder, opens the shard with `O_NOFOLLOW` and `O_NONBLOCK` (where Node has no `O_NOFOLLOW`, an `lstat` check comes first), and checks that it is a regular file. See TH-7, residuals 2 and 3. | Our code never runs the log's data. An append that followed a merged symlink out of the root could put event text in a shell start-up file, as in TH-21. Mitigated by bugfix 54b4e811: `O_NOFOLLOW`, or the `lstat` check where Node has none, and a real `.project-log` folder. Residual: the check-then-open windows (TH-7, residual 2). | Boundary B4. The notify path only reads it. |
-| D2 `.project` and PRD | Data store | n/a: a data store. | The project name is editable text that reaches the notification. It stays data (TH-1). A NUL character in it makes `spawn` throw, which gives outcome `failed` (TH-5 test). | n/a: the notify path only reads it. | The project name appears on screen (TH-6). | Read errors of `.project` and the PRD are caught (`bundle.ts:180`, `roadmap.ts:89-97`). Since bugfix 54b4e811, `.project` is read only when it is a regular file inside the root; any other `.project` gives null. The roadmap read then falls back to `.project/roadmap.json` through `readJson`, with no check on its kind (`roadmap.ts:74-86`; task 49c078ce; see TH-7, residual 3). Since bugfix d5ebde85, the PRD source is read only when it is a regular file inside the root. A failed lookup gives `failed`, and the command is unchanged (TH-8). | n/a: data that is never run. | Boundary B4. It also names the PRD source path, which the lookup reads. |
+| D2 `.project` and PRD | Data store | n/a: a data store. | The project name is editable text that reaches the notification. It stays data (TH-1). A NUL character in it makes `spawn` throw, which gives outcome `failed` (TH-5 test). | n/a: the notify path only reads it. | The project name appears on screen (TH-6). | Read errors of `.project` and the PRD are caught (`bundle.ts:180`, `roadmap.ts:95-103`). Since bugfix 54b4e811, `.project` is read only when it is a regular file inside the root; any other `.project` gives null. Since bugfix 49c078ce, a `.project` that is not a readable bundle (for example a folder or a link) gives an empty roadmap on a read (`emptyRoadmap()`) and a `No .project at <root>` error on a write. `editPrd` gives that error before it writes the PRD. `readSidecar` and `writeSidecar` read and write nothing under that `.project` or through it. The older-layout `roadmap.json` is used only for a real older-layout store (`usesLegacyStore`, `roadmap.ts`). `readJson` (`store.ts`) opens only a regular file (`statSync().isFile()`). See TH-7, residual 3. Since bugfix d5ebde85, the PRD source is read only when it is a regular file inside the root. A failed lookup gives `failed`, and the command is unchanged (TH-8). | n/a: data that is never run. | Boundary B4. It also names the PRD source path, which the lookup reads. For a project that still uses the older layout (a store folder from `STORE_DIRS`, for example `.claude/project-companion/`), D2 is that folder. `readCockpit` (`cockpit.ts:335-345`) reads its `project.json`, `tasks.json` and `roadmap.json` through `readJson`, and never its diagrams or boards. Each cell of this row applies to those three files too. The writes, the deletes and `migrate` of that folder are not on the notify path: see TH-7, residual 3. |
 | D4 Artifact files of approved gates | Data store | n/a: a data store. | A merged log can name any path. Since bugfix d5ebde85, `hashArtifact` reads a path only when it is a regular file inside the real project root (`regularFileIn`). A `..` escape, a symlink out of the root, a folder, a device, a FIFO or a socket counts as missing, so the gate becomes stale. An unreadable file gives `lookup failed: EACCES` (TH-5 test). | n/a: the notify path only reads them. | The bytes are only hashed. The notification and the reason do not show them. | SR-8, fixed by bugfix d5ebde85: a device such as `/dev/zero`, or a path outside the root, is never opened. Residual, accepted (PM, card c-73ccab; TH-7, residual 1): no size limit for a regular file inside the root. | n/a: data that is never run. | Read by `readGates` and `hashArtifact` inside `readCockpit`. Boundary B4. |
 | D3 Notification record `.project-notify/record.jsonl` | Data store (new) | Any local process can append false lines (TH-12). | TH-21: a committed symlink at the folder or the file could send appends outside the project. Mitigated: `lstat` the folder, `O_NOFOLLOW`. TH-12: the record can be edited and has no hash chain. TH-15: forged lines. | The lines have no actor. It is a local metric, not an audit trail (TH-12). | TH-13: decision text could be committed. Mitigated: two `.gitignore` files, and the folder's file comes first. Mode 600, folder mode 700. | TH-14: no limit on growth. A write failure never fails the command (DA-02.1). | TH-21: an append that followed a symlink into a shell start-up file could make `$(...)` in a title run as the PM at the next shell start. Mitigated: no symlink is followed, and no variable changes the path. | New. Local only. The default folder has its own `.gitignore`. |
 | F0 P1 to D1, existing append | Data flow | n/a: a flow has no identity. | Existing: the hash chain shows edits. The notify path does not use this flow (TH-16). | n/a: a flow is not an actor. | Existing: the card text is committed. This epic does not change it. | n/a: existing behaviour; this epic adds no append. | n/a: data only. | Shown for completeness. Not part of the notify path. |
 | F1 argv and env into P1 | Data flow | n/a: a flow has no identity. See E1 and E3. | Agent-written text, which may carry injected instructions from outside content. Data in every step (TH-1, TH-15). The environment can turn alerts off (TH-20). | n/a: a flow is not an actor. | n/a: the CLI's own arguments are already visible in the process list (existing). | Very long text: `ARG_MAX` is 1048576 bytes on this Mac. If the CLI's own arguments fit, the notifier's arguments are larger by about the size of the script. `E2BIG` from `spawn` gives `failed` (TH-8). | n/a: see P1 E. | Card text may come from outside content (boundary B1). |
-| F2 D1, D2, D4 into P1 | Data flow | n/a: a flow has no identity. | Content from other clones (B4) can hold any text and any artifact path. The lookup takes only the decision id that was just recorded, and the text stays data. | n/a: a flow is not an actor. | n/a: a file read inside the same account. Artifact bytes are hashed, not shown. | SR-8 (unbounded artifact reads) is fixed by bugfix d5ebde85. Residuals: see TH-7. 1 and 2 are accepted (PM, card c-73ccab). 3 is fixed for the shard and `.project` reads, the temp writes and the shard appends by bugfix 54b4e811; the rest is open in tasks 49c078ce and d78ae4cf. Bugfix ce914d26 adds a warning when an append is refused; the event is still lost (TH-7, residual 3). | n/a: data only. | A card id collision (`c-` plus 6 hex) makes `foldCards` keep the older card. The text can then be wrong, or the lookup fails (`failed`). |
+| F2 D1, D2, D4 into P1 | Data flow | n/a: a flow has no identity. | Content from other clones (B4) can hold any text and any artifact path. The lookup takes only the decision id that was just recorded, and the text stays data. | n/a: a flow is not an actor. | n/a: a file read inside the same account. Artifact bytes are hashed, not shown. | SR-8 (unbounded artifact reads) is fixed by bugfix d5ebde85. Residuals: see TH-7. 1 and 2 are accepted (PM, card c-73ccab). 3 is fixed for the shard and `.project` reads, the temp writes and the shard appends by bugfix 54b4e811, and for the older-layout reads and the `.project` folder fallback by bugfix 49c078ce; the rest is open in task d78ae4cf. The check-then-read window in `readJson` is open in task f767c2b0. Bugfix ce914d26 adds a warning when an append is refused; the event is still lost (TH-7, residual 3). | n/a: data only. | A card id collision (`c-` plus 6 hex) makes `foldCards` keep the older card. The text can then be wrong, or the lookup fails (`failed`). |
 | F3 P1 to P2, arguments and environment | Data flow | n/a: a flow has no identity. See P2 S. | TH-1. | n/a: a flow is not an actor. | TH-17: the arguments are visible in the process list, and the child gets the CLI's whole environment, with any secret in it. | A NUL character or `E2BIG` makes `spawn` throw, which gives `failed` (TH-8). | n/a: see P2 E. | Crosses a process boundary inside B2. |
 | F4 P2 to P3 to the PM | Data flow | n/a: inside macOS. See P3 S. | n/a: inside macOS. We cannot change the text after `spawn`. | n/a: a flow is not an actor. | TH-6. | Focus can hold back the banner. Accepted (Q3). | n/a: no action is attached. | Crosses boundary B3. |
 | F5 P1 to D3 | Data flow | n/a: a flow has no identity. | TH-15: a line break in the text cannot make a second line. TH-21: the flow never follows a symlink. | n/a: a flow is not an actor. | n/a: a local file in the project, mode 600, inside the same account. | TH-8: a failed write gives one standard error line, and the command goes on. | n/a: data only. | Inside B2. Local only. |
@@ -108,9 +108,11 @@ Open threats: mitigated by the design, but open until the named test passes. The
   reads open only a regular file inside the real project root, and `prd init` writes only inside the root, with `wx`.
   Residuals named by the PR #22 reviews, decided by the PM at the PR #22 merge (card c-73ccab): 1 and 2 accepted;
   3 partly fixed by bugfix 54b4e811. The shard and `.project` reads, the temp writes and the shard appends are fixed,
-  also on Windows. Open: the `.project` folder fallback (task 49c078ce) and the silent omission in `verifyLog` (task
-  d78ae4cf). Bugfix ce914d26 adds a warning when an append is refused; the event is still lost (residual 3).
-  Residual 2 now also holds the check-then-open windows of bugfix 54b4e811.
+  also on Windows. Bugfix 49c078ce fixes the older-layout reads and the `.project` folder fallback. Open: the silent
+  omission in `verifyLog` (task d78ae4cf), and the residuals that are open after bugfix 49c078ce (residual 3: tasks
+  4d1a4494, f767c2b0 and 3335c1f0, and one with no task yet). Bugfix ce914d26 adds a warning when an append is
+  refused; the event is still lost (residual 3). Residual 2 now also holds the check-then-open windows of bugfix
+  54b4e811.
   1. No size limit for a regular file inside the root. Accepted (PM, card c-73ccab).
   2. A window between a check and the read, write or open after it. Only a process that runs as the same user at that
      moment can use a window.
@@ -122,8 +124,9 @@ Open threats: mitigated by the design, but open until the named test passes. The
        follow a `.project-log` symlink that was swapped in out of the root. Accepted (PM, card c-40cf2e).
      - Where Node has no `O_NOFOLLOW` (Windows), `writeRecords` checks the shard with `lstat`, then opens it. An
        append can follow a shard symlink that was swapped in. Accepted (PM, card c-c43904).
-  3. A merged commit puts a symlink, a folder, a device or a FIFO at a log shard, at `.project` or at a temp path of
-     the write-then-rename helpers. Partly fixed by bugfix 54b4e811:
+  3. A merged commit puts a symlink, a folder, a device or a FIFO at a log shard, at `.project`, at a file of the
+     older-layout store or at a temp path of the write-then-rename helpers. Partly fixed by bugfixes 54b4e811 and
+     49c078ce:
      - Reads (cea9f52). `readShard` (`lib/project/events.ts`) and `readBundle` (`lib/project/bundle.ts`) read only
        when `regularFileIn` (`lib/project/safe-file.ts`, moved from `gate.ts`) finds a regular file inside
        the real project root. Any other shard counts as missing. Any other `.project` gives null. The check and the
@@ -144,10 +147,19 @@ Open threats: mitigated by the design, but open until the named test passes. The
        shell start-up file could run as shell code. Now closed, except for the `lstat`-then-open window (residual 2).
      - Tests: `tests/bug-54b4e811.test.ts`, `tests/safe-file.test.ts` and `tests/append-shard.test.ts`. The four "N2"
        tests run `writeRecords` with a flag set that has no `O_NOFOLLOW`. Not run on a real Windows machine.
+     - Fixed by bugfix 49c078ce (PR 36; card c-4936f7):
+       - `readJson` (`lib/project/store.ts`) takes only a regular file: it opens the path only when
+         `statSync(path).isFile()` is true. A FIFO, a device or a folder, also behind a symlink, gives the caller's
+         fallback and is never opened. This covers the older-layout reads (`project.json`, `tasks.json`,
+         `roadmap.json`, `diagrams/<id>.json`, `boards/<id>.json`) and the `.project-cache/git.json` read. The check
+         and the read are two steps (see "Open after bugfix 49c078ce", (b)).
+       - The older-layout `roadmap.json` is used only for a real older-layout store (`usesLegacyStore`,
+         `lib/project/roadmap.ts`). A `.project` that is not a readable bundle gives an empty roadmap
+         (`emptyRoadmap()`) on a read (`readSidecar`), and a `No .project at <root>` error on a write
+         (`writeSidecar`). `editPrd` gives the same error before it writes the PRD. So nothing is read or written
+         under that `.project` or through it.
+       - Tests: `tests/bug-49c078ce.test.ts` and `tests/qa-49c078ce-gate.test.ts`.
      - Open, low (security review of bugfix 54b4e811 and its re-check):
-       - When `.project` is a folder, `readSidecar` and `writeSidecar` (`roadmap.ts`) read and write
-         `.project/roadmap.json` through `readJson` and `writeJson`, with no check on its kind: task 49c078ce (card
-         c-4936f7).
        - A shard that is not a regular file is left out silently, and `verifyLog` reports no break: task d78ae4cf
          (card c-a04935).
      - Refused appends (bugfix ce914d26). Both refusals of bugfix 54b4e811, a planted `.project-log` and a planted
@@ -183,6 +195,75 @@ Open threats: mitigated by the design, but open until the named test passes. The
            The documented channel to the user is the JSON field `systemMessage`. Which hook events show it is
            UNKNOWN: the page says each event's section names the exceptions, and those sections were not read. So on
            the hook path the warning may not be seen: task 4a699ddc.
+     - Open after bugfix 49c078ce. The EM opened tasks for (a), (b) and (c); (d) has no task yet. None is on the
+       notify path, except the window in (b) and the followed link in (c), for an older-layout project. Owner of
+       each: PM accepts at the design gate.
+       - (a) Low. Task 4d1a4494. Reads of merged files with no kind check, so a merged symlink to a FIFO or a device
+         hangs the command:
+         - The source-file read of `dependencyGraph` (`lib/project/deps.ts:162`). `sourceFiles` (`deps.ts`) uses
+           `statSync`, which follows a link, so a link with a source extension (for example `x.ts`) is listed and
+           read. The `flow`, `next`, `review` and `drift` commands and the web app's flow route
+           (`app/api/project/flow/route.ts`) run it.
+         - The `.gitattributes` read of `installMergeDriver` (`cli/index.ts:362`), which `init` runs. `existsSync`
+           comes first and also follows the link.
+         - Not in the task's title: the `settings.json` read of `installHooks` (`cli/index.ts:425`), which `init`
+           also runs. The path is `<agent folder>/settings.json` under the root (for example
+           `.claude/settings.json`), so a merge can bring it. The bugfix spec put this line with the paths that the
+           user or git passes; that is not correct for this read.
+         - Likelihood low: it needs a merged symlink. Impact low: one command hangs until it is stopped, and no data
+           changes.
+       - (b) Medium: likelihood low, impact high. Task f767c2b0. Writes and recursive deletes follow a linked parent
+         folder. The 54b4e811 fix covers only the temp name of a write.
+         - `rmSync(paths.dir, { recursive: true, force: true })` in `migrateProject` and `deleteProject`
+           (`lib/project/store.ts`).
+         - `writeJson` (`mkdirSync` of the parent folder, then `replaceFile`) for `.project-cache/git.json`
+           (`lib/project/git-view.ts`) and for the older-layout writes (`project.json`, `tasks.json`,
+           `roadmap.json`, `diagrams/<id>.json`, `boards/<id>.json`). In this repository `.project-cache` is
+           git-ignored (`/.project-cache/` in `.gitignore`), so a merge brings it only when another clone added it
+           anyway. The code has no step that adds this line to the `.gitignore` of other projects.
+         - The narrow worst case. `.claude` (or another agent folder of `STORE_DIRS`) is a merged link to a folder
+           outside the root that holds `project-companion/project.json`, and the root has no `.project`.
+           `discover` (`store.ts`) uses `existsSync`, which follows the link, so that outside folder becomes the
+           store. `migrate` (after it writes `.project`) or `projects delete` (CLI, and the web app's
+           `app/api/projects/route.ts`) then deletes `<outside>/project-companion` and all of its content. Checked
+           by the architect with a probe on this Mac (Node v26.3.0): `rmSync` with `recursive` deletes through a
+           linked parent folder; when the path itself is a link (for example `.project-cache`), it deletes only
+           the link. It needs a link target that already holds `project-companion/project.json`, for example the
+           older-layout store of another project, and a `migrate` or `projects delete`.
+         - The window in `readJson`: `statSync` checks the kind, then `readFileSync` opens the path. A file that is
+           swapped for a FIFO between the two steps hangs the read. Low: it needs a process that writes to the
+           working tree at that moment. Same kind as the windows of residual 2.
+       - (c) Low. Task 3335c1f0. `migrate` copies the content of an older-layout file that is a followed link to a
+         regular JSON file outside the root into `.project`. `migrateProject` (`store.ts`) copies the name and the
+         creation time from `project.json`, each diagram and board file as a whole, the task list from
+         `tasks.json`, and the source, phases, overrides and orphans from `roadmap.json`. `.project` is committed,
+         so the content can then be pushed. Likelihood low: it needs a merged link in an older-layout store, a JSON
+         target, a `migrate` and a commit. Impact: one JSON file that the PM can read is disclosed. The task title
+         also names the order in `editPrd`; bugfix 49c078ce fixes that (`editPrd` refuses before it writes the
+         PRD).
+         - Accepted by design, for the PM to confirm at the design gate: `readJson` follows a link to a regular
+           file, also outside the root. The read cannot hang, because only a regular file is opened, and it never
+           writes. The bugfix spec offered the stricter rule (`regularFileIn` with a `root` argument); the fix does
+           not use it, and `readJson` takes an absolute path with no `root`. Outside `migrate`, the content stays on
+           this Mac: it shows in the CLI and the web app, and the `name` of a linked `project.json` is the project
+           name in a notification (TH-6).
+       - (d) Medium: likelihood low, impact high. No task yet: proposed to the EM. Writes with plain
+         `writeFileSync` (no temp file) follow a link at the file itself, not only at a parent folder:
+         - `review` (`cli/index.ts:2029-2034`) writes `.project-cache/review/<short hash>/packet.md` and
+           `hunks.json`. The packet holds the subject and the body of the reviewed commit (`packet`,
+           `lib/project/review.ts`), and the commit's author writes them. If a merged link at that path points to a
+           shell start-up file, the write replaces that file with the packet. The author's text can then run as the
+           PM at the next shell start, as in TH-21. It needs a merged link at the exact path, which holds the short
+           hash of the commit that the PM reviews.
+         - `init` writes `.gitattributes` (`installMergeDriver`, `cli/index.ts:366`) and
+           `<agent folder>/settings.json` (`installHooks`, `cli/index.ts:463`) through a link to a regular file, also
+           outside the root. It writes `SKILL.md` (`cli/index.ts:729-731`) only when `existsSync` is false, which is
+           also true for a link to a file that does not exist yet, so the write creates that file. The text is
+           fixed, or it is the target's own JSON with the `project-companion ingest` hooks added; the merged tree
+           does not choose it. Low.
+         - Checked by the architect with two probes on this Mac (Node v26.3.0, scratchpad, not tests):
+           `writeFileSync` through a link to a file changes the target, and through a link to a missing file
+           creates the target.
      - Out of scope: `registry.ts`, which writes in the home folder.
 - TH-8. A fault in the notify path fails the command. Causes: an unhandled `error` event, a `spawn` throw, a record
   write error, or a broken `.project` or artifact. Mitigation: an `error` listener and one `try`/`catch` around all
