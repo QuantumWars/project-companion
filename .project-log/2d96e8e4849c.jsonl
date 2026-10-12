@@ -5771,3 +5771,4 @@
 {"id":"2d96e8e4849c:5751","ts":1791783743665,"seq":5751,"actor":"2d96e8e4849c","prev":"678f7a268b48c5f4","componentId":"agent-tooling","kind":"run.progress","data":{"runId":"56e45387","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
 {"id":"2d96e8e4849c:5752","ts":1791783756056,"seq":5752,"actor":"2d96e8e4849c","prev":"28915b38ac60b8a2","componentId":"agent-tooling","kind":"run.state","data":{"runId":"56e45387","state":"awaiting_review","reason":"the subagent finished"}}
 {"id":"2d96e8e4849c:5753","ts":1791783760876,"seq":5753,"actor":"2d96e8e4849c","prev":"3e0972f0c3d57cbf","kind":"run.progress","data":{"runId":"48b010d7","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
+{"id":"2d96e8e4849c:5754","ts":1791783767785,"seq":5754,"actor":"2d96e8e4849c","prev":"affc36de2f6efce3","componentId":"agent-tooling","kind":"task.moved","data":{"taskId":"15753492","from":"in_progress","to":"review"}}
