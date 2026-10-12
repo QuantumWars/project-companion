@@ -380,7 +380,8 @@ const requireLogFolder = (root: string): void => {
 };
 
 // A symlink gives ELOOP (EMLINK on FreeBSD), a folder EISDIR, and a FIFO with no reader ENXIO, not a wait.
-// Windows has no O_NOFOLLOW or O_NONBLOCK: there only the folder and `fstat` checks guard.
+// Windows has no O_NOFOLLOW or O_NONBLOCK: there the folder check, an `lstat` of the shard (refuses a symlink)
+// and the `fstat` check guard.
 const APPEND_FLAGS = constants.O_WRONLY | constants.O_APPEND | constants.O_CREAT |
   (constants.O_NOFOLLOW ?? 0) | (constants.O_NONBLOCK ?? 0);
 
