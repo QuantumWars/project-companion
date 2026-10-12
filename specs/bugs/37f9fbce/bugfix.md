@@ -90,7 +90,7 @@ runs like the CLI and the app. **This part has no test** (task 2cb8cdff). QA rea
 
 - This fix changes only which arguments the CLI passes to `linkRepository`; it does not touch how a run's
   `touched` paths are stored (that is 15753492's `reportRun`, `lib/project/store.ts:1482`) or how they are
-  matched (`runFor`, `git-link.ts:141`, unchanged by this fix). Passing a run list that `runFor` was always
+  matched (`runFor`, `git-link.ts:141`, unchanged by this fix). (True when written; superseded by the update below.) Passing a run list that `runFor` was always
   going to reject (today's real, absolute-path runs, per 15753492's root cause) is harmless: the behaviour for
   every run logged today stays exactly what it is now (no signal-2 match), because `runFor`'s own
   `commit.paths.some((path) => run.touched.includes(path))` check already returns `false` for an absolute
@@ -109,6 +109,17 @@ runs like the CLI and the app. **This part has no test** (task 2cb8cdff). QA rea
   both consistent and correct. Either order reaches the same end state; this fix depends on nothing from
   15753492's diff and introduces no conflict with it (different files: `cli/index.ts` here, `lib/project/
   store.ts` and optionally `lib/project/git-link.ts` there, per 15753492's "Open for the PM" section).
+
+**Update after PR 29 (merged, fb4427f; from the code review of 37f9fbce).** The two statements above, that
+passing runs changes nothing for runs logged today, and that real harness runs still do not match, were true
+before PR 29. Since PR 29, `linkRepository` rewrites old absolute `touched` paths to project-relative paths
+(`lib/project/git-link.ts`, about lines 314-315). So real runs now match in the CLI and in the MCP tool. As a
+result, `git log` can relabel old commits: the run signal ranks above the trailer and the branch name.
+
+**Known side effect (separate task, recorded by the EM).** A run's attribution window closes only when the run
+is merged or abandoned (`lib/project/run.ts`, about line 259), so many runs stay open. An old open run can claim
+a later commit that touches a file only that run touched. This already happens in the app's Git view. The CLI
+and the MCP tool now show the same. This fix does not change it.
 
 **Line estimate**: about 1 changed line in `cli/index.ts` (the one call site; `readRuns` is already imported,
 so no import line changes). Basis: `grep -n "readRuns" cli/index.ts` on this checkout shows the import at
