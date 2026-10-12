@@ -15,7 +15,7 @@
  * link (PC-11).
  */
 
-import { foldCards, foldUpdates, workingDaysBetween, type Card, type Health, type WeeklyUpdate } from "./decisions";
+import { foldCards, foldUpdates, isCardClosed, workingDaysBetween, type Card, type Health, type WeeklyUpdate } from "./decisions";
 import { readEvents, type ProjectEvent } from "./events";
 import { readGates, type GateBook } from "./gate";
 import type { AgentRun } from "./run";
@@ -169,9 +169,8 @@ export const buildCockpit = (input: CockpitInput): CockpitModel => {
     });
   }
   for (const c of Array.from(cards.values())) {
-    if (c.answer !== undefined) continue;
-    // A track card is answered by confirming the track.
-    if (c.kind === "track" && (gates.tracks.get(c.subject)?.at ?? 0) > c.openedAt) continue;
+    // A track card is answered by confirming the track (see isCardClosed).
+    if (isCardClosed(c, gates.tracks)) continue;
     const waiting = workingDaysBetween(c.openedAt, now);
     const first = c.recommendation ?? c.options[0] ?? "<answer>";
     needsYou.push({

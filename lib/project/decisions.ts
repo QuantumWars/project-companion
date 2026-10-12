@@ -33,7 +33,18 @@ export type Card = {
   via?: string;
 };
 
-export const foldCards = (events: readonly ProjectEvent[]): Map<string, Card> => {
+/**
+ * True when a card no longer needs the PM: it has an answer, or it is a track
+ * card whose subject's track was confirmed after the card was opened. A track
+ * is confirmed by `gate track`, which carries no card id, so the answer cannot
+ * come from `foldCards` alone. The cockpit and `card list` both call this, so
+ * they cannot drift apart (bug ee2e49d6). A card opened after the confirmation
+ * stays open.
+ */
+export const isCardClosed = (card: Card, tracks: ReadonlyMap<string, { at: number }>): boolean =>
+  card.answer !== undefined || (card.kind === "track" && (tracks.get(card.subject)?.at ?? 0) > card.openedAt);
+
+export const foldCards =(events: readonly ProjectEvent[]): Map<string, Card> => {
   const cards = new Map<string, Card>();
   for (const e of events) {
     const d = e.data ?? {};

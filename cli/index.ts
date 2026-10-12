@@ -72,7 +72,7 @@ import { componentContext } from "../lib/project/component-context";
 import { parseHook } from "../lib/project/ingest";
 import { recordSpawnRequest, runForAgent, startSubagentRun, stopSubagentRun } from "../lib/project/subagent";
 import { burnup, foldSprints, sprintTasks } from "../lib/project/sprint";
-import { foldCards, foldUpdates, isHealth, weekId } from "../lib/project/decisions";
+import { foldCards, foldUpdates, isCardClosed, isHealth, weekId } from "../lib/project/decisions";
 import { agentLane, gateMetrics, humanLane } from "../lib/project/metrics";
 import { readCockpit } from "../lib/project/cockpit";
 import { notifyDecision } from "../lib/project/notify";
@@ -1471,7 +1471,8 @@ const main = () => {
       process.stdout.write(`Answered ${id}: ${answer}\n`);
       return;
     }
-    const list = Array.from(cards.values()).filter((c) => !has("open") || c.answer === undefined);
+    const tracks = readGates(root).tracks; // a confirmed track closes its track card (ee2e49d6)
+    const list = Array.from(cards.values()).filter((c) => !has("open") || !isCardClosed(c, tracks));
     if (has("json")) {
       process.stdout.write(`${JSON.stringify(list)}\n`);
       return;
@@ -1480,7 +1481,7 @@ const main = () => {
       process.stdout.write("No cards.\n");
       return;
     }
-    for (const c of list) process.stdout.write(`${c.id}  ${c.answer === undefined ? "open    " : "answered"}  ${c.subject.padEnd(16)} ${c.ask}\n`);
+    for (const c of list) process.stdout.write(`${c.id}  ${isCardClosed(c, tracks) ? "answered" : "open    "}  ${c.subject.padEnd(16)} ${c.ask}\n`);
     return;
   }
 
