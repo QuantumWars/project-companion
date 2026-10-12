@@ -46,9 +46,10 @@ architect should say whether RU-01.3 is the right ID to cite.
 
 ## Steps to reproduce
 
-1. Run `shasum ~/.claude/project-companion/index.json` and count the entries (`projects` array length).
+1. Count the entries (`projects` array length) of `~/.claude/project-companion/index.json` and save the sorted paths.
 2. Run `npm test -- cli.test` (or `gate.test`, `devolps-phase3`, `merge.test`, `sync.test`).
-3. Run the `shasum` and count again. The checksum differs, and the count is higher by the number of temporary
+3. Count again and compare the sorted path list (the checksum is not reliable: another process rewrites the
+   index). The count is higher by the number of temporary
    projects the suite made (`pc-cli-*` and so on, now gone from disk but still in the index until a read prunes them).
 
 For the regression test: `npm test -- bug-e17ca1c9`.
@@ -63,7 +64,14 @@ Registration is by design: the CLI must index what it touches. The bug is in the
 
 ## Fix
 
-Recommended: **option (c)**, the runner gives every suite a temporary `HOME` and no `CLAUDE_PROJECT_DIR`.
+Built: **option (c)**, the runner gives every suite a temporary `HOME` and no `CLAUDE_PROJECT_DIR`.
+
+What was built (commit 9a02466, `scripts/run-tests.mjs`, 11 lines added and 2 removed; checked by reading it):
+`mkdtempSync` makes one `pc-tests-home-*` folder in `tmpdir()` before the loop. Each suite child gets
+`env: { ...env without CLAUDE_PROJECT_DIR, HOME: <folder>, USERPROFILE: <folder>, PROJECT_COMPANION_NOTIFY: "off" }`
+(`USERPROFILE` is for Windows, where `homedir()` reads it). The existing `finally` removes the folder. The five
+offender suites are unchanged. `docs/test-rules.md` rule 5 has a note about it. The changelog was not changed,
+because it holds only release notes. The build step keeps the real env.
 
 In `scripts/run-tests.mjs`: make one `mkdtemp` folder (inside `tmpdir()`) before the loop; pass the child
 `env: { ...envWithoutClaudeProjectDir, HOME: <that folder>, PROJECT_COMPANION_NOTIFY: "off" }`; remove the folder
@@ -173,9 +181,13 @@ The second test passes before the fix in my shell, because `CLAUDE_PROJECT_DIR` 
 Claude Code session that sets it. The pass side is checked: with the suite started under a temporary `HOME` and no
 `CLAUDE_PROJECT_DIR` (a throwaway script outside the repo, the effect of the fix), it gives 4/4 passed.
 
-Checking the fix end to end (PM): run `shasum ~/.claude/project-companion/index.json`, run a full `npm test`, run the
-`shasum` again. The two checksums must match. If another tool writes the index in between, the check is not clean;
-run it when nothing else is using the project. Before the fix, the same procedure changes the checksum.
+After the fix (head 814e817, `npm test -- bug-e17ca1c9`): 4/4 passed, exit code 0. Full result and evidence:
+`docs/qa/e17ca1c9.md`.
+
+Checking the fix end to end (PM): read `~/.claude/project-companion/index.json` and save the entry count (the
+`projects` array length) and the sorted list of project paths. Run a full `npm test`. Read the index again. The
+count and the path list must be the same. Do not compare checksums: another process rewrites the index, so the
+checksum changes without the tests. Before the fix, the same procedure adds entries.
 
 Not tested, and why: the second risk (a wrong project chosen through `CLAUDE_PROJECT_DIR`) is covered only as an
 environment assertion, because I could not show a failing run without a set variable. Cleaning the 2,000+ stale
