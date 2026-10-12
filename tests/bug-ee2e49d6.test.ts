@@ -28,7 +28,7 @@
  */
 
 import { execFile } from "node:child_process";
-import { mkdtempSync, realpathSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
@@ -45,12 +45,16 @@ const execFileP = promisify(execFile);
 const CLI = join(process.cwd(), "dist", "project-companion.mjs");
 const TMP = realpathSync(mkdtempSync(join(tmpdir(), "pc-ee2e49d6-")));
 const HOME = join(TMP, "home"); // never the real ~/.claude (security F1)
+mkdirSync(HOME);
+// CLAUDE_PROJECT_DIR is dropped: the CLI would find its project there before the cwd (test rule 5).
+const { CLAUDE_PROJECT_DIR: _dir, ...BASE_ENV } = process.env;
 
 /** Runs the CLI in `root`, notifications explicitly off, HOME in this suite's own temp folder. */
 const pc = (dir: string, ...args: string[]) =>
   execFileP(process.execPath, [CLI, ...args], {
     cwd: dir,
-    env: { ...process.env, PROJECT_COMPANION_NOTIFY: "off", HOME },
+    env: { ...BASE_ENV, PROJECT_COMPANION_NOTIFY: "off", HOME },
+    timeout: 20_000, // a failure is an assertion, not a stuck suite (test rule 3)
   }).then((r) => ({ code: 0, out: r.stdout, err: r.stderr }), (e: { code?: number; stdout?: string; stderr?: string }) => ({
     code: e.code ?? -1,
     out: e.stdout ?? "",
@@ -91,6 +95,30 @@ test("ee2e49d6: the cockpit's needs-you list already drops the same card (contro
 
   const model = JSON.parse((await pc(root, "cockpit", "--json")).out) as { needsYou: { id: string }[] };
   ok(!model.needsYou.some((d) => d.id === id), "the cockpit already excludes a confirmed track card");
+});
+
+const openIds = async (root: string): Promise<string[]> =>
+  (JSON.parse((await pc(root, "card", "list", "--open", "--json")).out) as { id: string }[]).map((c) => c.id);
+
+test("ee2e49d6: a track card opened again after the confirmation stays open", async () => {
+  const root = project();
+  await pc(root, "card", "open", "--subject", "alerts", "--ask", "Which track?", "--kind", "track", "--json");
+  await pc(root, "gate", "track", "alerts", "full", "--via", "prompt:pm");
+  await new Promise((r) => setTimeout(r, 20)); // event timestamps are in ms
+  const again = cardId((await pc(root, "card", "open", "--subject", "alerts", "--ask", "Which track now?", "--kind", "track", "--json")).out);
+  ok((await openIds(root)).includes(again), "a card opened after the confirmation stays open");
+});
+
+test("ee2e49d6: a question card is not closed by a track confirmation; plain text says answered for a closed track card", async () => {
+  const root = project();
+  const q = cardId((await pc(root, "card", "open", "--subject", "alerts", "--ask", "Which email provider?", "--json")).out);
+  const t = cardId((await pc(root, "card", "open", "--subject", "alerts", "--ask", "Which track?", "--kind", "track", "--json")).out);
+  await pc(root, "gate", "track", "alerts", "full", "--via", "prompt:pm");
+  const ids = await openIds(root);
+  ok(ids.includes(q) && !ids.includes(t), "only the question card stays open");
+  const text = (await pc(root, "card", "list")).out;
+  ok(new RegExp(`${t}  answered`).test(text), "plain text shows the closed track card as answered");
+  ok(new RegExp(`${q}  open`).test(text), "plain text shows the question card as open");
 });
 
 runAll().then((failed) => {
