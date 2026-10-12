@@ -67,7 +67,7 @@ import {
   type ComponentLifecycle,
   type ComponentNode,
 } from "../lib/project/component";
-import { readEvents } from "../lib/project/events";
+import { readEvents, warnIfLogPlanted, warnLogRefused } from "../lib/project/events";
 import { componentContext } from "../lib/project/component-context";
 import { parseHook } from "../lib/project/ingest";
 import { recordSpawnRequest, runForAgent, startSubagentRun, stopSubagentRun } from "../lib/project/subagent";
@@ -1177,7 +1177,7 @@ const main = () => {
           event.kind === "tool.use" && event.agentId
             ? runForAgent(root, event.agentId)
             : runForSession(root, event.sessionId);
-        if (!run) return;
+        if (!run) return warnIfLogPlanted(root);
 
         if (event.kind === "tool.use") {
           const result = reportRun(root, run.id, {
@@ -1204,8 +1204,9 @@ const main = () => {
         if (event.kind === "session.end" && run.state === "running") {
           setRunState(root, run.id, "awaiting_review", event.reason);
         }
-      } catch {
+      } catch (error) {
         // See above: a hook must not fail the session it is observing.
+        warnLogRefused(error);
       }
     });
     return;
