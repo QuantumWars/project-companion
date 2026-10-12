@@ -19,7 +19,12 @@ applicable. The Engineering Manager adds a rule when a review finds a test probl
    a CLI child gets `env: { ...process.env, HOME: <temp folder> }` with `CLAUDE_PROJECT_DIR` removed, as the
    `cli` helper in `tests/notify.test.ts` does: the CLI adds every project it touches to the index under `HOME`,
    and finds its project from `CLAUDE_PROJECT_DIR` before the working folder. (Repo-upkeep spec RU-01.3; PR 10
-   security review, TH-20; PR 26 review, finding 2.)
+   security review, TH-20; PR 26 review, finding 2.) `scripts/run-tests.mjs` now gives every suite a temporary
+   `HOME` (and `USERPROFILE`) and no `CLAUDE_PROJECT_DIR`; a suite that sets its own `HOME` still works. The rule
+   still applies to a CLI child that a suite starts with its own `env`. (Bug e17ca1c9.)
+5a. A test never compares a checksum of a file that another process can write, such as the PM's
+   `~/.claude/project-companion/index.json` (the `ingest` hook rewrites it after every tool call in any session).
+   It checks its own entry instead: its probe folder is not listed. (Bug e17ca1c9 review.)
 6. A revert check restores the old behaviour in place and keeps every export. A whole-file revert fails at the
    esbuild bundle step and proves nothing. (PR 22 QA.)
 7. A probe or scratch file made for a check stays out of every commit. (PRs 8 and 10.)
