@@ -110,7 +110,7 @@ Open threats: mitigated by the design, but open until the named test passes. The
   3 partly fixed by bugfix 54b4e811. The shard and `.project` reads, the temp writes and the shard appends are fixed,
   also on Windows. Bugfix 49c078ce fixes the older-layout reads and the `.project` folder fallback. Open: the silent
   omission in `verifyLog` (task d78ae4cf), and the residuals that are open after bugfix 49c078ce (residual 3: tasks
-  4d1a4494, f767c2b0 and 3335c1f0, and one with no task yet). Bugfix ce914d26 adds a warning when an append is
+  4d1a4494, f767c2b0 and 3335c1f0, and 515a775e). Bugfix ce914d26 adds a warning when an append is
   refused; the event is still lost (residual 3). Residual 2 now also holds the check-then-open windows of bugfix
   54b4e811.
   1. No size limit for a regular file inside the root. Accepted (PM, card c-73ccab).
@@ -195,7 +195,7 @@ Open threats: mitigated by the design, but open until the named test passes. The
            The documented channel to the user is the JSON field `systemMessage`. Which hook events show it is
            UNKNOWN: the page says each event's section names the exceptions, and those sections were not read. So on
            the hook path the warning may not be seen: task 4a699ddc.
-     - Open after bugfix 49c078ce. The EM opened tasks for (a), (b) and (c); (d) has no task yet. None is on the
+     - Open after bugfix 49c078ce. The EM opened tasks for (a), (b) and (c); the EM opened task 515a775e for (d). None is on the
        notify path, except the window in (b) and the followed link in (c), for an older-layout project. Owner of
        each: PM accepts at the design gate.
        - (a) Low. Task 4d1a4494. Reads of merged files with no kind check, so a merged symlink to a FIFO or a device
@@ -247,7 +247,7 @@ Open threats: mitigated by the design, but open until the named test passes. The
            not use it, and `readJson` takes an absolute path with no `root`. Outside `migrate`, the content stays on
            this Mac: it shows in the CLI and the web app, and the `name` of a linked `project.json` is the project
            name in a notification (TH-6).
-       - (d) Medium: likelihood low, impact high. No task yet: proposed to the EM. Writes with plain
+       - (d) Medium: likelihood low, impact high. Task 515a775e. Writes with plain
          `writeFileSync` (no temp file) follow a link at the file itself, not only at a parent folder:
          - `review` (`cli/index.ts:2029-2034`) writes `.project-cache/review/<short hash>/packet.md` and
            `hunks.json`. The packet holds the subject and the body of the reviewed commit (`packet`,
