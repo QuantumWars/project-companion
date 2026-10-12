@@ -4,9 +4,9 @@
  * A harness reports the absolute path it wrote; `git` reports paths relative
  * to the top of the checkout that holds the file. Both `reportRun` (on write)
  * and `linkRepository` (on read, for runs logged before the fix) call
- * `relativeToRoot`. The result depends on the path and the folders around it
- * (the nearest `.git`), not on which root the caller holds, so the two sides
- * agree: they cannot drift.
+ * `relativeToRoot`. Both callers pass the project root, so they agree. The
+ * result depends on the path, the nearest `.git` above it, and the repository
+ * and worktrees folder of `root`.
  */
 import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
@@ -71,23 +71,27 @@ const inside = (rel: string): boolean =>
 /**
  * A path in a worktree folder that was deleted: `<root>/.claude/worktrees/<name>/<rest>`.
  * Git shows the file as `<rest>`. Only this project's own folder counts, and only
- * when `<name>` is one part and `<rest>` is not empty; the folders themselves give `null` (keep the path). A live checkout (a `.git`
- * inside the worktree folder, so `top` lies in the folder) wins and is not handled here.
+ * when `<name>` is one part and `<rest>` is not empty; the folders themselves give
+ * `null` (keep the path). A live checkout (a `.git` inside the worktree folder, so
+ * `top` lies in the folder) wins and is not handled here. A folder `<name>` that
+ * still exists is not a deleted worktree, so it is not handled here either.
  */
 const deletedWorktree = (real: string, realRoot: string, top: string | undefined): string | null | undefined => {
-  const base = join(realRoot, ".claude", "worktrees");
+  const base = realish(join(realRoot, ".claude", "worktrees"));
   if (top !== undefined && inside(relative(base, top))) return undefined;
   const rel = relative(base, real);
   if (rel === "") return null;
   if (!inside(rel)) return undefined;
   const parts = rel.split(sep);
-  return parts.length >= 2 ? parts.slice(1).join("/") : null;
+  if (parts.length < 2) return null;
+  if (existsSync(join(base, parts[0]))) return undefined;
+  return parts.slice(1).join("/");
 };
 
 /**
  * An absolute path becomes relative to the checkout that holds it, with
- * forward slashes. A path in another repository stays absolute. With no `.git` above it, it is made relative to `root`. A
- * relative path, a path outside both, or the top folder itself is returned
+ * forward slashes. A path in another repository stays absolute. With no `.git`
+ * above it, it is made relative to `root`. A relative path, a path outside both, or the top folder itself is returned
  * exactly as given: it is never rewritten with a `..` escape.
  */
 export const relativeToRoot = (root: string, path: string): string => {
