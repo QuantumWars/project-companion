@@ -33,6 +33,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
 
+import { isCardClosed, type Card } from "@/lib/project/decisions";
 import { initProject } from "@/lib/project/store";
 import { eq, ok, runAll, test } from "./harness";
 
@@ -54,7 +55,7 @@ const pc = (dir: string, ...args: string[]) =>
   execFileP(process.execPath, [CLI, ...args], {
     cwd: dir,
     env: { ...BASE_ENV, PROJECT_COMPANION_NOTIFY: "off", HOME },
-    timeout: 20_000, // a failure is an assertion, not a stuck suite (test rule 3)
+    timeout: 10_000, // a failure is an assertion, not a stuck suite (test rule 3)
   }).then((r) => ({ code: 0, out: r.stdout, err: r.stderr }), (e: { code?: number; stdout?: string; stderr?: string }) => ({
     code: e.code ?? -1,
     out: e.stdout ?? "",
@@ -102,11 +103,15 @@ const openIds = async (root: string): Promise<string[]> =>
 
 test("ee2e49d6: a track card opened again after the confirmation stays open", async () => {
   const root = project();
-  await pc(root, "card", "open", "--subject", "alerts", "--ask", "Which track?", "--kind", "track", "--json");
-  await pc(root, "gate", "track", "alerts", "full", "--via", "prompt:pm");
-  await new Promise((r) => setTimeout(r, 20)); // event timestamps are in ms
-  const again = cardId((await pc(root, "card", "open", "--subject", "alerts", "--ask", "Which track now?", "--kind", "track", "--json")).out);
-  ok((await openIds(root)).includes(again), "a card opened after the confirmation stays open");
+  const first = await pc(root, "card", "open", "--subject", "alerts", "--ask", "Which track?", "--kind", "track", "--json");
+  eq(first.code, 0, first.err);
+  const confirmed = await pc(root, "gate", "track", "alerts", "full", "--via", "prompt:pm");
+  eq(confirmed.code, 0, confirmed.err);
+  const second = await pc(root, "card", "open", "--subject", "alerts", "--ask", "Which track now?", "--kind", "track", "--json");
+  eq(second.code, 0, second.err);
+  const ids = await openIds(root);
+  ok(!ids.includes(cardId(first.out)), "the first card closed when the track was confirmed");
+  ok(ids.includes(cardId(second.out)), "a card opened after the confirmation stays open");
 });
 
 test("ee2e49d6: a question card is not closed by a track confirmation; plain text says answered for a closed track card", async () => {
@@ -119,6 +124,38 @@ test("ee2e49d6: a question card is not closed by a track confirmation; plain tex
   const text = (await pc(root, "card", "list")).out;
   ok(new RegExp(`${t}  answered`).test(text), "plain text shows the closed track card as answered");
   ok(new RegExp(`${q}  open`).test(text), "plain text shows the question card as open");
+});
+
+/* isCardClosed edge cases, in process (L4). */
+const mk = (over: Partial<Card>): Card => ({ id: "c-x", kind: "track", subject: "s", ask: "?", options: [], openedAt: 100, ...over });
+const tr = (...ats: number[]) => {
+  const m = new Map<string, { at: number }>();
+  for (const at of ats) m.set("s", { at }); // the later event replaces the earlier, as foldGates does
+  return m;
+};
+
+test("ee2e49d6: isCardClosed: a confirmation at the card's own timestamp leaves it open", () => {
+  eq(isCardClosed(mk({}), tr(100)), false);
+  eq(isCardClosed(mk({}), tr(101)), true);
+});
+
+test("ee2e49d6: isCardClosed: the later of two confirmations decides", () => {
+  eq(isCardClosed(mk({ openedAt: 150 }), tr(200, 120)), false, "latest is older than the card");
+  eq(isCardClosed(mk({ openedAt: 150 }), tr(120, 200)), true, "latest is newer than the card");
+});
+
+test("ee2e49d6: isCardClosed: a track card with no confirmed track stays open", () => {
+  eq(isCardClosed(mk({}), new Map()), false);
+  eq(isCardClosed(mk({ subject: "other" }), tr(500)), false, "another subject's track does not count");
+});
+
+test("ee2e49d6: isCardClosed: a question card is never closed by a track", () => {
+  eq(isCardClosed(mk({ kind: "question" }), tr(500)), false);
+});
+
+test("ee2e49d6: isCardClosed: a card with an answer is closed", () => {
+  eq(isCardClosed(mk({ kind: "question", answer: "yes" }), new Map()), true);
+  eq(isCardClosed(mk({ answer: "full" }), new Map()), true);
 });
 
 runAll().then((failed) => {
