@@ -79,7 +79,7 @@ test("15753492: a run that touches a file a commit also changes is linked to tha
 
     // The same inputs `readGitView` (lib/project/git-view.ts) feeds `linkRepository`.
     const runs = readRuns(dir);
-    eq(runs[0]?.touched, [absolute], "the run recorded the absolute path, as the harness sent it (control)");
+    eq(runs[0]?.touched, ["lib/auth/token.ts"], "the run recorded the path relative to the project root");
 
     const linked = await linkRepository(dir, readTasks(dir).tasks, [], 50, runs);
     const commit = linked.commits.find((c) => c.subject === "Rotate the token");
