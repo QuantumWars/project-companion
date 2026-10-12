@@ -1,19 +1,19 @@
 /**
  * Regression test for bug 37f9fbce: the CLI's `git log` and `git unlinked`
- * never attribute commits to agent runs.
+ * did not attribute commits to agent runs.
  *
- * `project-companion git log`/`git unlinked` (`cli/index.ts`, `runGit`) call
+ * `project-companion git log`/`git unlinked` (`cli/index.ts`, `runGit`) called
  *
  *   linkRepository(repo, tasks, features, limit)
  *
  * with no fifth argument. Only the app's Git view (`lib/project/git-view.ts`)
- * passes `runs`:
+ * passed `runs`:
  *
  *   linkRepository(repo, tasks, features, options.limit, runs)
  *
  * `linkRepository` (`lib/project/git-link.ts`) defaults `runs` to `[]`, so the
- * CLI never even attempts signal 2 of `run-attribution` (`docs/prd.md`, id
- * `run-attribution`) -- not "runs but finds no match", but "never tries".
+ * CLI never even attempted signal 2 of `run-attribution` (`docs/prd.md`, id
+ * `run-attribution`) -- not "runs but found no match", but "never tried".
  *
  * This is deliberately independent of bug 15753492 (a run's `touched` paths
  * are stored as absolute paths, so they can never match a commit's relative
@@ -28,7 +28,7 @@
  */
 
 import { execFile, execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
@@ -40,6 +40,15 @@ import { eq, ok, test, runAll } from "./harness";
 const run = promisify(execFile);
 const CLI = join(process.cwd(), "dist", "project-companion.mjs");
 
+const homes = new Map<string, string>(); // project dir -> its own HOME
+
+/** The CLI child's env: a temporary HOME, and no CLAUDE_PROJECT_DIR (findProject would use it, not the cwd). */
+const childEnv = (dir: string) => {
+  const { CLAUDE_PROJECT_DIR: _dir, ...env } = process.env;
+  return { ...env, HOME: homes.get(dir)! };
+};
+const TIMEOUT = 10_000; // a hung CLI fails the test (it does not return status 0)
+
 const repo = () => {
   // A temporary project and git repository, never the real .project /
   // .project-log of this repository.
@@ -49,16 +58,34 @@ const repo = () => {
   git("config", "user.email", "dev@example.com");
   git("config", "user.name", "A Dev");
   git("config", "commit.gpgsign", "false");
-  return { dir, git, cleanup: () => rmSync(dir, { recursive: true, force: true }) };
+  // A separate HOME: the CLI adds every project it touches to the index under
+  // HOME, so it must not be the PM's real ~/.claude (test rule 5).
+  const home = realpathSync(mkdtempSync(join(tmpdir(), "pc-37f9fbce-home-")));
+  homes.set(dir, home);
+  return {
+    dir,
+    git,
+    home,
+    cleanup: () => {
+      homes.delete(dir);
+      rmSync(dir, { recursive: true, force: true });
+      rmSync(home, { recursive: true, force: true });
+    },
+  };
 };
 
 const pc = (dir: string, ...args: string[]) =>
-  run(process.execPath, [CLI, ...args], { cwd: dir }).then((r) => r.stdout);
+  run(process.execPath, [CLI, ...args], { cwd: dir, env: childEnv(dir), timeout: TIMEOUT }).then((r) => r.stdout);
 
 /** One `ingest` hook payload, piped to the real CLI process on stdin. */
 const hook = (dir: string, payload: Record<string, unknown>) =>
-  new Promise<void>((resolve) => {
-    const child = execFile(process.execPath, [CLI, "ingest"], { cwd: dir }, () => resolve());
+  new Promise<void>((resolve, reject) => {
+    const child = execFile(
+      process.execPath,
+      [CLI, "ingest"],
+      { cwd: dir, env: childEnv(dir), timeout: TIMEOUT },
+      (err) => (err ? reject(err) : resolve()),
+    );
     child.stdin!.end(JSON.stringify(payload));
   });
 
@@ -124,17 +151,18 @@ test("37f9fbce (control): linkRepository WITH runs attributes the commit, same a
   }
 });
 
-test("37f9fbce: `project-companion git log` never shows the run signal -- the CLI passes no runs", async () => {
-  const { dir, git, cleanup } = repo();
+test("37f9fbce: `project-companion git log` shows the run signal for a commit a run covers", async () => {
+  const { dir, git, home, cleanup } = repo();
   try {
     await fixture(dir, git);
+    ok(existsSync(join(home, ".claude", "project-companion", "index.json")), "the CLI wrote its index under the test's HOME");
 
     const out = await pc(dir, "git", "log");
     const line = out.split("\n").find((l) => l.includes("Rotate the token"));
     ok(line, `no line for the commit in:\n${out}`);
 
     const signal = line!.trim().split(/\s+/)[1];
-    eq(signal, "run", "cli/index.ts's runGit calls linkRepository with no runs, so signal 2 never fires");
+    eq(signal, "run", "the CLI must pass runs to linkRepository, so signal 2 (run) fires");
   } finally {
     cleanup();
   }
