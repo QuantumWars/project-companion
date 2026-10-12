@@ -171,6 +171,26 @@ when the fix lands. Not in this spec step.
 - F3 (`verifyLog` does not report a refused shard): task d78ae4cf. Card c-a04935.
 - F4 (the check-then-read window): accepted under TH-7 residual 2. Card c-f3e53a.
 
+**Part 2 (N2): the Windows guard** (e0d8f7f), in `lib/project/events.ts`:
+
+- `writeRecords` is exported. Where Node has no `O_NOFOLLOW` (Windows), it runs `lstatSync` on the shard
+  before the open. It refuses a symlink with the same "not a regular file" error as above.
+- `ENOENT` is ignored (the shard is new). Any other `lstat` error passes through.
+- Found by the security re-check of the F1 fix (finding N2). With git `core.symlinks=true`, a merged
+  symlink at the actor's own shard, pointing to a writable file, was followed on Windows. Each append wrote
+  2 lines there, and event text could reach a shell start-up file.
+- Tested with a flag set that has no `O_NOFOLLOW`. Not run on a real Windows machine.
+- A review fix (`fix/54b4e811-n67`, in progress) changes the argument of `writeRecords` to a boolean. This
+  text describes only what is merged now. The argument shape may change in a follow-up commit.
+
+**PM decisions on the security re-check** (next to F1 to F4 above):
+
+- N1: the gap between the `.project-log` `lstat` check and the shard open is accepted under TH-7
+  residual 2. Card c-40cf2e.
+- N2: Windows is supported. Fix it in this pull request (above). Card c-f6ad42.
+- The Windows `lstat`-then-open window is accepted under TH-7 residual 2. Card c-c43904.
+- N3: the wording in TH-7 about silent event loss, and the widened task ce914d26.
+
 ## Regression test
 
 `tests/bug-54b4e811.test.ts`, 6 tests:
@@ -244,5 +264,16 @@ reporting the hang; the fix should bring this back down to about 1 s).
 - `54b4e811 F1: any other open or lstat error passes through unchanged`
 - `54b4e811 F1: a plain shard still opens with the identity, then each event, in one chain (control)`
 
+The file also holds 4 N2 tests (below), so it now has 12 tests.
+
 Results: 2 of 8 pass on 6400e7a (before the fix) and 8 of 8 pass on the fix. The 6 tests above in
 `tests/bug-54b4e811.test.ts` stay as they are.
+
+### Part 2 (N2): the Windows guard, `tests/append-shard.test.ts`, 4 tests
+
+Each runs `writeRecords` with a flag set that has no `O_NOFOLLOW`. Not run on a real Windows machine.
+
+- `54b4e811 N2: without O_NOFOLLOW, a shard that is a symlink to a regular file is refused, target unchanged`
+- `54b4e811 N2: without O_NOFOLLOW, a missing shard is created`
+- `54b4e811 N2: without O_NOFOLLOW, a regular shard is appended to`
+- `54b4e811 N2: without O_NOFOLLOW, an lstat error other than ENOENT passes through`
