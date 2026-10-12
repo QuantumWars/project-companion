@@ -8,7 +8,8 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { mkdirSync, readdirSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -38,6 +39,13 @@ const out = join(ROOT, "node_modules", ".project-companion-tests");
 mkdirSync(out, { recursive: true });
 let failed = 0;
 
+// Every suite runs with a temporary home and no CLAUDE_PROJECT_DIR, so a CLI child cannot add a test project to
+// the PM's real ~/.claude/project-companion/index.json or find the wrong project (test rule 5; bug e17ca1c9).
+// Node's homedir() reads HOME on macOS and Linux, and USERPROFILE on Windows, so set both.
+const home = mkdtempSync(join(tmpdir(), "pc-tests-home-"));
+const { CLAUDE_PROJECT_DIR: _unused, ...baseEnv } = process.env;
+const suiteEnv = { ...baseEnv, HOME: home, USERPROFILE: home, PROJECT_COMPANION_NOTIFY: "off" };
+
 try {
   for (const file of files) {
     const bundle = join(out, file.replace(/\.ts$/, ".mjs"));
@@ -55,13 +63,14 @@ try {
 
     process.stdout.write(`\n${file}\n`);
     try {
-      execFileSync(process.execPath, [bundle], { stdio: "inherit", cwd: ROOT, env: { ...process.env, PROJECT_COMPANION_NOTIFY: "off" } });
+      execFileSync(process.execPath, [bundle], { stdio: "inherit", cwd: ROOT, env: suiteEnv });
     } catch {
       failed++;
     }
   }
 } finally {
   rmSync(out, { recursive: true, force: true });
+  rmSync(home, { recursive: true, force: true });
 }
 
 process.exit(failed ? 1 : 0);
