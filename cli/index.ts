@@ -72,7 +72,7 @@ import { componentContext } from "../lib/project/component-context";
 import { parseHook } from "../lib/project/ingest";
 import { recordSpawnRequest, runForAgent, startSubagentRun, stopSubagentRun } from "../lib/project/subagent";
 import { burnup, foldSprints, sprintTasks } from "../lib/project/sprint";
-import { foldCards, foldUpdates, isHealth, weekId } from "../lib/project/decisions";
+import { foldCards, foldUpdates, isCardClosed, isHealth, weekId } from "../lib/project/decisions";
 import { agentLane, gateMetrics, humanLane } from "../lib/project/metrics";
 import { readCockpit } from "../lib/project/cockpit";
 import { notifyDecision } from "../lib/project/notify";
@@ -93,6 +93,7 @@ import {
   isStage,
   isTrack,
   listGates,
+  foldGates,
   readGates,
   refuseGate,
   requestGate,
@@ -1446,7 +1447,8 @@ const main = () => {
   /* ------------------------- decision cards (TR-14) ------------------------- */
 
   if (command === "card") {
-    const cards = foldCards(readEvents(root));
+    const events = readEvents(root);
+    const cards = foldCards(events);
     if (sub === "open") {
       const subject = flag("subject") ?? die("Usage: project-companion card open --subject <epic|task> --ask \"<question>\" [--options \"a|b\"] [--recommend R] [--why W] [--cost C] [--deadline YYYY-MM-DD] [--kind question|track]");
       const ask = flag("ask") ?? die("A card needs --ask \"<question>\".");
@@ -1471,7 +1473,8 @@ const main = () => {
       process.stdout.write(`Answered ${id}: ${answer}\n`);
       return;
     }
-    const list = Array.from(cards.values()).filter((c) => !has("open") || c.answer === undefined);
+    const tracks = foldGates(events).tracks; // a confirmed track closes its track card (ee2e49d6); no artifact reads
+    const list = Array.from(cards.values()).filter((c) => !has("open") || !isCardClosed(c, tracks));
     if (has("json")) {
       process.stdout.write(`${JSON.stringify(list)}\n`);
       return;
@@ -1480,7 +1483,7 @@ const main = () => {
       process.stdout.write("No cards.\n");
       return;
     }
-    for (const c of list) process.stdout.write(`${c.id}  ${c.answer === undefined ? "open    " : "answered"}  ${c.subject.padEnd(16)} ${c.ask}\n`);
+    for (const c of list) process.stdout.write(`${c.id}  ${isCardClosed(c, tracks) ? "answered" : "open    "}  ${c.subject.padEnd(16)} ${c.ask}\n`);
     return;
   }
 
