@@ -165,8 +165,8 @@ Open threats: mitigated by the design, but open until the named test passes. The
          a `LogRefusedError`; any other error gives nothing. It writes the line once per process, and a successful
          `appendEvent` resets that flag, so a long-running process warns once per refusal episode. The line is
          "project-companion: the event log is not recording events: .project-log, or a .jsonl file in it, is a link
-         or not a plain file or folder. Fix: delete that link or file (ls -la .project-log shows it), then run the
-         command again." It names only the fixed folder name `.project-log`. It holds no path of the project or the
+         or not a plain file or folder. Fix: delete that link or file (ls -ld .project-log, then ls -la
+         .project-log/ to look), then run the command again." It names only the fixed folder name `.project-log`. It holds no path of the project or the
          shard, no event text, no task or card text and no symlink target (PM, card c-20c120). The command still
          exits 0, and an edit of `.project` is still saved. The hook never exits non-zero.
        - Tests: `tests/bug-ce914d26.test.ts` and `tests/log-refused-warning.test.ts`.
