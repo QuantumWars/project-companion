@@ -84,9 +84,9 @@ The off switch does not stop the text lookup: `gate request` and `card open`
 still read the cockpit, gate artifacts and PRD source. The SR-8 fix (bug
 d5ebde85, PR #22) reads them only as regular files in the project root,
 except residual 3. Residuals 1, 2 are accepted. Bugfix 54b4e811 (PR 28) fixed
-residual 3 for shard and `.project` reads, temp writes, appends. Open:
-`.project` folder fallback (task 49c078ce), unreported refused shard (task
-d78ae4cf).
+residual 3: shard and `.project` reads, temp writes, appends. Open: `.project`
+folder fallback (task 49c078ce); unreported refused shard (task d78ae4cf);
+events lost with no message after a refused append (task ce914d26).
 
 ## When an alert does not appear
 
