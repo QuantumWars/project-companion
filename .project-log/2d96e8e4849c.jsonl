@@ -7263,3 +7263,9 @@
 {"id":"2d96e8e4849c:7233","ts":1791819387564,"seq":7233,"actor":"2d96e8e4849c","prev":"321ca9d76a72bd3f","kind":"run.progress","data":{"runId":"48b010d7","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
 {"id":"2d96e8e4849c:7234","ts":1791819397315,"seq":7234,"actor":"2d96e8e4849c","prev":"64d22b7d448c0fb8","kind":"gate.approved","data":{"kind":"merge","subject":"36","via":"prompt:351b14f2-73e0-4917-862e-b7b05f282940","artifacts":[{"ref":"head:028f8562895af9f8a153ad83464354edd7b33743","sha256":"028f8562895af9f8a153ad83464354edd7b33743"}]}}
 {"id":"2d96e8e4849c:7235","ts":1791819406097,"seq":7235,"actor":"2d96e8e4849c","prev":"a6ef73a9e8e91191","kind":"run.progress","data":{"runId":"48b010d7","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
+{"id":"2d96e8e4849c:7236","ts":1791819413972,"seq":7236,"actor":"2d96e8e4849c","prev":"8e2a3c048b637af4","kind":"run.progress","data":{"runId":"48b010d7","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
+{"id":"2d96e8e4849c:7237","ts":1791819418171,"seq":7237,"actor":"2d96e8e4849c","prev":"e5c4785e68012874","kind":"run.progress","data":{"runId":"48b010d7","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
+{"id":"2d96e8e4849c:7238","ts":1791819420959,"seq":7238,"actor":"2d96e8e4849c","prev":"5aec5733302da799","kind":"task.moved","data":{"taskId":"ce914d26","from":"review","to":"done"}}
+{"id":"2d96e8e4849c:7239","ts":1791819421049,"seq":7239,"actor":"2d96e8e4849c","prev":"d414501105853592","kind":"task.moved","data":{"taskId":"49c078ce","from":"backlog","to":"done"}}
+{"id":"2d96e8e4849c:7240","ts":1791819421416,"seq":7240,"actor":"2d96e8e4849c","prev":"b65d44bd24a14f85","kind":"run.progress","data":{"runId":"48b010d7","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
+{"id":"2d96e8e4849c:7241","ts":1791819425543,"seq":7241,"actor":"2d96e8e4849c","prev":"f46fd3eabc800558","kind":"sprint.closed","data":{"sprintId":"2026-w42c"}}
