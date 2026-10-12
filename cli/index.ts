@@ -512,7 +512,7 @@ const runGit = async (root: string, sub: string | undefined, rest: string[]) => 
 
   const roadmap = readRoadmap(root);
   const limit = Number(flag("limit")) || 50;
-  const linked = await linkRepository(repo!, readTasks(root).tasks, roadmap.features, limit);
+  const linked = await linkRepository(repo!, readTasks(root).tasks, roadmap.features, limit, readRuns(root));
 
   if (sub === "unlinked") {
     if (!linked.unattributed.length) {
