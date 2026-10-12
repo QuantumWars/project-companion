@@ -25,6 +25,7 @@
  */
 
 import { readCommits, readBranches, repoFingerprint, type GitCommit } from "./git";
+import { relativeToRoot } from "./rel-path";
 import type { Feature, Task } from "./types";
 
 export type AttributionSignal = "recorded" | "run" | "trailer" | "branch" | "paths";
@@ -310,5 +311,8 @@ export const linkRepository = async (
     repoFingerprint(root),
   ]);
 
-  return { ...attribute(commits, tasks, features, membership, runs), fingerprint };
+  // Runs logged before 15753492 hold absolute paths; compare them as git does.
+  const relRuns = runs.map((run) => ({ ...run, touched: run.touched.map((p) => relativeToRoot(root, p)) }));
+
+  return { ...attribute(commits, tasks, features, membership, relRuns), fingerprint };
 };

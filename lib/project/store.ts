@@ -55,6 +55,7 @@ import {
   type RunActor,
   type RunState,
 } from "./run";
+import { relativeToRoot } from "./rel-path";
 import { replaceFile } from "./safe-file";
 import {
   DEFAULT_STORE_DIR,
@@ -1493,8 +1494,10 @@ export const reportRun = (
   // A write outside the boundary is recorded as attempted and reported back,
   // not silently dropped: it usually means the task spans two components, and
   // that is a fact about the architecture worth seeing.
-  const refused = (progress.touched ?? []).filter((path) => !mayWrite(before, path));
-  const allowed = (progress.touched ?? []).filter((path) => mayWrite(before, path));
+  // Paths are stored relative to the git checkout that holds them, as git shows them (15753492).
+  const touched = (progress.touched ?? []).map((path) => relativeToRoot(root, path));
+  const refused = touched.filter((path) => !mayWrite(before, path));
+  const allowed = touched.filter((path) => mayWrite(before, path));
 
   logEvent(root, {
     kind: "run.progress",
