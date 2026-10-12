@@ -894,6 +894,7 @@ const build = () => {
         readTasks(root).tasks,
         readRoadmap(root).features,
         limit ?? 50,
+        readRuns(root),
       );
       return text(unlinkedOnly ? result.unattributed : result.commits);
     },
