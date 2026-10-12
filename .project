@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-12T07:01:56.583Z",
-  "revision": 548,
+  "updatedAt": "2026-10-12T07:05:40.734Z",
+  "revision": 549,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2242,7 +2242,7 @@
       "title": "CLI git log and git unlinked never attribute commits to agent runs",
       "status": "review",
       "createdAt": "2026-10-10T08:49:22.341Z",
-      "updatedAt": "2026-10-12T06:55:33.685Z",
+      "updatedAt": "2026-10-12T07:05:40.733Z",
       "order": 0,
       "description": "Track: Bugfix (confirmed by the PM, 2026-10-10). Found by the qa-engineer while writing the 15753492 spec.\n\nSpec ready to build (EM checked 2026-10-10): `specs/bugs/37f9fbce/bugfix.md` and `tests/bug-37f9fbce.test.ts` on branch `fix/37f9fbce-bug-spec` @ 495a8b9 (from 58f85bc). Build the fix from that branch (bugfix skill step 4).\nEM check on 495a8b9: `npm test -- bug-37f9fbce` -> exit 1, 1 of 3 pass (the control: linkRepository WITH runs attributes the commit), the 2 CLI tests fail (git log shows no run signal; git unlinked lists a commit a run covers), 2 s.\n\nObserved: `cli/index.ts:515` calls `linkRepository(repo, tasks, features, limit)` without the agent runs, so `project-companion git log` and `git unlinked` never try run-based attribution. Only the app's Git view (`lib/project/git-view.ts:87`) passes runs.\nExpected: PRD feature run-attribution (`docs/prd.md:222`): \"A commit matching a run's files and window attributes to that run's task.\"\nFix (spec): pass `readRuns(root)` as the 5th argument (readRuns is already imported in cli/index.ts). About 1 changed line (qa-engineer; not checked).\nOrder: independent of 15753492; the test uses root-relative touched paths, so it can merge before or after it (evidence in the spec's Fix section).\nNote (qa-engineer): the PRD box for run-attribution is ticked on the strength of the app's code path alone; the CLI never met it until this test.",
       "labels": [
@@ -2251,7 +2251,14 @@
       ],
       "kind": "bug",
       "role": "backend-engineer",
-      "points": 1
+      "points": 1,
+      "pr": {
+        "number": 30,
+        "url": "https://github.com/QuantumWars/project-companion/pull/30",
+        "state": "OPEN",
+        "headSha": "dbdb0125122bce45c51987797eff8b436fa80695",
+        "syncedAt": "2026-10-12T07:05:40.730Z"
+      }
     },
     {
       "id": "1187698b",
