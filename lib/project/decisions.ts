@@ -44,7 +44,7 @@ export type Card = {
 export const isCardClosed = (card: Card, tracks: ReadonlyMap<string, { at: number }>): boolean =>
   card.answer !== undefined || (card.kind === "track" && (tracks.get(card.subject)?.at ?? 0) > card.openedAt);
 
-export const foldCards =(events: readonly ProjectEvent[]): Map<string, Card> => {
+export const foldCards = (events: readonly ProjectEvent[]): Map<string, Card> => {
   const cards = new Map<string, Card>();
   for (const e of events) {
     const d = e.data ?? {};

@@ -93,6 +93,7 @@ import {
   isStage,
   isTrack,
   listGates,
+  foldGates,
   readGates,
   refuseGate,
   requestGate,
@@ -1446,7 +1447,8 @@ const main = () => {
   /* ------------------------- decision cards (TR-14) ------------------------- */
 
   if (command === "card") {
-    const cards = foldCards(readEvents(root));
+    const events = readEvents(root);
+    const cards = foldCards(events);
     if (sub === "open") {
       const subject = flag("subject") ?? die("Usage: project-companion card open --subject <epic|task> --ask \"<question>\" [--options \"a|b\"] [--recommend R] [--why W] [--cost C] [--deadline YYYY-MM-DD] [--kind question|track]");
       const ask = flag("ask") ?? die("A card needs --ask \"<question>\".");
@@ -1471,7 +1473,7 @@ const main = () => {
       process.stdout.write(`Answered ${id}: ${answer}\n`);
       return;
     }
-    const tracks = readGates(root).tracks; // a confirmed track closes its track card (ee2e49d6)
+    const tracks = foldGates(events).tracks; // a confirmed track closes its track card (ee2e49d6); no artifact reads
     const list = Array.from(cards.values()).filter((c) => !has("open") || !isCardClosed(c, tracks));
     if (has("json")) {
       process.stdout.write(`${JSON.stringify(list)}\n`);
