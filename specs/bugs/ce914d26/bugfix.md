@@ -94,7 +94,7 @@ checkout or a full disk.
   (`cli/index.ts:1166`), both through `warnIfLogPlanted`.
 - Exact warning text (one line, ends with a newline). The first version told the user to "remove the planted file",
   which is wrong when `.project-log` itself is the link. This text names both cases:
-  `project-companion: the event log is not recording events: .project-log, or a .jsonl file in it, is a link or not a plain file or folder. Fix: delete that link or file (ls -la .project-log shows it), then run the command again.`
+  `project-companion: the event log is not recording events: .project-log, or a .jsonl file in it, is a link or not a plain file or folder. Fix: delete that link or file (ls -ld .project-log, then ls -la .project-log/ to look), then run the command again.`
 - Exit code, standard output and the saved result do not change. `appendEvent`'s refusal is unchanged.
 
 ## Regression test
