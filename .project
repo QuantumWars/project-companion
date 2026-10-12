@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-12T06:55:33.825Z",
-  "revision": 546,
+  "updatedAt": "2026-10-12T07:01:56.583Z",
+  "revision": 548,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2411,6 +2411,24 @@
       "createdAt": "2026-10-12T06:55:33.824Z",
       "updatedAt": "2026-10-12T06:55:33.824Z",
       "order": 10
+    },
+    {
+      "id": "f1f9b66c",
+      "title": "Decide when a run's attribution window closes",
+      "description": "Not triaged. Raised by the code review of 37f9fbce (2026-10-12); affects the app's Git view, the CLI and the MCP tool.\nObserved (code reading plus the log): a run gets an end time only when it is merged or abandoned (lib/project/run.ts, about line 259). In this log, 164 runs exist, 53 with a task, and 3 are abandoned; none are merged. So almost every task run's window never closes, and runFor (lib/project/git-link.ts, about lines 146-155) matches any later commit that touches a file only that run touched, ahead of an explicit trailer. A file that two runs touched gets no run match. The review did not count how many commits change label.\nOptions to decide: close a run's window when its task is done, when its pull request merges, or after a fixed time; or prefer an explicit trailer over the run signal.",
+      "status": "backlog",
+      "createdAt": "2026-10-12T07:01:56.431Z",
+      "updatedAt": "2026-10-12T07:01:56.431Z",
+      "order": 11
+    },
+    {
+      "id": "18190f5e",
+      "title": "rel-path.ts header says both callers pass the project root; linkRepository's callers pass the git root",
+      "description": "Not triaged; low. Raised by the code review of 37f9fbce (2026-10-12). lib/project/rel-path.ts line 7 says both callers pass the project root. reportRun passes the project root, but every linkRepository caller passes the git root (gitRoot(root)). They differ only when the project sits in a subfolder of its repository. Fix the comment, or pass the project root.",
+      "status": "backlog",
+      "createdAt": "2026-10-12T07:01:56.583Z",
+      "updatedAt": "2026-10-12T07:01:56.583Z",
+      "order": 12
     }
   ],
   "roadmap": {
