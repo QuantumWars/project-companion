@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-12T14:47:49.436Z",
-  "revision": 649,
+  "updatedAt": "2026-10-12T15:03:41.555Z",
+  "revision": 650,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2533,6 +2533,14 @@
       "createdAt": "2026-10-12T14:47:49.435Z",
       "updatedAt": "2026-10-12T14:47:49.435Z",
       "order": 16
+    },
+    {
+      "id": "515a775e",
+      "title": "Bug: review and init write files with plain writeFileSync, which follows a link at the file (packet.md, .gitattributes, settings.json, SKILL.md)",
+      "status": "backlog",
+      "createdAt": "2026-10-12T15:03:41.554Z",
+      "updatedAt": "2026-10-12T15:03:41.554Z",
+      "order": 17
     }
   ],
   "roadmap": {
