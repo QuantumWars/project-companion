@@ -19,7 +19,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { readRoadmap, setPrdSource } from "@/lib/project/roadmap";
+import { editPrd, readRoadmap, setPrdSource } from "@/lib/project/roadmap";
 import { initProject, readDiagram, readTasks, writeJson } from "@/lib/project/store";
 import { emptyProject } from "@/lib/project/types";
 import { eq, test, runAll } from "./harness";
@@ -47,8 +47,7 @@ if (process.argv[2] === HELPER_FLAG) {
   }
   process.exit(0);
 } else {
-  // In-process tests: a temporary HOME and no CLAUDE_PROJECT_DIR (test rules), set before any project call.
-  process.env.HOME = realpathSync(mkdtempSync(join(tmpdir(), "pc-49c078ce-home-")));
+  // In-process tests: no CLAUDE_PROJECT_DIR (the runner sets a temporary HOME), set before any project call.
   delete process.env.CLAUDE_PROJECT_DIR;
 
   const tmpProject = () => {
@@ -63,6 +62,16 @@ if (process.argv[2] === HELPER_FLAG) {
   const mkfifo = (path: string): boolean => {
     const made = spawnSync("mkfifo", [path]);
     return !made.error && made.status === 0;
+  };
+
+  /** The message of the error `fn` throws; "no error" when it does not throw. */
+  const refusal = (fn: () => unknown): string => {
+    try {
+      fn();
+      return "no error";
+    } catch (error) {
+      return error instanceof Error ? error.message : String(error);
+    }
   };
 
   type ProbeResult = { timedOut: boolean; ok?: boolean; value?: unknown; error?: string };
@@ -152,11 +161,7 @@ if (process.argv[2] === HELPER_FLAG) {
       mkdirSync(outside);
       symlinkSync(outside, join(root, ".project"));
 
-      try {
-        setPrdSource(root, "docs/other.md"); // writeSidecar; may refuse after the fix
-      } catch {
-        // A "No .project" error is the expected refusal; only the target matters.
-      }
+      eq(refusal(() => setPrdSource(root, "docs/other.md")), `No .project at ${root}`, "the write must be refused with the No .project error");
       eq(existsSync(join(outside, "roadmap.json")), false, "roadmap.json was written outside the root through the linked .project");
     } finally {
       cleanup();
@@ -167,12 +172,28 @@ if (process.argv[2] === HELPER_FLAG) {
     const { root, cleanup } = tmpProject();
     try {
       mkdirSync(join(root, ".project"));
-      try {
-        setPrdSource(root, "docs/other.md");
-      } catch {
-        // Refusal is expected after the fix.
-      }
+      eq(refusal(() => setPrdSource(root, "docs/other.md")), `No .project at ${root}`, "the write must be refused with the No .project error");
       eq(existsSync(join(root, ".project", "roadmap.json")), false, "the legacy fallback wrote into a .project folder");
+    } finally {
+      cleanup();
+    }
+  });
+
+  test("49c078ce: editPrd on a .project folder is refused before the PRD is written", () => {
+    const { root, cleanup } = tmpProject();
+    try {
+      mkdirSync(join(root, ".project"));
+      mkdirSync(join(root, "docs"));
+      const body = "# Product\n\n## Phase 1\n\n### Feature one\n\n- [ ] Criterion one\n";
+      writeFileSync(join(root, "docs", "prd.md"), body);
+
+      eq(
+        refusal(() => editPrd(root, undefined, [{ op: "addPhase", name: "Phase 2" }])),
+        `No .project at ${root}`,
+        "editPrd must refuse with the No .project error",
+      );
+      eq(readFileSync(join(root, "docs", "prd.md"), "utf8"), body, "the PRD file must be unchanged");
+      eq(existsSync(join(root, ".project", "roadmap.json")), false, "nothing is written under .project");
     } finally {
       cleanup();
     }

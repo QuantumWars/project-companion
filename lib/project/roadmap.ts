@@ -88,6 +88,7 @@ const readSidecar = (root: string): RoadmapFile => {
   return readJson<RoadmapFile | null>(projectPaths(root).roadmap, null) ?? emptyRoadmap();
 };
 
+// "No project found" counts as NOT legacy on purpose; do not simplify this to `!usesBundle(root)`.
 const usesLegacyStore = (root: string): boolean => isLegacyStore(findProject(root)?.storeDir ?? BUNDLE_FILE);
 
 /** The PRD text; null when the source is not a regular file inside the root, so it is never opened (SR-8). */
@@ -217,6 +218,8 @@ export const editPrd = (root: string, baseHash: string | undefined, ops: PrdOp[]
   // loses the tick silently. The lock closes the window; the hash still guards
   // against a caller writing against a document it read minutes ago.
   withProjectLock(root, () => {
+    // Refuse before the PRD is written: writeSidecar would refuse after it (bug 49c078ce).
+    if (!readBundle(root) && !usesLegacyStore(root)) throw new Error(`No ${BUNDLE_FILE} at ${root}`);
     const sidecar = readSidecar(root);
     const source = sidecar.source || DEFAULT_PRD_PATH;
     const text = readPrdText(root, source);
