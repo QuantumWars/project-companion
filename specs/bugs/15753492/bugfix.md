@@ -73,42 +73,28 @@ working project or not. Worth a separate follow-up; noted in the hand-off, not f
 
 ## Fix
 
-Normalize `progress.touched` to paths relative to `root` inside `reportRun`, before the `mayWrite` boundary
-check and before logging -- `reportRun` already receives `root` as its first argument, so this is a single
-call site. A path that resolves inside `root` is stored using the same relative, forward-slash form `git`
-already uses for `commit.paths`, so the two line up byte for byte. A path that resolves *outside* `root`
-(for example a file the harness touched in the user's home folder, which can happen if a hook reports a
-path outside the project by mistake, or the project root moved) is left exactly as given -- the harness's
-original absolute string -- and never rewritten with a relative-path escape such as `../../Users/name/...`.
-That path can never be a commit's path either way (a commit cannot touch a file outside its own
-repository), so there is nothing meaningful to relativize it to, and converting it would turn a merely
-unmatchable string into one that could be misread as a path inside the project by whatever reads it next.
-This also fixes `mayWrite`'s boundary check for real harness runs: today, a component with a configured
-`writeGlobs` boundary matches an absolute path against a relative glob and always refuses it, so every real
-write from a harness is incorrectly reported as outside the boundary whenever a boundary is set at all; after
-the fix `mayWrite` sees the same relative path `git` would show for the same file.
+The PM decided (card c-a1704f): normalize on write **and** on read. Both sides use one shared helper, so the two
+cannot drift.
 
-## Open for the PM
+- **Shared helper.** `relativeToRoot(root, path)` in `lib/project/rel-path.ts`. An absolute path inside `root`
+  becomes a relative, forward-slash path -- the form `git` uses for `commit.paths`. A relative path, a path
+  outside `root`, or `root` itself is returned exactly as given. It is never rewritten with a `..` escape
+  (an outside path can never be a commit's path, and a `../..` string could be misread as a path inside the
+  project).
+- **Symlinked roots.** The helper compares real paths: `realish` resolves the deepest part of the path that
+  exists with `realpathSync` and appends the rest as given. So a root reached through a symlink (for example
+  macOS `/var` -> `/private/var`) and a file that does not exist yet both resolve correctly.
+- **Write side.** `reportRun` (`lib/project/store.ts`) maps `progress.touched` through `relativeToRoot` before
+  the `mayWrite` boundary check and before logging. New `run.progress` events hold relative paths, and `mayWrite`
+  now sees the same relative path as the run's relative `writeGlobs`, so a real harness write inside the
+  boundary is no longer refused.
+- **Read side.** `linkRepository` (`lib/project/git-link.ts`) maps each run's `touched` through
+  `relativeToRoot(root, ...)` before the file-overlap check. A run logged before the fix, whose events keep
+  absolute paths forever (the log is append-only and hash-chained), is attributed the moment the fix ships. No
+  migration and no log rewrite.
 
-The full paths already written to `.project-log/*.jsonl` cannot be edited: the log is append-only and
-hash-chained, so a `run.progress` event recorded before this fix ships keeps its absolute `touched` paths
-forever, however the fix above is written. Two ways to handle that:
-
-1. **Also normalize on read** -- in `linkRepository` (`lib/project/git-link.ts:298`, which already receives
-   `root`), map each `AttributableRun.touched` entry the same way the fix above does, before matching it
-   against `commit.paths`. Cost: a second, small copy of the same normalization logic (under 10 lines),
-   living beside the write-side one. Benefit: every run already in flight or already logged -- including
-   whatever sits in this repository's own `.project-log` right now, which is what the EM saw on 2026-10-09
-   -- gets attributed correctly the moment this ships, with no migration step and no log rewrite.
-2. **Leave the old events as they are** -- fix only the write side, so every `run.progress` event logged
-   from this point on is correct, and accept that a run started before the fix merges never links to its
-   commits. Simpler: one fix site, no duplicated logic. Cost: a silent, permanent gap in delivery evidence
-   for every run in flight today, with no way to repair it after the fact, since the log cannot be rewritten
-   and there is no way to tell, from an old event alone, which part of an absolute path is the project root.
-
-Recommendation: option 1. The read-side normalization is small, sits next to code that already has `root`
-in scope, and the alternative is a permanent loss of exactly the evidence this feature exists to produce,
-for every run already underway when the fix lands -- including this repository's own tracker.
+Not fixed here: `project-companion git log` and `git unlinked` call `linkRepository` without `runs` (bug
+37f9fbce), so the CLI never shows run attribution. The Git view in the app does.
 
 ## Regression test
 
@@ -116,24 +102,39 @@ for every run already underway when the fix lands -- including this repository's
 
 - `15753492: a run that touches a file a commit also changes is linked to that commit's task`
 
-The test starts a run against a task in a temporary project and git repository, feeds `reportRun` the
-same `touched` list `parseHook`'s `tool.use` branch would hand `cli/index.ts`'s `ingest` command -- the
-harness's absolute path for a file it wrote -- then commits that same file and calls `linkRepository` with
-the runs `readRuns` folds back out of the log, the same two calls `git-view.ts` makes for the app. It never
-touches the real `.project` or `.project-log` of this repository.
+It starts a run against a task in a temporary project and git repository, feeds `reportRun` the same `touched`
+list `parseHook`'s `tool.use` branch hands the `ingest` command -- the harness's absolute path -- then commits
+that file and calls `linkRepository` with the runs `readRuns` folds back out of the log (the same two calls
+`git-view.ts` makes). It never touches this repository's `.project` or `.project-log`.
+
+The "control" assertion changed with the fix. Before, it expected the run to hold the absolute path as the
+harness sent it. Now it expects `["lib/auth/token.ts"]`: the stored path is relative.
+
+`tests/run-paths.test.ts`, 6 tests:
+
+1. `15753492: an absolute path inside the root is stored relative with forward slashes`
+2. `15753492: a path outside the root, or with .. out of it, is stored exactly as given`
+3. `15753492: a relative path already in the log is unchanged`
+4. `15753492: mayWrite sees the relative path, so an absolute write inside the boundary is allowed`
+5. `15753492: a symlinked root still resolves an absolute path inside it`
+6. `15753492: an old run holding an absolute path still attributes to its commit`
+
+Result on the fixed code (head `c1792568929791630aca46e7e8a962a369e35bcb`):
 
 ```
 $ npm test -- bug-15753492
-
-> project-companion@0.3.0 test
-> node scripts/run-tests.mjs bug-15753492
-
-built dist/project-companion.mjs and dist/project-companion-mcp.mjs
-
 bug-15753492.test.ts
-  FAIL 15753492: a run that touches a file a commit also changes is linked to that commit's task
-       a run that wrote this exact file, inside its open window, must be the match: expected "run", got undefined
+  ok   15753492: a run that touches a file a commit also changes is linked to that commit's task
 
-0/1 passed
+1/1 passed
+
+$ npm test -- run-paths
+run-paths.test.ts
+  ok   (6 tests, listed above)
+
+6/6 passed
 ```
-Exit code: 1.
+
+Before the fix (commit `79df5ef`), the same regression test fails: `0/1 passed`, with `a run that wrote this
+exact file, inside its open window, must be the match: expected "run", got undefined`. QA report:
+`docs/qa/15753492.md`.
