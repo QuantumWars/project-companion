@@ -25,6 +25,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { LOG_REFUSED_WARNING } from "../lib/project/events";
 import { eq, ok, runAll, test } from "./harness";
 
 if (process.env.PROJECT_COMPANION_NOTIFY !== "off") {
@@ -77,7 +78,7 @@ const plantShard = (dir: string, target: string): void => {
 };
 
 /** Lines of stderr that say the event log refused a write. */
-const warnings = (err: string): string[] => err.split("\n").filter((l) => /event log/i.test(l) && /refus/i.test(l));
+const warnings = (err: string): string[] => err.split("\n").filter((l) => l === LOG_REFUSED_WARNING.trim());
 
 /** The warning must not hold event text, or a path outside the project. */
 const clean = (line: string, secrets: string[]) => {
@@ -149,7 +150,9 @@ test("ce914d26: the ingest hook says so when it cannot record run.requested, and
   clean(found[0], [SECRET_TITLE, target]);
 });
 
-test("ce914d26: the ingest hook prints one warning, not two, for a session.start that logEvent cannot record", async () => {
+// The session.start path makes exactly one refused write, so this proves one warning for one refusal.
+// The once-per-process flag itself is guarded by the unit test in tests/log-refused-warning.test.ts.
+test("ce914d26: an ingest session.start after a planted shard prints exactly one warning", async () => {
   const dir = await project();
   const target = join(outside(), "target.txt");
   writeFileSync(target, "OUTSIDE\n");
@@ -178,6 +181,30 @@ test("ce914d26: a tool.use hook that finds no run because the shard was planted 
   const found = warnings(r.err);
   eq(found.length, 1, `exactly one warning, got: ${JSON.stringify(r.err)}`);
   clean(found[0], [target, "s3"]);
+});
+
+test("ce914d26: a SubagentStop hook that finds no run because the shard was planted warns once and exits 0", async () => {
+  const dir = await project();
+  const started = await pc(dir, ["run", "start", "--session", "s4"]);
+  eq(started.code, 0, started.err);
+  const target = join(outside(), "target.txt");
+  writeFileSync(target, "OUTSIDE\n");
+  plantShard(dir, target);
+
+  const payload = { session_id: "s4", hook_event_name: "SubagentStop", agent_id: "agent-x", agent_type: "devolps:backend-engineer" };
+  const r = await pc(dir, ["ingest"], JSON.stringify(payload));
+
+  eq(r.code, 0, `a hook must never exit non-zero: ${r.err}`);
+  eq(readFileSync(target, "utf8"), "OUTSIDE\n", "the outside file must be unchanged");
+  eq(warnings(r.err).length, 1, `exactly one warning, got: ${JSON.stringify(r.err)}`);
+});
+
+test("ce914d26: a PostToolUse for an unknown session in a healthy project prints no warning (control)", async () => {
+  const dir = await project();
+  const payload = { session_id: "unknown-s", hook_event_name: "PostToolUse", tool_name: "Edit" };
+  const r = await pc(dir, ["ingest"], JSON.stringify(payload));
+  eq(r.code, 0, r.err);
+  eq(warnings(r.err).length, 0, `no warning when the log works: ${JSON.stringify(r.err)}`);
 });
 
 runAll().then((failed) => {

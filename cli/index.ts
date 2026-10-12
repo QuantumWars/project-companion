@@ -1162,7 +1162,10 @@ const main = () => {
         // Subagents get their own runs (TR-03).
         if (event.kind === "spawn.requested") return recordSpawnRequest(root, event);
         if (event.kind === "subagent.start") return void startSubagentRun(root, event);
-        if (event.kind === "subagent.stop") return void stopSubagentRun(root, event.agentId);
+        if (event.kind === "subagent.stop") {
+          if (!stopSubagentRun(root, event.agentId)) warnIfLogPlanted(root);
+          return;
+        }
 
         if (event.kind === "session.start") {
           if (runForSession(root, event.sessionId)) return; // A resume, not a new run.
