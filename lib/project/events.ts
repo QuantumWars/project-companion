@@ -379,19 +379,23 @@ const requireLogFolder = (root: string): void => {
   }
 };
 
-// A symlink gives ELOOP (EMLINK on FreeBSD), a folder EISDIR, and a FIFO with no reader ENXIO, not a wait.
-// Windows has no O_NOFOLLOW or O_NONBLOCK: there the folder check, an `lstat` of the shard (refuses a symlink)
-// and the `fstat` check guard.
-const APPEND_FLAGS = constants.O_WRONLY | constants.O_APPEND | constants.O_CREAT |
-  (constants.O_NOFOLLOW ?? 0) | (constants.O_NONBLOCK ?? 0);
-
+// With O_NOFOLLOW a symlink gives ELOOP (EMLINK on FreeBSD), a folder EISDIR, and a FIFO with no reader ENXIO
+// (O_NONBLOCK), not a wait. Windows has no O_NOFOLLOW or O_NONBLOCK: there the folder check, an `lstat` of the
+// shard (refuses a symlink) and the `fstat` check guard. `noFollow` is false only in tests that model Windows.
 /** Appends `records` to the actor's shard in one write, only when the shard is a regular file. */
-export const writeRecords = (root: string, actor: string, records: ProjectEvent[], flags: number = APPEND_FLAGS): void => {
+export const writeRecords = (
+  root: string,
+  actor: string,
+  records: ProjectEvent[],
+  noFollow: boolean = constants.O_NOFOLLOW !== undefined,
+): void => {
   const path = shardPath(root, actor);
   const notAFile = () =>
     new Error(`Refused to write the event log: ${path} is not a regular file (bug 54b4e811). Remove it and try again.`);
+  const flags = constants.O_WRONLY | constants.O_APPEND | constants.O_CREAT | (constants.O_NONBLOCK ?? 0) |
+    (noFollow ? (constants.O_NOFOLLOW ?? 0) : 0);
   // Without O_NOFOLLOW (Windows) the open follows a merged symlink: check the path first (security re-check N2).
-  if (constants.O_NOFOLLOW === undefined || (flags & constants.O_NOFOLLOW) === 0) {
+  if (!noFollow || constants.O_NOFOLLOW === undefined) {
     try {
       if (lstatSync(path).isSymbolicLink()) throw notAFile();
     } catch (error) {
