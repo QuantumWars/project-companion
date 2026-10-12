@@ -86,7 +86,7 @@ Cost and checks:
 - Does any suite need the real HOME (git config, npm cache)? I checked by measurement: with the whole suite
   run under a temporary `HOME` and no `CLAUDE_PROJECT_DIR` (a throwaway script outside the repo that starts
   `npm test` with that env), all 30 existing suites passed (`rc 0`, none failed). `git`
-  suites set their own identity per repo. So (c) is safe on this machine. Not checked: CI (a Linux runner); if CI
+  suites set their own identity per repo. So (c) is safe on this machine. Not checked: CI (a macOS runner, `macos-latest`); if CI
   has no `HOME` the same fix still sets one.
 - One side effect: a suite that runs `git commit` without setting an identity would fail on a machine whose only identity is in
   `~/.gitconfig`. None does today.
@@ -160,8 +160,9 @@ then proves the effect with a CLI child started the way the offending suites sta
 - `e17ca1c9: a CLI child with the runner's env cannot reach the real index` (medium: makes a temp git repo, runs
   `init` and `status`, checks the index is under the temporary HOME). It refuses to start the CLI unless `HOME` is
   temporary, so the failing run cannot add an entry to the PM's index.
-- `e17ca1c9: this suite did not change the real index` (small: checksum of the real index, found through the
-  passwd entry, not `$HOME`)
+- `e17ca1c9: this suite did not add its project to the real index` (small: looks for test 3's probe folder in the real
+  index, found through the passwd entry, not `$HOME`; a missing file counts as not listed. It replaces a checksum
+  comparison, which failed whenever another session rewrote the index)
 
 Before the fix (`npm test -- bug-e17ca1c9`; 2 of 4 fail; exit code 1):
 

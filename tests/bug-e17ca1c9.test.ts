@@ -12,12 +12,11 @@
  * index.
  *
  * Safety (test rules 3, 5 and 8): this suite never starts the CLI while HOME is the real home, so a
- * failure here cannot add an entry to the PM's index. It reads the real index only to compare its
- * checksum. Every child has a timeout. It removes the folder it makes.
+ * failure here cannot add an entry to the PM's index. It reads the real index only to look for its own
+ * probe folder. Every child has a timeout. It removes the folder it makes.
  */
 
 import { execFileSync } from "node:child_process";
-import { createHash } from "node:crypto";
 import { existsSync, mkdtempSync, readFileSync, realpathSync, rmSync } from "node:fs";
 import { homedir, tmpdir, userInfo } from "node:os";
 import { join, sep } from "node:path";
@@ -32,9 +31,11 @@ if (process.env.PROJECT_COMPANION_NOTIFY !== "off") {
 const CLI = join(process.cwd(), "dist", "project-companion.mjs");
 // The passwd entry does not follow $HOME, so this stays the PM's real home even when HOME is changed.
 const REAL_HOME = userInfo().homedir;
-const REAL_INDEX = join(REAL_HOME, ".claude", "project-companion", "index.json");
-const sum = (file: string): string | null => (existsSync(file) ? createHash("sha256").update(readFileSync(file)).digest("hex") : null);
-const realIndexBefore = sum(REAL_INDEX);
+// Same rule as globalIndexPath in lib/project/registry.ts: the first of these agent folders that exists.
+const REAL_AGENT_DIR = [".claude", ".codex", ".cursor", ".gemini"].find((d) => existsSync(join(REAL_HOME, d))) ?? ".claude";
+const REAL_INDEX = join(REAL_HOME, REAL_AGENT_DIR, "project-companion", "index.json");
+// The probe project folder of test 3, kept so test 4 can look for it in the real index.
+let probe: string | null = null;
 
 const real = (p: string): string => {
   try { return realpathSync(p); } catch { return p; }
@@ -63,6 +64,7 @@ test("e17ca1c9: a CLI child with the runner's env cannot reach the real index", 
   );
 
   const dir = realpathSync(mkdtempSync(join(tmpdir(), "pc-e17ca1c9-")));
+  probe = dir;
   try {
     const git = (...args: string[]) => execFileSync("git", args, { cwd: dir, stdio: "pipe", timeout: 10_000 });
     git("init", "-q", "-b", "main");
@@ -77,8 +79,11 @@ test("e17ca1c9: a CLI child with the runner's env cannot reach the real index", 
   }
 });
 
-test("e17ca1c9: this suite did not change the real index", () => {
-  eq(sum(REAL_INDEX), realIndexBefore, "the checksum of the real index changed during this suite");
+test("e17ca1c9: this suite did not add its project to the real index", () => {
+  ok(probe !== null, "test 3 did not run, so there is no probe folder to look for");
+  // Other sessions rewrite the real index, so compare nothing but the probe folder. A missing file is not listed.
+  const text = existsSync(REAL_INDEX) ? readFileSync(REAL_INDEX, "utf8") : "";
+  ok(!text.includes(probe as string), `the real index ${REAL_INDEX} lists the probe project ${probe}`);
 });
 
 runAll().then((failed) => process.exit(failed ? 1 : 0));
