@@ -43,6 +43,7 @@ const project = () => {
   git("init", "-q", "-b", "main");
   git("config", "user.email", "dev@example.com");
   git("config", "user.name", "A Dev");
+  git("config", "commit.gpgsign", "false");
   initProject(dir, "Demo");
   return { dir, git, cleanup: () => rmSync(dir, { recursive: true, force: true }) };
 };
