@@ -158,7 +158,7 @@ export class LogRefusedError extends Error {
 
 // Fixed words only: no path, no event text, no symlink target (bug ce914d26, TH-5).
 export const LOG_REFUSED_WARNING =
-  "project-companion: the event log refused a write (not a regular file or not a real folder); events are not being recorded. Fix: remove the planted file in .project-log/.\n";
+  "project-companion: the event log is not recording events: .project-log, or a .jsonl file in it, is a link or not a plain file or folder. Fix: delete that link or file (ls -la .project-log shows it), then run the command again.\n";
 
 let warned = false;
 
@@ -412,6 +412,7 @@ export const appendEvent = (
   records.push(record);
 
   writeRecords(root, actor.id, records);
+  warned = false; // A later refusal is a new episode: warn again (long-running processes).
   return record;
 };
 

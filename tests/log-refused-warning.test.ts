@@ -3,12 +3,12 @@
  * 54b4e811 refusal, and never holds event text. In-process, no child (test rules 3, 5, 8).
  */
 
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import {
-  LOG_REFUSED_WARNING, LogRefusedError, appendEvent, resetLogRefusedWarning, warnLogRefused,
+  LOG_REFUSED_WARNING, LogRefusedError, appendEvent, resetLogRefusedWarning, resolveActor, warnIfLogPlanted, warnLogRefused,
 } from "../lib/project/events";
 import { eq, ok, runAll, test } from "./harness";
 
@@ -84,6 +84,94 @@ test("ce914d26: appendEvent throws the dedicated class for a log folder that is 
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+const ACTOR = { id: "a1", email: "a@b.c", name: "A", host: "h" };
+
+/** Runs `fn` with a fresh temp project folder; always removes it. */
+const inTmp = (fn: (dir: string) => void): void => {
+  const dir = mkdtempSync(join(tmpdir(), "pc-ce914d26-unit-"));
+  try {
+    fn(dir);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+};
+
+test("ce914d26: warnIfLogPlanted is silent with no .project-log folder", () => {
+  inTmp((dir) => eq(capture(() => warnIfLogPlanted(dir)).length, 0));
+});
+
+test("ce914d26: warnIfLogPlanted is silent for an empty .project-log", () => {
+  inTmp((dir) => {
+    mkdirSync(join(dir, ".project-log"));
+    eq(capture(() => warnIfLogPlanted(dir)).length, 0);
+  });
+});
+
+test("ce914d26: warnIfLogPlanted is silent when the own shard is a regular file", () => {
+  inTmp((dir) => {
+    mkdirSync(join(dir, ".project-log"));
+    writeFileSync(join(dir, ".project-log", `${resolveActor(dir).id}.jsonl`), "");
+    eq(capture(() => warnIfLogPlanted(dir)).length, 0);
+  });
+});
+
+test("ce914d26: warnIfLogPlanted warns once when .project-log is a regular file", () => {
+  inTmp((dir) => {
+    writeFileSync(join(dir, ".project-log"), "x");
+    const lines = capture(() => {
+      warnIfLogPlanted(dir);
+      warnIfLogPlanted(dir);
+    });
+    eq(lines.length, 1);
+    eq(lines[0], LOG_REFUSED_WARNING);
+  });
+});
+
+test("ce914d26: warnIfLogPlanted warns once when the own shard is a symlink", () => {
+  inTmp((dir) => {
+    const target = join(dir, "elsewhere.txt");
+    writeFileSync(target, "OUTSIDE\n");
+    mkdirSync(join(dir, ".project-log"));
+    symlinkSync(target, join(dir, ".project-log", `${resolveActor(dir).id}.jsonl`));
+    const lines = capture(() => warnIfLogPlanted(dir));
+    eq(lines.length, 1);
+    eq(lines[0], LOG_REFUSED_WARNING);
+  });
+});
+
+test("ce914d26: warnIfLogPlanted never throws, even when the folder does not exist", () => {
+  const lines = capture(() => warnIfLogPlanted(join(tmpdir(), "pc-ce914d26-no-such-dir", "x")));
+  eq(lines.length, 0);
+});
+
+test("ce914d26: the warning words do not tell the user to delete the contents of .project-log", () => {
+  ok(!/remove the planted file/i.test(LOG_REFUSED_WARNING), "old wording gone");
+  eq(LOG_REFUSED_WARNING.split("\n").length, 2, "one line");
+});
+
+test("ce914d26: a refusal, a good write, then a second refusal warn twice (one per episode)", () => {
+  inTmp((dir) => {
+    const refuse = () => {
+      try {
+        appendEvent(dir, { kind: "task.created" }, ACTOR);
+      } catch (error) {
+        warnLogRefused(error);
+      }
+    };
+    const lines = capture(() => {
+      writeFileSync(join(dir, ".project-log"), "x");
+      refuse();
+      refuse(); // same episode: no second line
+      rmSync(join(dir, ".project-log"));
+      appendEvent(dir, { kind: "task.created" }, ACTOR); // a good write ends the episode
+      rmSync(join(dir, ".project-log"), { recursive: true, force: true });
+      writeFileSync(join(dir, ".project-log"), "x");
+      refuse();
+    });
+    eq(lines.length, 2);
+  });
 });
 
 runAll().then((failed) => process.exit(failed ? 1 : 0));
