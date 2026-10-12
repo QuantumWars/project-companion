@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-12T13:43:38.818Z",
-  "revision": 642,
+  "updatedAt": "2026-10-12T13:51:34.423Z",
+  "revision": 643,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2486,6 +2486,15 @@
       "createdAt": "2026-10-12T11:21:44.450Z",
       "updatedAt": "2026-10-12T11:21:44.450Z",
       "order": 14
+    },
+    {
+      "id": "4a699ddc",
+      "title": "Hook warnings may not reach the user: stderr on exit 0 is undocumented, systemMessage per event unknown",
+      "description": "Not triaged; needs a check on the real Claude Code. Raised by the code review of ce914d26 (2026-10-12); EM read the hooks reference (code.claude.com/docs/en/hooks) the same day.\nDocumented: a hook that exits 0 with text on stderr is not shown to Claude; whether the user sees it is NOT documented. The JSON field systemMessage on stdout is documented as 'Warning message shown to the user', but the page says some events discard it, and it does not say whether PostToolUse, SubagentStop or SessionStart show it (pages read: characters 0 to 200000 of 268801).\nEffect: the ingest hook's warnings (ce914d26's new one, and the existing budget and boundary warnings, cli/index.ts about lines 1195-1205) may reach nobody. Proposal: find out on the installed Claude Code (a small test hook in a scratch project, not this repository's settings), then pick a channel per event.",
+      "status": "backlog",
+      "createdAt": "2026-10-12T13:51:34.423Z",
+      "updatedAt": "2026-10-12T13:51:34.423Z",
+      "order": 13
     }
   ],
   "roadmap": {
