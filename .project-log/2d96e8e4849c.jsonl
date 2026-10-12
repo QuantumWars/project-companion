@@ -5583,3 +5583,5 @@
 {"id":"2d96e8e4849c:5565","ts":1791782360633,"seq":5565,"actor":"2d96e8e4849c","prev":"9bf06918ef8af830","kind":"run.progress","data":{"runId":"48b010d7","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
 {"id":"2d96e8e4849c:5566","ts":1791782361720,"seq":5566,"actor":"2d96e8e4849c","prev":"276c9889d23ea6b0","kind":"run.progress","data":{"runId":"30866fc4","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
 {"id":"2d96e8e4849c:5567","ts":1791782364529,"seq":5567,"actor":"2d96e8e4849c","prev":"2273ac7f1b630f82","kind":"run.progress","data":{"runId":"30866fc4","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
+{"id":"2d96e8e4849c:5568","ts":1791782366239,"seq":5568,"actor":"2d96e8e4849c","prev":"8641fb323be6ff19","kind":"run.progress","data":{"runId":"48b010d7","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
+{"id":"2d96e8e4849c:5569","ts":1791782369703,"seq":5569,"actor":"2d96e8e4849c","prev":"5d83ef7ff0e9c6ca","kind":"run.state","data":{"runId":"30866fc4","state":"awaiting_review","reason":"the subagent finished"}}
