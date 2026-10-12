@@ -69,44 +69,48 @@ disagree because only one of them joins `card.opened`/`card.answered` with `trac
 
 ## Fix
 
-Out of scope for this spec (bugfix track: spec first, code by the builder). The fix belongs in
-`cli/index.ts`'s `card` command: before filtering, read `readGates(root).tracks` (as `cockpit.ts` already does)
-and treat a track card as closed when `gates.tracks.get(card.subject)?.at` is newer than `card.openedAt` --
-either by reusing the exact rule cockpit.ts uses, or by moving that rule into a shared helper (for example
-exporting it from `lib/project/decisions.ts` or `lib/project/cockpit.ts`) that both `cli/index.ts` and
-`cockpit.ts` call, so the two can no longer drift apart again. The plain-text `card list` output
-(`cli/index.ts:1483`, `c.answer === undefined ? "open    " : "answered"`) should also show a confirmed track
-card as answered/closed, not "open", for the same reason.
+A shared helper, `isCardClosed(card, tracks)` in `lib/project/decisions.ts`, holds the one rule: a card is closed
+when `card.answer` is set, or when it is a track card and `tracks.get(card.subject)?.at` is newer than
+`card.openedAt`. Its callers:
 
-Open question for the PM/architect: should a track card that was confirmed before this fix ships get a
-retroactive `answer`, or does the new read rule alone fix every existing project without a data change? (No
-`.project`/`.project-log` file was touched for this spec, per the bugfix track's write scope.)
+- `cli/index.ts`, `card list --open`: the filter is `!has("open") || !isCardClosed(c, tracks)`, with `tracks` read
+  from `readGates(root).tracks`.
+- `cli/index.ts`, plain-text `card list`: shows `answered` when `isCardClosed` is true, else `open`.
+- `lib/project/cockpit.ts`, `buildCockpit`: `if (isCardClosed(c, gates.tracks)) continue;` replaces its own copy of
+  the rule, so the two readers cannot drift apart.
+
+A card opened after the confirmation stays open (its `openedAt` is newer than the track's `at`). A question card
+is never closed by a track confirmation.
+
+PM decision (card c-0fe3e6): the read rule alone fixes every existing project. No stored answer, no log write.
+The open question that was here is removed.
 
 ## Regression test
 
-`tests/bug-ee2e49d6.test.ts`, 2 tests:
+`tests/bug-ee2e49d6.test.ts`, 4 tests:
 
 - `ee2e49d6: card list --open still shows a track card after its track is confirmed` -- opens a track card,
-  confirms its track with `gate track ... --via`, then asserts the card id is gone from `card list --open
-  --json`. This is the failing test; it proves the bug as named above.
-- `ee2e49d6: the cockpit's needs-you list already drops the same card (control)` -- same sequence, read through
-  `cockpit --json`'s `needsYou` instead, to show that the cockpit already gets this right and the two surfaces
-  disagree only because of `cli/index.ts`'s `card` command.
+  confirms its track, asserts the id is gone from `card list --open --json`. This test failed before the fix.
+- `ee2e49d6: the cockpit's needs-you list already drops the same card (control)` -- the same sequence, read
+  through `cockpit --json`.
+- `ee2e49d6: a track card opened again after the confirmation stays open` -- a second track card for the same
+  subject, opened after the confirmation, stays on the open list.
+- `ee2e49d6: a question card is not closed by a track confirmation; plain text says answered for a closed track card`
+  -- only the question card stays open; plain `card list` prints `answered` for the closed track card and `open`
+  for the question card.
 
-Both tests spawn the built CLI (`dist/project-companion.mjs`) in a temporary project under `os.tmpdir()`, never
-the real `.project` of this repository. The suite refuses to run unless `PROJECT_COMPANION_NOTIFY` is already
-`off` (set by the test runner), never writes `process.env` itself, and every spawned CLI call is given an
-explicit `PROJECT_COMPANION_NOTIFY=off` and a `HOME` inside the suite's own temporary folder, so `card open`'s
-one notification (DA-01.2) is never shown to the PM.
+The suite spawns the built CLI in a temporary project under `os.tmpdir()`. Each CLI call gets
+`PROJECT_COMPANION_NOTIFY=off`, `HOME` set to a folder inside the suite's temporary folder, and no
+`CLAUDE_PROJECT_DIR` (test rule 5). Each call has a 20 s timeout (test rule 3).
 
 ```
-$ npm test -- bug-ee2e49d6
-...
-bug-ee2e49d6.test.ts
-  FAIL ee2e49d6: card list --open still shows a track card after its track is confirmed
-       a confirmed track card must leave card list --open: expected false, got true
+$ npm test -- bug-ee2e49d6      (head f22c59d)
+  ok   ee2e49d6: card list --open still shows a track card after its track is confirmed
   ok   ee2e49d6: the cockpit's needs-you list already drops the same card (control)
-
-1/2 passed
+  ok   ee2e49d6: a track card opened again after the confirmation stays open
+  ok   ee2e49d6: a question card is not closed by a track confirmation; plain text says answered for a closed track card
+4/4 passed
 ```
-Exit code: 1.
+
+Before the fix (commit 4c37e22, the 2-test version): `1/2 passed`; the first test fails with "a confirmed track
+card must leave card list --open: expected false, got true".
