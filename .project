@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-12T06:52:10.790Z",
-  "revision": 544,
+  "updatedAt": "2026-10-12T06:55:33.825Z",
+  "revision": 546,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2240,9 +2240,9 @@
     {
       "id": "37f9fbce",
       "title": "CLI git log and git unlinked never attribute commits to agent runs",
-      "status": "in_progress",
+      "status": "review",
       "createdAt": "2026-10-10T08:49:22.341Z",
-      "updatedAt": "2026-10-12T06:52:10.789Z",
+      "updatedAt": "2026-10-12T06:55:33.685Z",
       "order": 0,
       "description": "Track: Bugfix (confirmed by the PM, 2026-10-10). Found by the qa-engineer while writing the 15753492 spec.\n\nSpec ready to build (EM checked 2026-10-10): `specs/bugs/37f9fbce/bugfix.md` and `tests/bug-37f9fbce.test.ts` on branch `fix/37f9fbce-bug-spec` @ 495a8b9 (from 58f85bc). Build the fix from that branch (bugfix skill step 4).\nEM check on 495a8b9: `npm test -- bug-37f9fbce` -> exit 1, 1 of 3 pass (the control: linkRepository WITH runs attributes the commit), the 2 CLI tests fail (git log shows no run signal; git unlinked lists a commit a run covers), 2 s.\n\nObserved: `cli/index.ts:515` calls `linkRepository(repo, tasks, features, limit)` without the agent runs, so `project-companion git log` and `git unlinked` never try run-based attribution. Only the app's Git view (`lib/project/git-view.ts:87`) passes runs.\nExpected: PRD feature run-attribution (`docs/prd.md:222`): \"A commit matching a run's files and window attributes to that run's task.\"\nFix (spec): pass `readRuns(root)` as the 5th argument (readRuns is already imported in cli/index.ts). About 1 changed line (qa-engineer; not checked).\nOrder: independent of 15753492; the test uses root-relative touched paths, so it can merge before or after it (evidence in the spec's Fix section).\nNote (qa-engineer): the PRD box for run-attribution is ticked on the strength of the app's code path alone; the CLI never met it until this test.",
       "labels": [
@@ -2401,6 +2401,15 @@
       "status": "backlog",
       "createdAt": "2026-10-12T06:08:35.552Z",
       "updatedAt": "2026-10-12T06:08:35.552Z",
+      "order": 10
+    },
+    {
+      "id": "2cb8cdff",
+      "title": "No test calls the MCP tools (git_log, run_report and the others)",
+      "description": "Not triaged. Found by the backend-engineer while fixing 37f9fbce (2026-10-12).\nObserved: the only MCP-related test is tests/catalog.test.ts, so a change to an MCP tool such as git_log (which had the same missing-runs gap as the CLI) cannot be tested. Proposal: a small harness that calls the tool handlers with a temporary project, then a test for git_log with runs.",
+      "status": "backlog",
+      "createdAt": "2026-10-12T06:55:33.824Z",
+      "updatedAt": "2026-10-12T06:55:33.824Z",
       "order": 10
     }
   ],

@@ -6159,3 +6159,5 @@
 {"id":"2d96e8e4849c:6139","ts":1791788109669,"seq":6139,"actor":"2d96e8e4849c","prev":"edaa8a7b412dd9b1","kind":"run.progress","data":{"runId":"b80c06a8","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
 {"id":"2d96e8e4849c:6140","ts":1791788113364,"seq":6140,"actor":"2d96e8e4849c","prev":"e2257173b3821da9","kind":"run.progress","data":{"runId":"b80c06a8","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
 {"id":"2d96e8e4849c:6141","ts":1791788123343,"seq":6141,"actor":"2d96e8e4849c","prev":"3923235dc405457a","kind":"run.state","data":{"runId":"b80c06a8","state":"awaiting_review","reason":"the subagent finished"}}
+{"id":"2d96e8e4849c:6142","ts":1791788133696,"seq":6142,"actor":"2d96e8e4849c","prev":"3a73c83af94578bd","kind":"task.moved","data":{"taskId":"37f9fbce","from":"in_progress","to":"review"}}
+{"id":"2d96e8e4849c:6143","ts":1791788133834,"seq":6143,"actor":"2d96e8e4849c","prev":"9bb7f06b12e6f144","kind":"task.created","data":{"taskId":"2cb8cdff","title":"No test calls the MCP tools (git_log, run_report and the others)","status":"backlog"}}
