@@ -239,4 +239,53 @@ test("15753492: with no git repository, a symlinked root still gives a relative 
   }
 });
 
+test("15753492: a path in a deleted worktree of this project becomes relative and links to its commit", async () => {
+  const { dir, git, cleanup } = project();
+  try {
+    const task = createTask(dir, { title: "Rotate keys", status: "in_progress" });
+    const gone = join(dir, ".claude", "worktrees", "agent-gone", "lib", "a.ts");
+    eq(relativeToRoot(dir, gone), "lib/a.ts", "worktree prefix removed");
+    mkdirSync(join(dir, "lib"));
+    writeFileSync(join(dir, "lib", "a.ts"), "export const a = 1;\n");
+    git("add", "lib/a.ts");
+    git("commit", "-q", "-m", "Add a", "--date", new Date(Date.now() + 60_000).toISOString());
+    const old = { id: "old2", taskId: task.id, touched: [gone], startedAt: new Date(Date.now() - 60_000).toISOString() };
+    const linked = await linkRepository(dir, [task], [], 50, [old]);
+    const commit = linked.commits.find((c) => c.subject === "Add a");
+    eq(commit?.signal, "run", "linked through the run");
+    eq(commit?.taskId, task.id, "to the run's task");
+  } finally {
+    cleanup();
+  }
+});
+
+test("15753492: a deleted-worktree path of a different project stays absolute", () => {
+  const { dir, cleanup } = project();
+  const other = realpathSync(mkdtempSync(join(tmpdir(), "pc-runpaths-otherwt-")));
+  try {
+    const foreign = join(other, ".claude", "worktrees", "agent-gone", "lib", "a.ts");
+    eq(relativeToRoot(dir, foreign), foreign, "other project's folder not matched");
+  } finally {
+    rmSync(other, { recursive: true, force: true });
+    cleanup();
+  }
+});
+
+test("15753492: the worktrees folder, a worktree folder itself and an empty rest stay unchanged", () => {
+  const { dir, cleanup } = project();
+  try {
+    const base = join(dir, ".claude", "worktrees");
+    eq(relativeToRoot(dir, base), base, "the worktrees folder");
+    eq(relativeToRoot(dir, join(base, "agent-gone")), join(base, "agent-gone"), "the folder itself");
+    const trailing = `${join(base, "agent-gone")}/`;
+    eq(relativeToRoot(dir, trailing), trailing, "empty rest");
+    const escape = `${base}/agent-gone/../../../../x.ts`;
+    eq(relativeToRoot(dir, escape), escape, ".. escape out of the project");
+    const sideways = `${base}/agent-gone/../other/a.ts`;
+    eq(relativeToRoot(dir, sideways), "a.ts", "a resolved path under another worktree folder is a worktree path");
+  } finally {
+    cleanup();
+  }
+});
+
 runAll().then((failed) => process.exit(failed ? 1 : 0));

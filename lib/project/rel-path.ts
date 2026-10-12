@@ -54,7 +54,7 @@ const commonDir = (top: string): string | undefined => {
  * to THIS repository (same common directory as the repository that holds
  * `root`). Returns `undefined` when no `.git` is above `real` (fall back to
  * `root`), and `null` when the checkout is another repository's: the caller
- * keeps the path as given. A rule for a deleted worktree can be added here.
+ * keeps the path as given. A deleted worktree is handled by `deletedWorktree`.
  */
 const checkoutTop = (real: string, root: string): string | null | undefined => {
   const top = nearestGit(real);
@@ -69,6 +69,22 @@ const inside = (rel: string): boolean =>
   rel !== "" && rel !== ".." && !rel.startsWith(`..${sep}`) && !isAbsolute(rel);
 
 /**
+ * A path in a worktree folder that was deleted: `<root>/.claude/worktrees/<name>/<rest>`.
+ * Git shows the file as `<rest>`. Only this project's own folder counts, and only
+ * when `<name>` is one part and `<rest>` is not empty; the folders themselves give `null` (keep the path). A live checkout (a `.git`
+ * inside the worktree folder, so `top` lies in the folder) wins and is not handled here.
+ */
+const deletedWorktree = (real: string, realRoot: string, top: string | undefined): string | null | undefined => {
+  const base = join(realRoot, ".claude", "worktrees");
+  if (top !== undefined && inside(relative(base, top))) return undefined;
+  const rel = relative(base, real);
+  if (rel === "") return null;
+  if (!inside(rel)) return undefined;
+  const parts = rel.split(sep);
+  return parts.length >= 2 ? parts.slice(1).join("/") : null;
+};
+
+/**
  * An absolute path becomes relative to the checkout that holds it, with
  * forward slashes. A path in another repository stays absolute. With no `.git` above it, it is made relative to `root`. A
  * relative path, a path outside both, or the top folder itself is returned
@@ -80,6 +96,9 @@ export const relativeToRoot = (root: string, path: string): string => {
   const realRoot = realish(resolve(root));
   const top = checkoutTop(real, realRoot);
   if (top === null) return path;
+  const gone = deletedWorktree(real, realRoot, top);
+  if (gone === null) return path;
+  if (gone !== undefined) return gone;
   const rel = relative(top ?? realRoot, real);
   return inside(rel) ? rel.split(sep).join("/") : path;
 };
