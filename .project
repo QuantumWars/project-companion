@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-12T15:37:01.037Z",
-  "revision": 652,
+  "updatedAt": "2026-10-12T16:07:59.558Z",
+  "revision": 653,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2491,15 +2491,6 @@
       "createdAt": "2026-10-12T07:18:54.939Z",
       "updatedAt": "2026-10-12T07:18:54.939Z",
       "order": 13
-    },
-    {
-      "id": "c5c6d8cf",
-      "title": "More plain file reads that a merged symlink to a FIFO can hang: deps.ts and the .gitattributes read",
-      "description": "Not triaged; low until checked. Found by the qa-engineer writing the 49c078ce spec (2026-10-12), by code reading, not run.\nlib/project/deps.ts about line 162 reads every source file with a plain readFileSync, while its exists check uses statSync().isFile(); a merged symlink to a FIFO under a source name can hang dependencyGraph. cli/index.ts about line 362 (.gitattributes) is the same class. Also named in the 49c078ce spec's table: notify-record.ts about line 89 (readRecord, task not yet triaged) and rel-path.ts. Decide scope with the 49c078ce fix or a follow-up.",
-      "status": "backlog",
-      "createdAt": "2026-10-12T11:21:44.450Z",
-      "updatedAt": "2026-10-12T11:21:44.450Z",
-      "order": 14
     },
     {
       "id": "4a699ddc",
