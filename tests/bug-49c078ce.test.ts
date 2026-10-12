@@ -68,7 +68,7 @@ if (process.argv[2] === HELPER_FLAG) {
   type ProbeResult = { timedOut: boolean; ok?: boolean; value?: unknown; error?: string };
 
   const probe = (action: string, root: string, home: string): ProbeResult => {
-    const env = { ...process.env, HOME: home };
+    const env: NodeJS.ProcessEnv = { ...process.env, HOME: home };
     delete env.CLAUDE_PROJECT_DIR;
     const run = spawnSync(process.execPath, [process.argv[1], HELPER_FLAG, action, root], {
       timeout: PROBE_TIMEOUT_MS,

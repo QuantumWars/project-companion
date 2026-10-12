@@ -25,9 +25,9 @@ import {
   type ParsedPhase,
   type PrdOp,
 } from "./prd";
-import { mutateBundle, readBundle, withProjectLock } from "./bundle";
+import { BUNDLE_FILE, mutateBundle, readBundle, withProjectLock } from "./bundle";
 import { isInside, regularFileIn, replaceFile } from "./safe-file";
-import { readJson, projectPaths, writeJson } from "./store";
+import { findProject, isLegacyStore, readJson, projectPaths, writeJson } from "./store";
 import {
   DEFAULT_PRD_PATH,
   emptyRoadmap,
@@ -82,8 +82,13 @@ const readSidecar = (root: string): RoadmapFile => {
       orphans: bundle.roadmap.orphans,
     };
   }
+  // The older roadmap.json counts only for an older-layout project. A `.project` that is not a readable
+  // bundle (a folder, a link) holds no roadmap, so nothing under it is read (bug 49c078ce).
+  if (!usesLegacyStore(root)) return emptyRoadmap();
   return readJson<RoadmapFile | null>(projectPaths(root).roadmap, null) ?? emptyRoadmap();
 };
+
+const usesLegacyStore = (root: string): boolean => isLegacyStore(findProject(root)?.storeDir ?? BUNDLE_FILE);
 
 /** The PRD text; null when the source is not a regular file inside the root, so it is never opened (SR-8). */
 const readPrdText = (root: string, source: string): string | null => {
@@ -255,6 +260,8 @@ const writeSidecar = (root: string, file: RoadmapFile) => {
   ) {
     return;
   }
+  // No readable bundle: only an older-layout project may write roadmap.json. Never write under `.project`.
+  if (!usesLegacyStore(root)) throw new Error(`No ${BUNDLE_FILE} at ${root}`);
   writeJson(projectPaths(root).roadmap, file);
 };
 
