@@ -73,7 +73,7 @@ means something is wrong or hostile (a merged symlink). Bug 54b4e811 added the r
 silent, which turned a loud failure into a silent loss. The `ingest` hook and `recordSpawnRequest` have the same
 shape, with their own empty `catch` and a direct `appendEvent`.
 
-## Fix (as built, commit 9b8f21e)
+## Fix (as built, commits 9b8f21e and eb5a489)
 
 PM decisions: card c-20c120 chose one fixed line on stderr with no event text, no task or card text, no symlink
 target and no absolute path. Card c-e9c7ce chose to warn only for the bug-54b4e811 refusal, not for a read-only
@@ -82,39 +82,55 @@ checkout or a full disk.
 - `LogRefusedError` (`lib/project/events.ts`, `code = "LOG_REFUSED"`): `appendEvent` throws it for a planted shard
   and for a planted `.project-log`. Callers match on the class, not on the message.
 - `warnLogRefused(error)` (`events.ts:171`): writes `LOG_REFUSED_WARNING` to stderr only when `error` is a
-  `LogRefusedError`, and only once per process (module flag `warned`). Any other error: nothing, and the flag is
-  not used up.
-- `warnIfLogPlanted(root)` (`events.ts:181`): for the hook that finds no run. It checks with `lstat` whether
+  `LogRefusedError`, and only once per refusal episode (module flag `warned`). Any other error: nothing, and the
+  flag is not used up.
+- Reset: `appendEvent` sets `warned = false` after a successful write (`events.ts:415`). A long-running process
+  warns once per refusal episode, not once for its whole life.
+- `warnIfLogPlanted(root)` (`events.ts:181`): for a hook that finds no run. It checks with `lstat` whether
   `.project-log` is not a folder, or the actor's own shard is not a regular file. If so it calls `warnLogRefused`.
   It never throws.
-- Call sites: `logEvent` catch (`store.ts:243`); the `ingest` handler's catch (`cli/index.ts:1209`, covers
-  `recordSpawnRequest`); the `if (!run)` skip (`cli/index.ts:1180`, calls `warnIfLogPlanted`).
-- Exact warning text (one line, ends with a newline):
-  `project-companion: the event log refused a write (not a regular file or not a real folder); events are not being recorded. Fix: remove the planted file in .project-log/.`
+- Call sites: `logEvent` catch (`store.ts:243`); the `ingest` handler's catch (`cli/index.ts:1212`, covers
+  `recordSpawnRequest`); the `if (!run)` skip (`cli/index.ts:1183`); and `subagent.stop` with no run
+  (`cli/index.ts:1166`), both through `warnIfLogPlanted`.
+- Exact warning text (one line, ends with a newline). The first version told the user to "remove the planted file",
+  which is wrong when `.project-log` itself is the link. This text names both cases:
+  `project-companion: the event log is not recording events: .project-log, or a .jsonl file in it, is a link or not a plain file or folder. Fix: delete that link or file (ls -la .project-log shows it), then run the command again.`
 - Exit code, standard output and the saved result do not change. `appendEvent`'s refusal is unchanged.
 
 ## Regression test
 
-`tests/bug-ce914d26.test.ts` (6 tests, built CLI, temporary project, temporary `HOME`, no `CLAUDE_PROJECT_DIR`,
+`tests/bug-ce914d26.test.ts` (8 tests, built CLI, temporary project, temporary `HOME`, no `CLAUDE_PROJECT_DIR`,
 10 s timeout on each child, `PROJECT_COMPANION_NOTIFY=off`; test rules 1, 2, 3, 5):
 
 1. `ce914d26: task add after a planted own shard says the event log refused a write`
 2. `ce914d26: task add with a working log prints no warning (control)`
 3. `ce914d26: a planted .project-log gives the same one warning and writes nothing outside`
 4. `ce914d26: the ingest hook says so when it cannot record run.requested, and still exits 0`
-5. `ce914d26: the ingest hook prints one warning, not two, for a session.start that logEvent cannot record`
+5. `ce914d26: an ingest session.start after a planted shard prints exactly one warning`
 6. `ce914d26: a tool.use hook that finds no run because the shard was planted after run start warns once and exits 0`
+7. `ce914d26: a SubagentStop hook that finds no run because the shard was planted warns once and exits 0`
+8. `ce914d26: a PostToolUse for an unknown session in a healthy project prints no warning (control)`
 
-`tests/log-refused-warning.test.ts` (5 unit tests):
+`tests/log-refused-warning.test.ts` (13 unit tests):
 
 1. `ce914d26: warnLogRefused prints the fixed line once for the refusal, not twice`
 2. `ce914d26: warnLogRefused prints nothing for other errors`
 3. `ce914d26: a non-refusal error does not use up the once-per-process flag`
 4. `ce914d26: the warning holds no event text, path or message of the error`
 5. `ce914d26: appendEvent throws the dedicated class for a log folder that is a file`
+6. `ce914d26: warnIfLogPlanted is silent with no .project-log folder`
+7. `ce914d26: warnIfLogPlanted is silent for an empty .project-log`
+8. `ce914d26: warnIfLogPlanted is silent when the own shard is a regular file`
+9. `ce914d26: warnIfLogPlanted warns once when .project-log is a regular file`
+10. `ce914d26: warnIfLogPlanted warns once when the own shard is a symlink`
+11. `ce914d26: warnIfLogPlanted never throws, even when the folder does not exist`
+12. `ce914d26: the warning words do not tell the user to delete the contents of .project-log`
+13. `ce914d26: a refusal, a good write, then a second refusal warn twice (one per episode)`
 
-Result at head 6798024: `npm test -- ce914d26` 6 of 6; `npm test -- log-refused` 5 of 5. Before the fix (branch
-`fix/ce914d26-bug-spec`) the CLI test file gives 1 of 5 (the control passes, 4 fail).
+Result at head 3b8b3d4: `npm test -- ce914d26` 8 of 8; `npm test -- log-refused` 13 of 13; `npm test` 538 of 538 in
+33 suites. Before the fix (branch `fix/ce914d26-bug-spec`) the CLI test file gave 1 of 5 (the control passes, 4
+fail).
 
-Note: removing the once-per-process flag fails only unit test 1, because no CLI command reaches two refused writes
-in one process (the builder's finding; QA did not re-run this).
+Guard for the once-per-process flag: no CLI command reaches two refused writes in one process, so a CLI test cannot
+see the flag. The unit tests guard it (tests 1 and 13 above). CLI test 5 proves one warning, not two, for a
+`session.start` (`startRun` and the `if (!run)` skip both hit the refusal).
