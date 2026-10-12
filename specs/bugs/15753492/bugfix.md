@@ -74,24 +74,42 @@ working project or not. Worth a separate follow-up; noted in the hand-off, not f
 ## Fix
 
 The PM decided (card c-a1704f): normalize on write **and** on read. Both sides use one shared helper, so the two
-cannot drift.
+cannot drift. The code review (F1 high, F2 medium) and the PM (card c-008562) widened the first version; the
+PM (card c-effe5d) added the deleted-worktree rule.
 
-- **Shared helper.** `relativeToRoot(root, path)` in `lib/project/rel-path.ts`. An absolute path inside `root`
-  becomes a relative, forward-slash path -- the form `git` uses for `commit.paths`. A relative path, a path
-  outside `root`, or `root` itself is returned exactly as given. It is never rewritten with a `..` escape
-  (an outside path can never be a commit's path, and a `../..` string could be misread as a path inside the
-  project).
-- **Symlinked roots.** The helper compares real paths: `realish` resolves the deepest part of the path that
-  exists with `realpathSync` and appends the rest as given. So a root reached through a symlink (for example
-  macOS `/var` -> `/private/var`) and a file that does not exist yet both resolve correctly.
-- **Write side.** `reportRun` (`lib/project/store.ts`) maps `progress.touched` through `relativeToRoot` before
-  the `mayWrite` boundary check and before logging. New `run.progress` events hold relative paths, and `mayWrite`
-  now sees the same relative path as the run's relative `writeGlobs`, so a real harness write inside the
-  boundary is no longer refused.
-- **Read side.** `linkRepository` (`lib/project/git-link.ts`) maps each run's `touched` through
-  `relativeToRoot(root, ...)` before the file-overlap check. A run logged before the fix, whose events keep
-  absolute paths forever (the log is append-only and hash-chained), is attributed the moment the fix ships. No
-  migration and no log rewrite.
+- **Shared helper.** `relativeToRoot(root, path)` in `lib/project/rel-path.ts`. It is called by `reportRun`
+  (`lib/project/store.ts`, on write) and by `linkRepository` (`lib/project/git-link.ts`, on read).
+- **Nearest-checkout rule.** An absolute path becomes a relative, forward-slash path, relative to the nearest
+  folder above it that holds a `.git` entry (`checkoutTop`). That is the base `git` uses for `commit.paths`. So:
+  - A write in an agent worktree (`<root>/.claude/worktrees/<name>/lib/a.ts`) becomes `lib/a.ts` (finding F1).
+  - A project in a sub-folder of its repository stores paths relative to the git root, not to the project folder
+    (finding F2).
+  - With no `.git` above the path, the base is `root`.
+- **Same-repository rule.** The nearest checkout counts only when it belongs to THIS repository. The helper
+  compares git common directories without a subprocess (`commonDir`: a `.git` folder, or a `.git` file that
+  points to a folder with a `commondir` file; a submodule has none, so its own folder is its common directory).
+  A path in a sibling repository, a nested repository inside the project, or a submodule stays exactly as given
+  (absolute): its relative path would be a path in another repository, and could match a commit here by chance
+  (re-review R1).
+- **Deleted-worktree rule.** When a worktree folder `<root>/.claude/worktrees/<name>/` no longer exists, no `.git`
+  is above the path, so the nearest-checkout rule cannot see it. `deletedWorktree` makes
+  `<root>/.claude/worktrees/<name>/<rest>` become `<rest>`, because git shows the file as `<rest>` on the
+  worktree's branch. It applies only to this project's own `.claude/worktrees` folder, only when `<name>` is one
+  path part and `<rest>` is not empty, and never when a live checkout holds the path (a live checkout wins).
+- **Symlinked roots.** The helper compares real paths: `realish` resolves the deepest part that exists with
+  `realpathSync` and appends the rest as given. So a root reached through a symlink (for example macOS `/var` ->
+  `/private/var`) and a file that does not exist yet both resolve correctly.
+- **What stays absolute or as given.** A relative path; a path in another repository (sibling, nested or
+  submodule); a deleted-worktree path of a different project; a path that would need a `..` escape; the base
+  folder itself; the `.claude/worktrees` folder itself; a worktree folder itself; an empty rest. A `..` that stays
+  inside the base is resolved. The helper never rewrites a path with a `..` escape: an outside path can never be a
+  commit's path, and a `../..` string could be misread as a path inside the project.
+- **Write side.** `reportRun` maps `progress.touched` through `relativeToRoot` before the `mayWrite` boundary
+  check and before logging. New `run.progress` events hold relative paths, and `mayWrite` sees the same relative
+  path as the run's relative `writeGlobs`, so a real harness write inside the boundary is no longer refused.
+- **Read side.** `linkRepository` maps each run's `touched` through `relativeToRoot(root, ...)` before the
+  file-overlap check. A run logged before the fix, whose events keep absolute paths forever (the log is
+  append-only and hash-chained), is attributed the moment the fix ships. No migration and no log rewrite.
 
 Not fixed here: `project-companion git log` and `git unlinked` call `linkRepository` without `runs` (bug
 37f9fbce), so the CLI never shows run attribution. The Git view in the app does.
@@ -110,7 +128,8 @@ that file and calls `linkRepository` with the runs `readRuns` folds back out of 
 The "control" assertion changed with the fix. Before, it expected the run to hold the absolute path as the
 harness sent it. Now it expects `["lib/auth/token.ts"]`: the stored path is relative.
 
-`tests/run-paths.test.ts`, 6 tests:
+`tests/agent-run-paths.test.ts`, 16 tests (the file name starts with `agent-run`, so the PRD line
+`Verify: npm test -- agent-run` selects it):
 
 1. `15753492: an absolute path inside the root is stored relative with forward slashes`
 2. `15753492: a path outside the root, or with .. out of it, is stored exactly as given`
@@ -118,21 +137,29 @@ harness sent it. Now it expects `["lib/auth/token.ts"]`: the stored path is rela
 4. `15753492: mayWrite sees the relative path, so an absolute write inside the boundary is allowed`
 5. `15753492: a symlinked root still resolves an absolute path inside it`
 6. `15753492: an old run holding an absolute path still attributes to its commit`
+7. `15753492: a .. that stays inside the root is resolved, and the root itself is unchanged`
+8. `15753492: a write inside a linked worktree links the run to the commit made there`
+9. `15753492: a project in a sub-folder of its repository stores paths relative to the git root`
+10. `15753492: a path in a sibling repository stays absolute and never links to a commit here`
+11. `15753492: a path in a nested repository inside the project stays absolute`
+12. `15753492: a path in a submodule of the project stays absolute`
+13. `15753492: with no git repository, a symlinked root still gives a relative path`
+14. `15753492: a path in a deleted worktree of this project becomes relative and links to its commit`
+15. `15753492: a deleted-worktree path of a different project stays absolute`
+16. `15753492: the worktrees folder, a worktree folder itself and an empty rest stay unchanged`
 
-Result on the fixed code (head `c1792568929791630aca46e7e8a962a369e35bcb`):
+Result on the fixed code (head `e04973bbf2a03b2e045fa50744c12e39c22200fa`):
 
 ```
 $ npm test -- bug-15753492
-bug-15753492.test.ts
-  ok   15753492: a run that touches a file a commit also changes is linked to that commit's task
-
 1/1 passed
 
-$ npm test -- run-paths
-run-paths.test.ts
-  ok   (6 tests, listed above)
+$ npm test -- agent-run-paths
+16/16 passed
 
-6/6 passed
+$ npm test -- agent-run
+agent-run-paths.test.ts  16/16 passed
+agent-run.test.ts        25/25 passed
 ```
 
 Before the fix (commit `79df5ef`), the same regression test fails: `0/1 passed`, with `a run that wrote this
