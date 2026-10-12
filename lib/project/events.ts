@@ -147,6 +147,58 @@ export type NewEvent = {
   data?: Record<string, unknown>;
 };
 
+/** The refusal of bug 54b4e811: a planted shard or log folder. Match on this class, not on the message. */
+export class LogRefusedError extends Error {
+  readonly code = "LOG_REFUSED";
+  constructor(message: string) {
+    super(message);
+    this.name = "LogRefusedError";
+  }
+}
+
+// Fixed words only: no path, no event text, no symlink target (bug ce914d26, TH-5).
+export const LOG_REFUSED_WARNING =
+  "project-companion: the event log is not recording events: .project-log, or a .jsonl file in it, is a link or not a plain file or folder. Fix: delete that link or file (ls -ld .project-log, then ls -la .project-log/ to look), then run the command again.\n";
+
+let warned = false;
+
+/** Resets the once-per-process flag. For tests only. */
+export const resetLogRefusedWarning = (): void => {
+  warned = false;
+};
+
+/** Writes the fixed warning once per process, only for the 54b4e811 refusal. Any other error: nothing. */
+export const warnLogRefused = (error: unknown): void => {
+  if (!(error instanceof LogRefusedError) || warned) return;
+  warned = true;
+  process.stderr.write(LOG_REFUSED_WARNING);
+};
+
+/**
+ * For a hook that finds no run: warns when the actor's own shard, or the log folder, is planted.
+ * Reads of a planted shard return nothing, so its runs look missing (bug ce914d26, item 5d).
+ */
+export const warnIfLogPlanted = (root: string): void => {
+  try {
+    let planted = false;
+    try {
+      planted = !lstatSync(logDir(root)).isDirectory();
+    } catch {
+      return; // no log folder: nothing planted
+    }
+    if (!planted) {
+      try {
+        planted = !lstatSync(shardPath(root, resolveActor(root).id)).isFile();
+      } catch {
+        return; // no own shard
+      }
+    }
+    if (planted) warnLogRefused(new LogRefusedError("planted"));
+  } catch {
+    // A hook must not fail the session it observes.
+  }
+};
+
 export const logDir = (root: string): string => join(root, LOG_DIR);
 
 const shardPath = (root: string, actor: string): string =>
@@ -360,6 +412,7 @@ export const appendEvent = (
   records.push(record);
 
   writeRecords(root, actor.id, records);
+  warned = false; // A later refusal is a new episode: warn again (long-running processes).
   return record;
 };
 
@@ -375,7 +428,7 @@ const requireLogFolder = (root: string): void => {
     return;
   }
   if (!stat.isDirectory()) {
-    throw new Error(`Refused to write the event log: ${dir} is not a real folder (bug 54b4e811). Remove it and try again.`);
+    throw new LogRefusedError(`Refused to write the event log: ${dir} is not a real folder (bug 54b4e811). Remove it and try again.`);
   }
 };
 
@@ -391,7 +444,7 @@ export const writeRecords = (
 ): void => {
   const path = shardPath(root, actor);
   const notAFile = () =>
-    new Error(`Refused to write the event log: ${path} is not a regular file (bug 54b4e811). Remove it and try again.`);
+    new LogRefusedError(`Refused to write the event log: ${path} is not a regular file (bug 54b4e811). Remove it and try again.`);
   const flags = constants.O_WRONLY | constants.O_APPEND | constants.O_CREAT | (constants.O_NONBLOCK ?? 0) |
     (noFollow ? (constants.O_NOFOLLOW ?? 0) : 0);
   // Without O_NOFOLLOW (Windows) the open follows a merged symlink: check the path first (security re-check N2).

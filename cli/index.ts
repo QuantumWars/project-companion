@@ -67,7 +67,7 @@ import {
   type ComponentLifecycle,
   type ComponentNode,
 } from "../lib/project/component";
-import { readEvents } from "../lib/project/events";
+import { readEvents, warnIfLogPlanted, warnLogRefused } from "../lib/project/events";
 import { componentContext } from "../lib/project/component-context";
 import { parseHook } from "../lib/project/ingest";
 import { recordSpawnRequest, runForAgent, startSubagentRun, stopSubagentRun } from "../lib/project/subagent";
@@ -1162,7 +1162,10 @@ const main = () => {
         // Subagents get their own runs (TR-03).
         if (event.kind === "spawn.requested") return recordSpawnRequest(root, event);
         if (event.kind === "subagent.start") return void startSubagentRun(root, event);
-        if (event.kind === "subagent.stop") return void stopSubagentRun(root, event.agentId);
+        if (event.kind === "subagent.stop") {
+          if (!stopSubagentRun(root, event.agentId)) warnIfLogPlanted(root);
+          return;
+        }
 
         if (event.kind === "session.start") {
           if (runForSession(root, event.sessionId)) return; // A resume, not a new run.
@@ -1177,7 +1180,7 @@ const main = () => {
           event.kind === "tool.use" && event.agentId
             ? runForAgent(root, event.agentId)
             : runForSession(root, event.sessionId);
-        if (!run) return;
+        if (!run) return warnIfLogPlanted(root);
 
         if (event.kind === "tool.use") {
           const result = reportRun(root, run.id, {
@@ -1204,8 +1207,9 @@ const main = () => {
         if (event.kind === "session.end" && run.state === "running") {
           setRunState(root, run.id, "awaiting_review", event.reason);
         }
-      } catch {
+      } catch (error) {
         // See above: a hook must not fail the session it is observing.
+        warnLogRefused(error);
       }
     });
     return;

@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-12T12:37:33.459Z",
-  "revision": 619,
+  "updatedAt": "2026-10-12T13:51:34.423Z",
+  "revision": 643,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -1426,7 +1426,7 @@
       "status": "done",
       "componentId": "agent-tooling",
       "createdAt": "2026-10-08T20:33:57.586Z",
-      "updatedAt": "2026-10-12T10:07:51.470Z",
+      "updatedAt": "2026-10-12T13:38:31.788Z",
       "order": 61,
       "kind": "bug",
       "role": "backend-engineer",
@@ -1437,7 +1437,7 @@
         "url": "https://github.com/QuantumWars/project-companion/pull/29",
         "state": "MERGED",
         "headSha": "2356a27e39d7285d5c8318ffd09f42fd4139b59a",
-        "syncedAt": "2026-10-12T10:07:51.469Z"
+        "syncedAt": "2026-10-12T13:38:31.786Z"
       }
     },
     {
@@ -1960,14 +1960,14 @@
       "points": 1,
       "role": "devops-sre",
       "createdAt": "2026-10-08T16:42:12.477Z",
-      "updatedAt": "2026-10-12T10:07:52.136Z",
+      "updatedAt": "2026-10-12T13:38:32.380Z",
       "order": 39,
       "pr": {
         "number": 10,
         "url": "https://github.com/QuantumWars/project-companion/pull/10",
         "state": "MERGED",
         "headSha": "9f0d1accc72ef0b42722a4c4444528a449e96615",
-        "syncedAt": "2026-10-12T10:07:52.134Z"
+        "syncedAt": "2026-10-12T13:38:32.379Z"
       }
     },
     {
@@ -1983,14 +1983,14 @@
       "points": 1,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.579Z",
-      "updatedAt": "2026-10-12T10:07:52.795Z",
+      "updatedAt": "2026-10-12T13:38:32.906Z",
       "order": 40,
       "pr": {
         "number": 11,
         "url": "https://github.com/QuantumWars/project-companion/pull/11",
         "state": "MERGED",
         "headSha": "a7018441c070d605e6372bef65b2079ac2ccd4eb",
-        "syncedAt": "2026-10-12T10:07:52.794Z"
+        "syncedAt": "2026-10-12T13:38:32.905Z"
       }
     },
     {
@@ -2006,14 +2006,14 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.680Z",
-      "updatedAt": "2026-10-12T10:07:53.530Z",
+      "updatedAt": "2026-10-12T13:38:33.560Z",
       "order": 41,
       "pr": {
         "number": 12,
         "url": "https://github.com/QuantumWars/project-companion/pull/12",
         "state": "MERGED",
         "headSha": "d40d5237e42c6e109a809950bffa6dac50831dd7",
-        "syncedAt": "2026-10-12T10:07:53.529Z"
+        "syncedAt": "2026-10-12T13:38:33.559Z"
       }
     },
     {
@@ -2029,14 +2029,14 @@
       "points": 2,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.781Z",
-      "updatedAt": "2026-10-12T10:07:54.181Z",
+      "updatedAt": "2026-10-12T13:38:34.151Z",
       "order": 42,
       "pr": {
         "number": 14,
         "url": "https://github.com/QuantumWars/project-companion/pull/14",
         "state": "MERGED",
         "headSha": "c83bd383f8aee3f5555e7e14e428c38a676a9ef5",
-        "syncedAt": "2026-10-12T10:07:54.180Z"
+        "syncedAt": "2026-10-12T13:38:34.150Z"
       }
     },
     {
@@ -2052,14 +2052,14 @@
       "points": 2,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.883Z",
-      "updatedAt": "2026-10-12T10:07:54.818Z",
+      "updatedAt": "2026-10-12T13:38:34.736Z",
       "order": 43,
       "pr": {
         "number": 15,
         "url": "https://github.com/QuantumWars/project-companion/pull/15",
         "state": "MERGED",
         "headSha": "24563c227b039384a5d0060c3c48a44f3ce3cd15",
-        "syncedAt": "2026-10-12T10:07:54.817Z"
+        "syncedAt": "2026-10-12T13:38:34.735Z"
       }
     },
     {
@@ -2075,14 +2075,14 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:12.986Z",
-      "updatedAt": "2026-10-12T10:07:55.577Z",
+      "updatedAt": "2026-10-12T13:38:35.452Z",
       "order": 44,
       "pr": {
         "number": 16,
         "url": "https://github.com/QuantumWars/project-companion/pull/16",
         "state": "MERGED",
         "headSha": "b92eb6a987d8a0588f7c574a76ad22ad780993d4",
-        "syncedAt": "2026-10-12T10:07:55.576Z"
+        "syncedAt": "2026-10-12T13:38:35.451Z"
       }
     },
     {
@@ -2098,14 +2098,14 @@
       "points": 3,
       "role": "backend-engineer",
       "createdAt": "2026-10-08T16:42:13.087Z",
-      "updatedAt": "2026-10-12T10:07:56.236Z",
+      "updatedAt": "2026-10-12T13:38:36.037Z",
       "order": 45,
       "pr": {
         "number": 17,
         "url": "https://github.com/QuantumWars/project-companion/pull/17",
         "state": "MERGED",
         "headSha": "2519dd4c6e53881bd3b4be3a44c9c6aab3a24078",
-        "syncedAt": "2026-10-12T10:07:56.235Z"
+        "syncedAt": "2026-10-12T13:38:36.035Z"
       }
     },
     {
@@ -2121,14 +2121,14 @@
       "points": 3,
       "role": "qa-engineer",
       "createdAt": "2026-10-08T16:42:13.187Z",
-      "updatedAt": "2026-10-12T10:07:57.003Z",
+      "updatedAt": "2026-10-12T13:38:36.657Z",
       "order": 46,
       "pr": {
         "number": 18,
         "url": "https://github.com/QuantumWars/project-companion/pull/18",
         "state": "MERGED",
         "headSha": "c20b099d25281a7bcf88c97aa2c1cad4b2f30a36",
-        "syncedAt": "2026-10-12T10:07:57.002Z"
+        "syncedAt": "2026-10-12T13:38:36.655Z"
       }
     },
     {
@@ -2144,14 +2144,14 @@
       "points": 1,
       "role": "qa-engineer",
       "createdAt": "2026-10-08T16:42:13.291Z",
-      "updatedAt": "2026-10-12T10:07:57.670Z",
+      "updatedAt": "2026-10-12T13:38:37.266Z",
       "order": 47,
       "pr": {
         "number": 19,
         "url": "https://github.com/QuantumWars/project-companion/pull/19",
         "state": "MERGED",
         "headSha": "88d236f2eda9ee4531322742d31b1db96478c9c4",
-        "syncedAt": "2026-10-12T10:07:57.669Z"
+        "syncedAt": "2026-10-12T13:38:37.265Z"
       }
     },
     {
@@ -2160,7 +2160,7 @@
       "status": "done",
       "componentId": "agent-tooling",
       "createdAt": "2026-10-08T20:33:57.663Z",
-      "updatedAt": "2026-10-12T10:07:58.325Z",
+      "updatedAt": "2026-10-12T13:38:37.926Z",
       "order": 63,
       "kind": "bug",
       "role": "backend-engineer",
@@ -2171,7 +2171,7 @@
         "url": "https://github.com/QuantumWars/project-companion/pull/31",
         "state": "MERGED",
         "headSha": "8f4cc82037a2a7cac7decb8d5414dbdceacc4888",
-        "syncedAt": "2026-10-12T10:07:58.324Z"
+        "syncedAt": "2026-10-12T13:38:37.924Z"
       }
     },
     {
@@ -2179,7 +2179,7 @@
       "title": "Bug: the artifact text lookup can be slow without limit (SR-8)",
       "status": "done",
       "createdAt": "2026-10-08T20:33:57.740Z",
-      "updatedAt": "2026-10-12T10:07:58.972Z",
+      "updatedAt": "2026-10-12T13:38:38.498Z",
       "order": 54,
       "kind": "bug",
       "role": "backend-engineer",
@@ -2189,7 +2189,7 @@
         "url": "https://github.com/QuantumWars/project-companion/pull/22",
         "state": "MERGED",
         "headSha": "d4bd59b3773296af25e8381a6bab449e4bd7e840",
-        "syncedAt": "2026-10-12T10:07:58.971Z"
+        "syncedAt": "2026-10-12T13:38:38.497Z"
       }
     },
     {
@@ -2201,7 +2201,7 @@
       "kind": "task",
       "role": "devops-sre",
       "createdAt": "2026-10-08T20:52:59.167Z",
-      "updatedAt": "2026-10-12T10:07:59.650Z",
+      "updatedAt": "2026-10-12T13:38:39.248Z",
       "order": 38,
       "points": 2,
       "pr": {
@@ -2209,7 +2209,7 @@
         "url": "https://github.com/QuantumWars/project-companion/pull/8",
         "state": "MERGED",
         "headSha": "cc56648aef8271a40b192db026d10063d68d1bbb",
-        "syncedAt": "2026-10-12T10:07:59.649Z"
+        "syncedAt": "2026-10-12T13:38:39.247Z"
       }
     },
     {
@@ -2225,7 +2225,7 @@
       "title": "Bug: log shards and .project read through a symlink or device (SR-8 residual 3)",
       "status": "done",
       "createdAt": "2026-10-10T07:37:24.550Z",
-      "updatedAt": "2026-10-12T10:08:00.332Z",
+      "updatedAt": "2026-10-12T13:38:39.819Z",
       "order": 59,
       "description": "Track: Bugfix (confirmed by the PM). Opened by the PM's answer to card c-73ccab at the PR 22 merge: accept TH-7 residuals 1 and 2; open a separate bug for residual 3.\n\nSpec ready to build (EM checked 2026-10-10): `specs/bugs/54b4e811/bugfix.md` and `tests/bug-54b4e811.test.ts` on branch `fix/54b4e811-bug-spec` @ c4c739e (from bb0df35). Build the fix from that branch (bugfix skill step 4).\nEM check on c4c739e: `npm test -- bug-54b4e811` -> exit 1, 5 of 6 fail, the control passes, 6 s, no hang. The two read tests use a FIFO with no writer, in a child process with a 3 s kill timeout (not /dev/zero, which grew memory to several GB in the qa-engineer's measurement).\n\nObserved 1: log shards (`lib/project/events.ts` readShard) and `.project` (`lib/project/bundle.ts` readBundle) are read with no regular-file check; a merged symlink to a device or FIFO makes the read never end.\nObserved 2 (low): `writeText` (roadmap.ts), `writeBundle` (bundle.ts) and `writeJson` (store.ts) write `<path>.<pid>.tmp` with a plain writeFileSync, which follows a symlink at that name.\nFix (spec): reuse `regularFileIn`/`isInside` (lib/project/gate.ts, from SR-8) for the reads; write temp files with `wx`, and on EEXIST unlink and retry with `wx` (model: notify-record.ts).\nEstimate: about 40-60 changed lines (qa-engineer, from the two landed examples of the same shapes; not checked).\nExpected: no requirement ID exists; the spec cites TH-7 residual 3 (threat-model.md) and card c-73ccab. Same gap as d5ebde85.\nDocs: update TH-7 residual 3 and the D1 and D2 rows when it is fixed.",
       "labels": [
@@ -2241,7 +2241,7 @@
         "url": "https://github.com/QuantumWars/project-companion/pull/28",
         "state": "MERGED",
         "headSha": "59b38853da8cdb20a16ff994c275f343afd6191e",
-        "syncedAt": "2026-10-12T10:08:00.331Z"
+        "syncedAt": "2026-10-12T13:38:39.818Z"
       }
     },
     {
@@ -2249,7 +2249,7 @@
       "title": "CLI git log and git unlinked never attribute commits to agent runs",
       "status": "done",
       "createdAt": "2026-10-10T08:49:22.341Z",
-      "updatedAt": "2026-10-12T10:08:01.012Z",
+      "updatedAt": "2026-10-12T13:38:40.414Z",
       "order": 62,
       "description": "Track: Bugfix (confirmed by the PM, 2026-10-10). Found by the qa-engineer while writing the 15753492 spec.\n\nSpec ready to build (EM checked 2026-10-10): `specs/bugs/37f9fbce/bugfix.md` and `tests/bug-37f9fbce.test.ts` on branch `fix/37f9fbce-bug-spec` @ 495a8b9 (from 58f85bc). Build the fix from that branch (bugfix skill step 4).\nEM check on 495a8b9: `npm test -- bug-37f9fbce` -> exit 1, 1 of 3 pass (the control: linkRepository WITH runs attributes the commit), the 2 CLI tests fail (git log shows no run signal; git unlinked lists a commit a run covers), 2 s.\n\nObserved: `cli/index.ts:515` calls `linkRepository(repo, tasks, features, limit)` without the agent runs, so `project-companion git log` and `git unlinked` never try run-based attribution. Only the app's Git view (`lib/project/git-view.ts:87`) passes runs.\nExpected: PRD feature run-attribution (`docs/prd.md:222`): \"A commit matching a run's files and window attributes to that run's task.\"\nFix (spec): pass `readRuns(root)` as the 5th argument (readRuns is already imported in cli/index.ts). About 1 changed line (qa-engineer; not checked).\nOrder: independent of 15753492; the test uses root-relative touched paths, so it can merge before or after it (evidence in the spec's Fix section).\nNote (qa-engineer): the PRD box for run-attribution is ticked on the strength of the app's code path alone; the CLI never met it until this test.",
       "labels": [
@@ -2264,7 +2264,7 @@
         "url": "https://github.com/QuantumWars/project-companion/pull/30",
         "state": "MERGED",
         "headSha": "dbdb0125122bce45c51987797eff8b436fa80695",
-        "syncedAt": "2026-10-12T10:08:01.011Z"
+        "syncedAt": "2026-10-12T13:38:40.412Z"
       }
     },
     {
@@ -2276,7 +2276,7 @@
       "kind": "task",
       "role": "devops-sre",
       "createdAt": "2026-10-10T09:01:44.136Z",
-      "updatedAt": "2026-10-12T10:08:01.618Z",
+      "updatedAt": "2026-10-12T13:38:40.964Z",
       "order": 57,
       "points": 2,
       "pr": {
@@ -2284,7 +2284,7 @@
         "url": "https://github.com/QuantumWars/project-companion/pull/27",
         "state": "MERGED",
         "headSha": "dc7b232c4e348a851602f510ce27a7be21937cba",
-        "syncedAt": "2026-10-12T10:08:01.617Z"
+        "syncedAt": "2026-10-12T13:38:40.963Z"
       }
     },
     {
@@ -2296,7 +2296,7 @@
       "kind": "task",
       "role": "devops-sre",
       "createdAt": "2026-10-10T09:01:44.335Z",
-      "updatedAt": "2026-10-12T10:08:02.284Z",
+      "updatedAt": "2026-10-12T13:38:41.651Z",
       "order": 56,
       "points": 1,
       "pr": {
@@ -2304,7 +2304,7 @@
         "url": "https://github.com/QuantumWars/project-companion/pull/26",
         "state": "MERGED",
         "headSha": "a9fd7930bae7ebbf81d4e3ca088e60862b119e41",
-        "syncedAt": "2026-10-12T10:08:02.283Z"
+        "syncedAt": "2026-10-12T13:38:41.651Z"
       }
     },
     {
@@ -2340,13 +2340,20 @@
       "id": "e17ca1c9",
       "title": "Bug: CLI test suites write the PM's real project index (~/.claude/project-companion/index.json)",
       "description": "Not triaged; track not proposed yet. Found by the code-reviewer on PR 26 (finding 2, by code reading); EM checked the effect on 2026-10-11.\nObserved: some test suites run the CLI with the real environment, so the CLI registers each temporary test project in the PM's index under the real HOME (cli/index.ts registerProject at about lines 716 and 753). Examples: tests/devolps-phase3.test.ts (pc helper spreads process.env, about line 272) and tests/merge.test.ts (about line 90, no env given). EM check: the PM's index holds 2,420 entries, of which 2,399 are temporary test folders (names such as pc-sync-*, pc-merge-*, pc-gate-*).\nSecond risk, not observed: the same suites pass any CLAUDE_PROJECT_DIR to the CLI, which finds its project from it before the working folder (store.ts:129). In the EM's shell CLAUDE_PROJECT_DIR is unset (checked 2026-10-11); in other shells: UNKNOWN.\nExpected: test rule 5 (docs/test-rules.md): a CLI child gets a temporary HOME and no CLAUDE_PROJECT_DIR, as the cli helper in tests/notify.test.ts does.\nNote: cleaning the 2,399 stale entries from the PM's index is a separate, PM-owned step (it is the PM's home folder).",
-      "status": "review",
+      "status": "done",
       "createdAt": "2026-10-10T19:05:47.723Z",
-      "updatedAt": "2026-10-12T12:37:33.458Z",
-      "order": 0,
+      "updatedAt": "2026-10-12T13:38:42.665Z",
+      "order": 64,
       "kind": "bug",
       "role": "devops-sre",
-      "points": 1
+      "points": 1,
+      "pr": {
+        "number": 33,
+        "url": "https://github.com/QuantumWars/project-companion/pull/33",
+        "state": "MERGED",
+        "headSha": "2658f2dbf96444092b6ee8cde25e460e369b7e71",
+        "syncedAt": "2026-10-12T13:38:42.502Z"
+      }
     },
     {
       "id": "aa27f49a",
@@ -2382,10 +2389,10 @@
       "id": "ce914d26",
       "title": "logEvent skips the event log silently when a planted shard is refused",
       "description": "Not triaged. Found by the backend-engineer while building the 54b4e811 F1 fix (2026-10-11); scope widened by the security re-check of 54b4e811 (N3, 2026-10-12).\nObserved (built CLI, temp project): with the actor's own shard planted, 'task add' exits 0 and saves the task, but logEvent (lib/project/store.ts, about lines 236-242) catches the appendEvent refusal and writes no log line and no warning. The outside file is unchanged (the F1 fix holds).\nProposal: logEvent writes one stderr warning when the event log refuses a write, so a task edit does not skip the log without a trace.\n\nWidened scope (security re-check N3):\n(a) logEvent also writes criterion.verified;\n(b) the ingest hook catches every error (cli/index.ts, about lines 1206-1208), and recordSpawnRequest (lib/project/subagent.ts, about lines 19-21) calls appendEvent directly, so run.requested is lost with no message too; a warning in logEvent alone would not reach it;\n(c) the same silence follows a planted .project-log, not only a planted shard;\n(d) runs exist only as events in the log (store.ts, about line 1389), so with the actor's own shard planted its runs read as missing, and the hook returns early (about cli/index.ts:1179) and skips its budget and boundary checks with no message.\nFix idea: one shared warning when the log refuses a write, used by logEvent, the ingest catch and recordSpawnRequest.",
-      "status": "backlog",
+      "status": "review",
       "createdAt": "2026-10-11T17:48:40.772Z",
-      "updatedAt": "2026-10-12T11:33:11.983Z",
-      "order": 9,
+      "updatedAt": "2026-10-12T13:43:38.817Z",
+      "order": 0,
       "kind": "bug",
       "role": "backend-engineer",
       "points": 3
@@ -2479,6 +2486,15 @@
       "createdAt": "2026-10-12T11:21:44.450Z",
       "updatedAt": "2026-10-12T11:21:44.450Z",
       "order": 14
+    },
+    {
+      "id": "4a699ddc",
+      "title": "Hook warnings may not reach the user: stderr on exit 0 is undocumented, systemMessage per event unknown",
+      "description": "Not triaged; needs a check on the real Claude Code. Raised by the code review of ce914d26 (2026-10-12); EM read the hooks reference (code.claude.com/docs/en/hooks) the same day.\nDocumented: a hook that exits 0 with text on stderr is not shown to Claude; whether the user sees it is NOT documented. The JSON field systemMessage on stdout is documented as 'Warning message shown to the user', but the page says some events discard it, and it does not say whether PostToolUse, SubagentStop or SessionStart show it (pages read: characters 0 to 200000 of 268801).\nEffect: the ingest hook's warnings (ce914d26's new one, and the existing budget and boundary warnings, cli/index.ts about lines 1195-1205) may reach nobody. Proposal: find out on the installed Claude Code (a small test hook in a scratch project, not this repository's settings), then pick a channel per event.",
+      "status": "backlog",
+      "createdAt": "2026-10-12T13:51:34.423Z",
+      "updatedAt": "2026-10-12T13:51:34.423Z",
+      "order": 13
     }
   ],
   "roadmap": {
