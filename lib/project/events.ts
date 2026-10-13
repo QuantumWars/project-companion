@@ -156,14 +156,18 @@ export class LogRefusedError extends Error {
   }
 }
 
+// The shared cause and fix. Fixed words only: no path, no event text, no symlink target.
+const LOG_REFUSED_CAUSE_AND_FIX =
+  ".project-log, or a .jsonl file in it, is a link or not a plain file or folder. Fix: delete that link or file (ls -ld .project-log, then ls -la .project-log/ to look), then run the command again.\n";
+
 // Fixed words only: no path, no event text, no symlink target (bug ce914d26, TH-5).
 export const LOG_REFUSED_WARNING =
-  "project-companion: the event log is not recording events: .project-log, or a .jsonl file in it, is a link or not a plain file or folder. Fix: delete that link or file (ls -ld .project-log, then ls -la .project-log/ to look), then run the command again.\n";
+  "project-companion: the event log is not recording events: " + LOG_REFUSED_CAUSE_AND_FIX;
 
 // The line for a command that failed because the log refused the write (bug f6864c33, card c-8c9d71).
 // Fixed words only: no path, no event text, no symlink target, no stack (card c-20c120).
 export const LOG_REFUSED_FAILURE =
-  "project-companion: this command failed because the event log was not written: .project-log, or a .jsonl file in it, is a link or not a plain file or folder. Fix: delete that link or file (ls -ld .project-log, then ls -la .project-log/ to look), then run the command again.\n";
+  "project-companion: this command failed because the event log was not written: " + LOG_REFUSED_CAUSE_AND_FIX;
 
 let warned = false;
 

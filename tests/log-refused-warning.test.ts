@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import {
-  LOG_REFUSED_WARNING, LogRefusedError, appendEvent, resetLogRefusedWarning, resolveActor, warnIfLogPlanted, warnLogRefused,
+  LOG_REFUSED_FAILURE, LOG_REFUSED_WARNING, LogRefusedError, appendEvent, resetLogRefusedWarning, resolveActor, warnIfLogPlanted, warnLogRefused,
 } from "../lib/project/events";
 import { eq, ok, runAll, test } from "./harness";
 
@@ -149,6 +149,9 @@ test("ce914d26: warnIfLogPlanted never throws, even when the folder does not exi
 test("ce914d26: the warning words do not tell the user to delete the contents of .project-log", () => {
   ok(!/remove the planted file/i.test(LOG_REFUSED_WARNING), "old wording gone");
   eq(LOG_REFUSED_WARNING.split("\n").length, 2, "one line");
+  const tail = ".project-log, or a .jsonl file in it, is a link or not a plain file or folder. Fix: delete that link or file (ls -ld .project-log, then ls -la .project-log/ to look), then run the command again.\n";
+  eq(LOG_REFUSED_WARNING, "project-companion: the event log is not recording events: " + tail, "exact warning");
+  eq(LOG_REFUSED_FAILURE, "project-companion: this command failed because the event log was not written: " + tail, "exact failure");
 });
 
 test("ce914d26: a refusal, a good write, then a second refusal warn twice (one per episode)", () => {

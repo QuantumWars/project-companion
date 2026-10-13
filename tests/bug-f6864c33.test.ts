@@ -90,6 +90,7 @@ const CARD = ["card", "open", "--subject", SUBJECT, "--ask", ASK, "--options", "
 /** The failure the user must see: non-zero, one plain line, no stack, nothing private. */
 const plainRefusal = (r: Result, secrets: string[]): void => {
   ok(r.code !== 0 && r.code !== -1, `must exit non-zero (not hang, not 0), got ${r.code}: ${JSON.stringify(r.err)}`);
+  eq(r.out, "", `stdout must stay empty after a refusal: ${JSON.stringify(r.out)}`);
   ok(!/^\s+at /m.test(r.err), `stderr must hold no stack frame ("    at "): ${JSON.stringify(r.err)}`);
   ok(!/\bNode\.js v\d/.test(r.err), `stderr must not carry the Node version footer: ${JSON.stringify(r.err)}`);
   const lines = r.err.split("\n").filter((l) => l.trim() !== "");
