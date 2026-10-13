@@ -2,6 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
+  "updatedAt": "2026-10-13T20:30:53.076Z",
+  "revision": 680,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2570,8 +2572,15 @@
       "title": "Bug: readShard does not check event ts, so one out-of-range ts makes every run read throw (run.ts, also the older runId path)",
       "status": "backlog",
       "createdAt": "2026-10-13T12:55:34.876Z",
-      "updatedAt": "2026-10-13T12:55:34.876Z",
-      "order": 14
+      "updatedAt": "2026-10-13T20:30:53.075Z",
+      "order": 14,
+      "pr": {
+        "number": 44,
+        "url": "https://github.com/QuantumWars/project-companion/pull/44",
+        "state": "OPEN",
+        "headSha": "0908fa44c81e1e2bc2d3f2ea01c2eb7e69b6c175",
+        "syncedAt": "2026-10-13T20:30:53.072Z"
+      }
     },
     {
       "id": "d9ef5e5e",
@@ -2591,7 +2600,5 @@
   "agents": {
     "byComponent": {}
   },
-  "wip": {},
-  "revision": 679,
-  "updatedAt": "2026-10-13T15:58:06.759Z"
+  "wip": {}
 }
