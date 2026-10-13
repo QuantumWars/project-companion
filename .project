@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-13T20:30:53.076Z",
-  "revision": 680,
+  "updatedAt": "2026-10-13T20:46:42.644Z",
+  "revision": 682,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2589,6 +2589,22 @@
       "createdAt": "2026-10-13T12:55:34.977Z",
       "updatedAt": "2026-10-13T12:55:34.977Z",
       "order": 15
+    },
+    {
+      "id": "24aa2fae",
+      "title": "Bug: appendEvent takes its clock from an untrusted tail ts; a planted ts of 8.64e15 makes every later event invalid and readShard drops them silently (events.ts appendEvent ~398-426; found in PR 44 review M1, card c-6bb9ce)",
+      "status": "backlog",
+      "createdAt": "2026-10-13T20:46:42.538Z",
+      "updatedAt": "2026-10-13T20:46:42.538Z",
+      "order": 15
+    },
+    {
+      "id": "641e0593",
+      "title": "Bug: when a shard's last line is dropped as malformed, the next append reuses its seq and id with no chain break (events.ts ~394-395; PR 44 review L2)",
+      "status": "backlog",
+      "createdAt": "2026-10-13T20:46:42.644Z",
+      "updatedAt": "2026-10-13T20:46:42.644Z",
+      "order": 16
     }
   ],
   "roadmap": {
