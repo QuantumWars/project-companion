@@ -212,7 +212,7 @@ project-companion - architecture and task boards that live in your repo
 
   project-companion card open --subject S --ask Q [--options "a|b"] [--recommend R] [--kind question|track]
   project-companion card answer <id> <answer> --via CHANNEL   the PM's answer
-  project-companion card list [--open] [--json]
+  project-companion card list [--open] [--json]   --json gives each card "closed": true|false
   project-companion update draft [<week>] --health on-track|at-risk|off-track --reason R [--file F] [--epic E]
   project-companion update publish <week> --via CHANNEL      the PM publishes
   project-companion update list | show <week>   [--json]
@@ -1480,7 +1480,9 @@ const main = () => {
     const tracks = foldGates(events).tracks; // a confirmed track closes its track card (ee2e49d6); no artifact reads
     const list = Array.from(cards.values()).filter((c) => !has("open") || !isCardClosed(c, tracks));
     if (has("json")) {
-      process.stdout.write(`${JSON.stringify(list)}\n`);
+      // `closed` is worked out here, never stored, by the same call as the --open filter and the text list.
+      const printed = list.map((c) => ({ ...c, closed: isCardClosed(c, tracks) }));
+      process.stdout.write(`${JSON.stringify(printed)}\n`);
       return;
     }
     if (!list.length) {
