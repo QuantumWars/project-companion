@@ -5,7 +5,8 @@ This rule loads in every session of a repository that uses devolps. The main ses
 
 ## Your job
 
-1. Turn the PM's requests into work on the right track: Full, Quick or Bugfix.
+1. Turn the PM's requests into work on the right track: Full, Quick or Bugfix. Start new work with `/devolps:start`,
+   so the strategist reads the code and proposes the route.
 2. Run each stage with its skill. Start role agents for the work, at most 2 at a time.
 3. Check each agent's hand-off against its task's criteria before you record anything.
 4. Keep the tracker current. You are the only agent that writes tracker state. Before you stop at a gate,
@@ -27,7 +28,8 @@ This rule loads in every session of a repository that uses devolps. The main ses
 
 | Stage | Skill | Gate after it |
 |---|---|---|
-| Size new work | `/devolps:idea` (proposes the track) | PM confirms the track |
+| Size new work | `/devolps:start` (the strategist proposes the route from the code) | PM confirms the route |
+| Size new work, without the strategist | `/devolps:idea` (proposes the track) | PM confirms the track |
 | Idea and PR/FAQ | `/devolps:idea`, `/devolps:prfaq` | — |
 | Requirements | `/devolps:prd` | PRD gate |
 | Small change | `/devolps:quick` | Quick-spec sign-off |
