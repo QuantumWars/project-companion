@@ -2,6 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
+  "updatedAt": "2026-10-13T12:23:09.020Z",
+  "revision": 667,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2462,15 +2464,6 @@
       "order": 10
     },
     {
-      "id": "f1f9b66c",
-      "title": "Decide when a run's attribution window closes",
-      "description": "Not triaged. Raised by the code review of 37f9fbce (2026-10-12); affects the app's Git view, the CLI and the MCP tool.\nObserved (code reading plus the log): a run gets an end time only when it is merged or abandoned (lib/project/run.ts, about line 259). In this log, 164 runs exist, 53 with a task, and 3 are abandoned; none are merged. So almost every task run's window never closes, and runFor (lib/project/git-link.ts, about lines 146-155) matches any later commit that touches a file only that run touched, ahead of an explicit trailer. A file that two runs touched gets no run match. The review did not count how many commits change label.\nOptions to decide: close a run's window when its task is done, when its pull request merges, or after a fixed time; or prefer an explicit trailer over the run signal.",
-      "status": "backlog",
-      "createdAt": "2026-10-12T07:01:56.431Z",
-      "updatedAt": "2026-10-12T07:01:56.431Z",
-      "order": 11
-    },
-    {
       "id": "18190f5e",
       "title": "rel-path.ts header says both callers pass the project root; linkRepository's callers pass the git root",
       "description": "Not triaged; low. Raised by the code review of 37f9fbce (2026-10-12). lib/project/rel-path.ts line 7 says both callers pass the project root. reportRun passes the project root, but every linkRepository caller passes the git root (gitRoot(root)). They differ only when the project sits in a subfolder of its repository. Fix the comment, or pass the project root.",
@@ -2551,6 +2544,14 @@
         "headSha": "4d7e110a265502b427ecaa800ab4ae28517ba0aa",
         "syncedAt": "2026-10-13T10:51:43.754Z"
       }
+    },
+    {
+      "id": "ee3e8672",
+      "title": "Close a run's attribution window when the run's task is done, so an old run stops claiming later commits (backlog task f",
+      "status": "backlog",
+      "createdAt": "2026-10-13T12:23:05.289Z",
+      "updatedAt": "2026-10-13T12:23:05.289Z",
+      "order": 15
     }
   ],
   "roadmap": {
@@ -2562,7 +2563,5 @@
   "agents": {
     "byComponent": {}
   },
-  "wip": {},
-  "revision": 665,
-  "updatedAt": "2026-10-13T11:46:40.869Z"
+  "wip": {}
 }
