@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-13T10:46:46.814Z",
-  "revision": 662,
+  "updatedAt": "2026-10-13T10:51:43.757Z",
+  "revision": 663,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2544,8 +2544,15 @@
       "title": "Add a computed closed field to card list --json, so a script can tell open cards from closed ones (backlog task 14361e8f",
       "status": "in_progress",
       "createdAt": "2026-10-13T10:38:58.981Z",
-      "updatedAt": "2026-10-13T10:46:46.813Z",
-      "order": 0
+      "updatedAt": "2026-10-13T10:51:43.756Z",
+      "order": 0,
+      "pr": {
+        "number": 40,
+        "url": "https://github.com/QuantumWars/project-companion/pull/40",
+        "state": "OPEN",
+        "headSha": "4d7e110a265502b427ecaa800ab4ae28517ba0aa",
+        "syncedAt": "2026-10-13T10:51:43.754Z"
+      }
     }
   ],
   "roadmap": {
