@@ -8103,3 +8103,4 @@
 {"id":"2d96e8e4849c:8058","ts":1791903515118,"seq":8058,"actor":"2d96e8e4849c","prev":"4aae439471ec621a","kind":"run.progress","data":{"runId":"0a4406a9","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
 {"id":"2d96e8e4849c:8059","ts":1791903519236,"seq":8059,"actor":"2d96e8e4849c","prev":"7af5efdadd462bf6","kind":"run.progress","data":{"runId":"0a4406a9","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
 {"id":"2d96e8e4849c:8060","ts":1791904351386,"seq":8060,"actor":"2d96e8e4849c","prev":"4eac3d6c3195839d","kind":"run.progress","data":{"runId":"0a4406a9","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
+{"id":"2d96e8e4849c:8061","ts":1791904357018,"seq":8061,"actor":"2d96e8e4849c","prev":"094717a50a72db64","kind":"task.moved","data":{"taskId":"be08efcf","from":"backlog","to":"in_progress"}}
