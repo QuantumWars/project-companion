@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-13T12:55:34.978Z",
-  "revision": 671,
+  "updatedAt": "2026-10-13T13:21:51.116Z",
+  "revision": 672,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2548,10 +2548,10 @@
     {
       "id": "ee3e8672",
       "title": "Close a run's attribution window when the run's task is done, so an old run stops claiming later commits (backlog task f",
-      "status": "in_progress",
+      "status": "done",
       "createdAt": "2026-10-13T12:23:05.289Z",
-      "updatedAt": "2026-10-13T12:51:35.277Z",
-      "order": 0,
+      "updatedAt": "2026-10-13T13:21:51.116Z",
+      "order": 69,
       "pr": {
         "number": 41,
         "url": "https://github.com/QuantumWars/project-companion/pull/41",
