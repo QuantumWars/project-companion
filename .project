@@ -2,8 +2,6 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-13T12:43:24.496Z",
-  "revision": 668,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2548,10 +2546,33 @@
     {
       "id": "ee3e8672",
       "title": "Close a run's attribution window when the run's task is done, so an old run stops claiming later commits (backlog task f",
-      "status": "in_progress",
+      "status": "done",
       "createdAt": "2026-10-13T12:23:05.289Z",
-      "updatedAt": "2026-10-13T12:43:24.496Z",
-      "order": 0
+      "updatedAt": "2026-10-13T13:21:51.116Z",
+      "order": 69,
+      "pr": {
+        "number": 41,
+        "url": "https://github.com/QuantumWars/project-companion/pull/41",
+        "state": "OPEN",
+        "headSha": "ef718eb5110b3cfc6960df3f18efd83bdde9185e",
+        "syncedAt": "2026-10-13T12:51:35.275Z"
+      }
+    },
+    {
+      "id": "4624028a",
+      "title": "Bug: readShard does not check event ts, so one out-of-range ts makes every run read throw (run.ts, also the older runId path)",
+      "status": "backlog",
+      "createdAt": "2026-10-13T12:55:34.876Z",
+      "updatedAt": "2026-10-13T12:55:34.876Z",
+      "order": 14
+    },
+    {
+      "id": "d9ef5e5e",
+      "title": "Git view signal filter row has no run chip; add one (low)",
+      "status": "backlog",
+      "createdAt": "2026-10-13T12:55:34.977Z",
+      "updatedAt": "2026-10-13T12:55:34.977Z",
+      "order": 15
     }
   ],
   "roadmap": {
@@ -2563,5 +2584,7 @@
   "agents": {
     "byComponent": {}
   },
-  "wip": {}
+  "wip": {},
+  "revision": 673,
+  "updatedAt": "2026-10-13T13:22:07.218Z"
 }
