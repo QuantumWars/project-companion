@@ -75,7 +75,7 @@ flowchart LR
 | D3 Notification record `.project-notify/record.jsonl` | Data store (new) | Any local process can append false lines (TH-12). | TH-21: a committed symlink at the folder or the file could send appends outside the project. Mitigated: `lstat` the folder, `O_NOFOLLOW`. TH-12: the record can be edited and has no hash chain. TH-15: forged lines. | The lines have no actor. It is a local metric, not an audit trail (TH-12). | TH-13: decision text could be committed. Mitigated: two `.gitignore` files, and the folder's file comes first. Mode 600, folder mode 700. | TH-14: no limit on growth. A write failure never fails the command (DA-02.1). | TH-21: an append that followed a symlink into a shell start-up file could make `$(...)` in a title run as the PM at the next shell start. Mitigated: no symlink is followed, and no variable changes the path. | New. Local only. The default folder has its own `.gitignore`. |
 | F0 P1 to D1, existing append | Data flow | n/a: a flow has no identity. | Existing: the hash chain shows edits. The notify path does not use this flow (TH-16). | n/a: a flow is not an actor. | Existing: the card text is committed. This epic does not change it. | n/a: existing behaviour; this epic adds no append. | n/a: data only. | Shown for completeness. Not part of the notify path. |
 | F1 argv and env into P1 | Data flow | n/a: a flow has no identity. See E1 and E3. | Agent-written text, which may carry injected instructions from outside content. Data in every step (TH-1, TH-15). The environment can turn alerts off (TH-20). | n/a: a flow is not an actor. | n/a: the CLI's own arguments are already visible in the process list (existing). | Very long text: `ARG_MAX` is 1048576 bytes on this Mac. If the CLI's own arguments fit, the notifier's arguments are larger by about the size of the script. `E2BIG` from `spawn` gives `failed` (TH-8). | n/a: see P1 E. | Card text may come from outside content (boundary B1). |
-| F2 D1, D2, D4 into P1 | Data flow | n/a: a flow has no identity. | Content from other clones (B4) can hold any text and any artifact path. The lookup takes only the decision id that was just recorded, and the text stays data. | n/a: a flow is not an actor. | n/a: a file read inside the same account. Artifact bytes are hashed, not shown. | SR-8 (unbounded artifact reads) is fixed by bugfix d5ebde85. Residuals: see TH-7. 1 and 2 are accepted (PM, card c-73ccab). 3 is fixed for the shard and `.project` reads, the temp writes and the shard appends by bugfix 54b4e811, and for the older-layout reads and the `.project` folder fallback by bugfix 49c078ce; the rest is open in task d78ae4cf. The check-then-read window in `readJson` is open in task f767c2b0. Bugfix ce914d26 adds a warning when an append is refused; the event is still lost (TH-7, residual 3). | n/a: data only. | A card id collision (`c-` plus 6 hex) makes `foldCards` keep the older card. The text can then be wrong, or the lookup fails (`failed`). |
+| F2 D1, D2, D4 into P1 | Data flow | n/a: a flow has no identity. | Content from other clones (B4) can hold any text and any artifact path. The lookup takes only the decision id that was just recorded, and the text stays data. | n/a: a flow is not an actor. | n/a: a file read inside the same account. Artifact bytes are hashed, not shown. | SR-8 (unbounded artifact reads) is fixed by bugfix d5ebde85. Residuals: see TH-7. 1 and 2 are accepted (PM, card c-73ccab). 3 is fixed for the shard and `.project` reads, the temp writes and the shard appends by bugfix 54b4e811, and for the older-layout reads and the `.project` folder fallback by bugfix 49c078ce; the rest is open in task d78ae4cf. The check-then-read window in `readJson` is open in task f767c2b0. Bugfix ce914d26 adds a warning when an append is refused; the event is still lost (TH-7, residual 3). Bugfix f6864c33 replaces the stack trace of `gate`, `card`, `sprint` and `update` on a refused append with one fixed line with no path, and exit 1. `run start` still prints a trace (task 543d585e). | n/a: data only. | A card id collision (`c-` plus 6 hex) makes `foldCards` keep the older card. The text can then be wrong, or the lookup fails (`failed`). |
 | F3 P1 to P2, arguments and environment | Data flow | n/a: a flow has no identity. See P2 S. | TH-1. | n/a: a flow is not an actor. | TH-17: the arguments are visible in the process list, and the child gets the CLI's whole environment, with any secret in it. | A NUL character or `E2BIG` makes `spawn` throw, which gives `failed` (TH-8). | n/a: see P2 E. | Crosses a process boundary inside B2. |
 | F4 P2 to P3 to the PM | Data flow | n/a: inside macOS. See P3 S. | n/a: inside macOS. We cannot change the text after `spawn`. | n/a: a flow is not an actor. | TH-6. | Focus can hold back the banner. Accepted (Q3). | n/a: no action is attached. | Crosses boundary B3. |
 | F5 P1 to D3 | Data flow | n/a: a flow has no identity. | TH-15: a line break in the text cannot make a second line. TH-21: the flow never follows a symlink. | n/a: a flow is not an actor. | n/a: a local file in the project, mode 600, inside the same account. | TH-8: a failed write gives one standard error line, and the command goes on. | n/a: data only. | Inside B2. Local only. |
@@ -186,9 +186,20 @@ Open threats: mitigated by the design, but open until the named test passes. The
          - The refused event is not recovered. The log is an audit trail; `.project` holds the state.
          - Only this refusal warns. Other write failures, for example a read-only checkout or a full disk, stay
            silent (PM, card c-e9c7ce).
-         - The commands that call `appendEvent` directly (`gate`, `sprint`, `card`, `update`) do not handle the
-           refusal. They still fail with an uncaught error, and its stack trace holds the path of the shard, or of
-           `.project-log`, inside the project: task f6864c33.
+         - Fixed by bugfix f6864c33. The commands that call `appendEvent` directly (`gate`, `sprint`, `card`,
+           `update`) failed with an uncaught error. Its stack trace held the path of the shard, or of
+           `.project-log`, inside the project, the absolute path of the installed bundle
+           (`file:///.../dist/project-companion.mjs`) and the Node version. Now a top-level catch around `main()`
+           (`cli/index.ts:2206-2213`) catches only a `LogRefusedError`. It writes one fixed line to standard error
+           (`LOG_REFUSED_FAILURE`, `lib/project/events.ts:165-166`) and exits 1. Any other error goes out
+           unchanged. The line is "project-companion: this command failed because the event log was not written:
+           .project-log, or a .jsonl file in it, is a link or not a plain file or folder. Fix: delete that link or
+           file (ls -ld .project-log, then ls -la .project-log/ to look), then run the command again." It holds no
+           path, no event text, no task or card text and no symlink target (PM, card c-20c120). So the
+           information-disclosure point of the old trace (project path, bundle path, Node version) is closed for
+           these four commands. Tests: `tests/bug-f6864c33.test.ts` and `tests/qa-f6864c33-rethrow.test.ts`.
+           Still open (see "Open after bugfix f6864c33"): `run start`, and `startRun` for the MCP tool, still
+           give a stack trace (task 543d585e); and the fixed line can be lost on a blocked standard-error pipe.
          - The hook writes the warning to standard error and exits 0. Claude Code's hooks page
            (code.claude.com/docs/en/hooks, fetched 2026-10-12 by the architect) says "Claude never sees stderr from a
            hook that exits 0", and names debug logging as the way to read it. It does not say that the user sees it.
@@ -264,6 +275,19 @@ Open threats: mitigated by the design, but open until the named test passes. The
          - Checked by the architect with two probes on this Mac (Node v26.3.0, scratchpad, not tests):
            `writeFileSync` through a link to a file changes the target, and through a link to a missing file
            creates the target.
+     - Open after bugfix f6864c33. Owner of each: PM accepts at the design gate.
+       - (a) Low. Task 543d585e. `run start` (`cli/index.ts:1070`) and the MCP tool that calls `startRun`
+         (`mcp/server.ts:732`) do not get the fixed line. When the append is refused, `startRun` finds no run in the
+         log and throws a plain `Error` (`lib/project/store.ts:1474-1476`), not a `LogRefusedError`, so the
+         top-level catch rethrows it. QA (`docs/qa/f6864c33.md`) saw exit 1 and 12 lines on standard error: the
+         ce914d26 warning, then a stack trace. The message is fixed text with no path. The trace still holds the
+         absolute path of the installed bundle and the Node version (bugfix spec f6864c33). If the trace also holds
+         the project path: not checked. What an MCP client sees: not checked. Likelihood low: it needs a planted
+         `.project-log` or shard. Impact low: an install path and the Node version show to the reader of standard
+         error; no data changes.
+       - (b) Low, not checked. The fixed line can be lost when standard error is a blocked pipe, because
+         `process.exit(1)` follows the write at once. `die()` (`cli/index.ts:308-311`) does the same. The exit
+         code 1 still tells the caller that the command failed.
      - Out of scope: `registry.ts`, which writes in the home folder.
 - TH-8. A fault in the notify path fails the command. Causes: an unhandled `error` event, a `spawn` throw, a record
   write error, or a broken `.project` or artifact. Mitigation: an `error` listener and one `try`/`catch` around all
