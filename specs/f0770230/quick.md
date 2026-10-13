@@ -42,10 +42,8 @@ Verify (a new suite `tests/card-list-closed.test.ts`, run with `npm test -- card
 
 ## Tasks
 - f0770230 — Add a computed `closed` field to `card list --json` — role: backend-engineer — component: none.
-- Docs (constitution rule 12), in the same pull request: change the help line at `cli/index.ts:215` to `project-companion card list [--open] [--json]   --json gives each card "closed": true|false`. Check: `node dist/project-companion.mjs --help | grep 'card list'` shows `closed`. A grep of every tracked file for `card list` found no other doc that lists the JSON shape. (The README's "Sprints, cards and updates" block at `README.md:168-177` has no `card list` line. `lib/project/skill-template.ts` and `docs/runbooks/` do not mention it.) Q1 asks whether to add a README line.
+- Docs (constitution rule 12), in the same pull request: change the help line at `cli/index.ts:215` to `project-companion card list [--open] [--json]   --json gives each card "closed": true|false`. Check: `node dist/project-companion.mjs --help | grep 'card list'` shows `closed`. A grep of every tracked file for `card list` found no other doc that lists the JSON shape. (The README's "Sprints, cards and updates" block at `README.md:168-177` has no `card list` line. `lib/project/skill-template.ts` and `docs/runbooks/` do not mention it.) The PM answered Q1 "yes": the same pull request also adds one line to `README.md`'s "Sprints, cards and updates" block, `project-companion card list --open --json   # each card has "closed": true or false`. Check: `grep -n 'closed' README.md` shows that line.
 - CHANGELOG entry: at release, not in this pull request (this follows the current practice; `/devolps:release` writes it).
 
 ## Open questions
-- [ ] **Q1. Add a README example line?** This does not block any requirement.
-  - (a) Yes (recommended). Add one line to `README.md`'s "Sprints, cards and updates" block: `project-companion card list --open --json   # each card has "closed": true or false`. Script authors read the README, not `--help`.
-  - (b) No. The help line only. This is the minimum the request asks for.
+- [x] **Q1. Add a README example line?** Answered by the PM on 2026-10-13 in chat: yes (option a). The README line is part of the Docs task above.
