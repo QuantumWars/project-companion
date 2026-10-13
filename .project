@@ -2,8 +2,6 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-13T09:46:43.841Z",
-  "revision": 656,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2415,10 +2413,10 @@
       "id": "f6864c33",
       "title": "CLI prints a Node stack trace for an event-log refusal on gate and card commands",
       "description": "Not triaged; low. Found by the backend-engineer while building the 54b4e811 F1 fix (2026-10-11).\nObserved: with a planted shard, 'card open' and 'gate request' exit 1 and record nothing (correct), but print the refusal with a Node stack trace, because the CLI turns only GateError into a clean message.\nProposal: print the refusal through die (no stack trace) for gate, card, sprint and update commands.",
-      "status": "backlog",
+      "status": "done",
       "createdAt": "2026-10-11T17:48:40.908Z",
-      "updatedAt": "2026-10-13T09:41:20.313Z",
-      "order": 10,
+      "updatedAt": "2026-10-13T10:23:22.332Z",
+      "order": 67,
       "pr": {
         "number": 39,
         "url": "https://github.com/QuantumWars/project-companion/pull/39",
@@ -2558,5 +2556,7 @@
   "agents": {
     "byComponent": {}
   },
-  "wip": {}
+  "wip": {},
+  "revision": 658,
+  "updatedAt": "2026-10-13T10:23:27.168Z"
 }
