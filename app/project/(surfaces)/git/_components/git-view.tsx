@@ -44,7 +44,8 @@ const SIGNAL: Record<AttributionSignal, { label: string; hint: string; className
   run: {
     label: "run",
     hint:
-      "An agent run was watched writing these files, inside the window it was open. " +
+      "An agent run was watched writing these files, inside the window it was open " +
+      "(it closes when the run ends or its task first moves to done). " +
       "Observed rather than declared, so it holds without the trailer convention.",
     className: "bg-brand-subtle text-brand ring-brand-border",
   },

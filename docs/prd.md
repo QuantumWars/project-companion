@@ -213,7 +213,9 @@ Verify: npm test -- agent-run
 <!-- id: run-attribution -->
 
 The fifth and second-strongest signal: a commit of files a run was watched writing,
-inside the window it was open, which ends when the run ends or its task first moves to done, whichever is first. This is what makes attribution work without the trailer.
+inside the window it was open. The window ends when the run ends or its task
+first moves to done, whichever is first. This is what makes attribution work
+without the trailer.
 
 Paths: lib/project/git-link.ts
 
