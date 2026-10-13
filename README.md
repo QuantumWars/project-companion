@@ -171,6 +171,7 @@ an approved merge gate.
 project-companion sprint add 2026-w42 --start 2026-10-12 --end 2026-10-16 --goal "Guest receipts"
 project-companion sprint commit 2026-w42 --tasks <id,id>        # added work is kept apart
 project-companion card open --subject checkout --ask "SES or Mailgun?" --options "ses|mailgun"
+project-companion card list --open --json                        # each card has "closed": true or false
 project-companion task block <id> --reason "Waiting for API keys" --cause outside --unblocker PM
 project-companion update draft 2026-w42 --health at-risk --reason "Keys are late"
 project-companion pr link <task id> <pr number>                  # through gh; no token is stored
