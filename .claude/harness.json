@@ -35,6 +35,7 @@
         "package-lock.json",
         "next.config.mjs",
         "tsconfig.json",
+        ".eslintrc.json",
         "docs/runbooks/**",
         "docs/releases/*-checklist.md"
       ]
