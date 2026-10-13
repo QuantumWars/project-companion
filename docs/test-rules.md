@@ -34,3 +34,4 @@ applicable. The Engineering Manager adds a rule when a review finds a test probl
    retro: a missing timeout check and a missing test for a config error.)
 10. A control test for a branch that passes an error on must raise an error that reaches that branch. An error that an inner handler catches first proves nothing about it. (Bug f6864c33 review, M1.)
 11. A new reader of an existing event kind ignores records whose `ts` is not a valid Date, and has a test with a bad `ts` next to a good record. (Job 002 reviews, security S1.)
+12. A test that names a state or enum value uses a value the code accepts, so it fails because of the bug and not because of a rejected input. (Bug 4624028a: the first test used `done`, which is not a run state.)

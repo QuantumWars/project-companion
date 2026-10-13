@@ -14,7 +14,7 @@ It does not check `ts` or `data`. Two kinds of bad line then reach `runsFrom` (`
 1. `ts` out of range or not a number (`1e20`, a string, null, missing). For any event with a `runId`,
    `new Date(event.ts).toISOString()` (about line 223) throws `RangeError: Invalid time value`. A null or missing
    `ts` does not throw in every case, but it sorts first (as 0), so the run's later events apply before its start
-   and the run reads wrong (state `running` instead of `done`).
+   and the run reads wrong (state `running` instead of `awaiting_review`).
 2. `data` missing or not an object (null, a string, an array). `runsFrom` reads `data.to` and `data.runId`
    (about lines 213-218) with no check. `null` and missing `data` throw `TypeError`. A string or array does not
    throw, but the line is still not a valid record. Case 2 was already on master before job 002.
@@ -42,7 +42,7 @@ The EM should decide whether to add a requirement ID for this. This spec cites t
 
 1. Make a project root with `.project-log/<actor>.jsonl` holding three lines: a good `run.started` for `run-1`,
    a bad line (for example `"ts":1e20` on a `run.progress`, or `"data":null` on a `task.moved`), and a good
-   `run.state` that sets `run-1` to `done`.
+   `run.state` that sets `run-1` to `awaiting_review`.
 2. Call `runsFrom(readEvents(root))`.
 3. It throws (`Invalid time value`, or `Cannot read properties of null (reading 'to')`), or returns `run-1` in
    state `running`.
@@ -79,6 +79,6 @@ a good `run.state`, it has two tests:
 
 - `4624028a: readShard drops a line with <case> and keeps the good lines` (reads `readShard`);
 - `4624028a: runsFrom still reads the good run when the log holds a line with <case>` (reads
-  `runsFrom(readEvents(root))` and expects `run-1` in state `done`).
+  `runsFrom(readEvents(root))` and expects `run-1` in state `awaiting_review`).
 
 On the current code, all 16 fail (`npm test`: `0/16 passed` for this file). After the fix they must all pass.
