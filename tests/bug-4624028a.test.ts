@@ -19,7 +19,7 @@ const good = (seq: number, kind: string, data: Record<string, unknown>) =>
   JSON.stringify({ id: `${ACTOR}:${seq}`, ts: 1_700_000_000_000 + seq, seq, actor: ACTOR, prev: null, kind, data });
 
 const GOOD_START = good(0, "run.started", { runId: "run-1", actor: { kind: "agent" }, autonomy: "confirm" });
-const GOOD_STATE = good(2, "run.state", { runId: "run-1", state: "done" });
+const GOOD_STATE = good(2, "run.state", { runId: "run-1", state: "awaiting_review" });
 
 /** A run-bearing line in the shape of a good one, with the field under test replaced. */
 const withTs = (ts: unknown) =>
@@ -60,7 +60,7 @@ for (const [name, bad] of Object.entries(BAD_LINES)) {
     withLog([GOOD_START, bad, GOOD_STATE], (root) => {
       const runs = runsFrom(readEvents(root));
       eq(runs.map((r) => r.id), ["run-1"], "the run beside the bad line must still be read");
-      eq(runs[0].state, "done", "and its later good event must still apply");
+      eq(runs[0].state, "awaiting_review", "and its later good event must still apply");
     });
   });
 }

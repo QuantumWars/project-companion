@@ -300,10 +300,23 @@ const shardFiles = (root: string): string[] => {
     .sort();
 };
 
+/** A parsed line is a record only if the fields every reader relies on hold. */
+const isWellFormed = (e: ProjectEvent | null): e is ProjectEvent =>
+  !!e &&
+  typeof e.kind === "string" &&
+  typeof e.ts === "number" &&
+  Number.isFinite(e.ts) &&
+  !Number.isNaN(new Date(e.ts).getTime()) &&
+  typeof e.data === "object" &&
+  e.data !== null &&
+  !Array.isArray(e.data);
+
 /**
  * Every event in one shard, in write order.
  *
- * A malformed line is skipped rather than thrown on. The log is append-only and
+ * A malformed line is skipped rather than thrown on. A line is kept only when
+ * `kind` is a string, `ts` is a finite number that makes a valid Date, and
+ * `data` is a non-null, non-array object (bug 4624028a). The log is append-only and
  * committed, which means a bad merge or a truncated write can leave one broken
  * record in the middle of an otherwise fine history -- refusing to read the
  * whole project because of it would turn a cosmetic problem into an outage.
@@ -321,7 +334,7 @@ export const readShard = (root: string, actor: string): ProjectEvent[] => {
     if (!line.trim()) continue;
     try {
       const parsed = JSON.parse(line) as ProjectEvent;
-      if (parsed && typeof parsed.kind === "string") events.push(parsed);
+      if (isWellFormed(parsed)) events.push(parsed);
     } catch {
       // See above: one bad line must not cost the rest of the history.
     }
