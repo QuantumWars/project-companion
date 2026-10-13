@@ -40,12 +40,14 @@ type CacheFile = { fingerprint: string; attribution: AttributionResult };
 /**
  * Turns over whenever a run could change an answer.
  *
- * Count, plus the newest update stamp: a new run, a file added to one, or a run
- * ending all move it. Cheap, and it does not need to be a hash of everything --
+ * Count, plus the newest update stamp: a new run, a file added to one, a run
+ * ending, or a run's task first moving to done all move it. Cheap, and it does not need to be a hash of everything --
  * a cache key only has to change when the answer might.
  */
-const runFingerprint = (runs: readonly { updatedAt: string }[]): string =>
-  `${runs.length}:${runs.map((r) => r.updatedAt).sort().at(-1) ?? "none"}`;
+const runFingerprint = (runs: readonly { updatedAt: string; taskDoneAt?: string }[]): string => {
+  const done = runs.flatMap((r) => (r.taskDoneAt ? [r.taskDoneAt] : [])).sort();
+  return `${runs.length}:${runs.map((r) => r.updatedAt).sort().at(-1) ?? "none"}:${done.length}:${done.at(-1) ?? "none"}`;
+};
 
 export const readGitView = async (
   root: string,

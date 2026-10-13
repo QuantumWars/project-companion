@@ -34,11 +34,16 @@ progress. Your agent ticks a box and the board moves; you move a card and the
 document is untouched.
 
 **Commits attribute themselves.** Five signals, strongest first: a recorded sha,
-an agent run that was watched writing those files, a `project-companion: <id>`
-trailer, the branch name, then overlap with a component's declared paths. The
-last one only ever names a *component*, never a task — it is an inference, and a
-task is a specific claim. Where two things claim a commit equally well, neither
-gets it.
+an agent run that was watched writing those files (only until its task is
+done), a `project-companion: <id>` trailer, the branch name, then overlap with a
+component's declared paths. The last one only ever names a *component*, never a
+task — it is an inference, and a task is a specific claim. Where two things
+claim a commit equally well, neither gets it.
+
+A commit made after its task is done falls to the weaker signals (trailer,
+branch, paths), and moving the task back out of done does not reopen the
+window. A board drag to Done made before this change left no record, so its run
+stays open until you run `task move <id> review`, then `task move <id> done`.
 
 <img src="docs/media/git.png" alt="The git surface, with a commit graph and per-feature delivery evidence">
 

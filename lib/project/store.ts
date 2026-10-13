@@ -1694,31 +1694,45 @@ export const reorderTask = (
   id: string,
   status: TaskStatus,
   index: number,
-): Task | null =>
-  mutateTasks(root, (tasks) => {
-    const task = tasks.find((t) => t.id === id);
-    if (!task) return null;
+): Task | null => {
+  let from: TaskStatus | undefined;
+  const moved =
+    mutateTasks(root, (tasks) => {
+      const task = tasks.find((t) => t.id === id);
+      if (!task) return null;
 
-    const from = task.status;
-    task.status = status;
-    task.updatedAt = now();
+      from = task.status;
+      task.status = status;
+      task.updatedAt = now();
 
-    const column = tasks
-      .filter((t) => t.status === status && t.id !== id)
-      .sort((a, b) => a.order - b.order);
+      const column = tasks
+        .filter((t) => t.status === status && t.id !== id)
+        .sort((a, b) => a.order - b.order);
 
-    column.splice(Math.max(0, Math.min(index, column.length)), 0, task);
-    column.forEach((t, i) => (t.order = i));
+      column.splice(Math.max(0, Math.min(index, column.length)), 0, task);
+      column.forEach((t, i) => (t.order = i));
 
-    if (from !== status) {
-      tasks
-        .filter((t) => t.status === from)
-        .sort((a, b) => a.order - b.order)
-        .forEach((t, i) => (t.order = i));
-    }
+      if (from !== status) {
+        tasks
+          .filter((t) => t.status === from)
+          .sort((a, b) => a.order - b.order)
+          .forEach((t, i) => (t.order = i));
+      }
 
-    return task;
-  }) ?? null;
+      return task;
+    }) ?? null;
+
+  // Same event `moveTask` writes, and only for a real status change: a drag
+  // within one column is not something that happened to the work.
+  if (moved && from !== undefined && from !== status) {
+    logEvent(root, {
+      kind: "task.moved",
+      componentId: moved.componentId,
+      data: { taskId: id, from, to: status },
+    });
+  }
+  return moved;
+};
 export const tasksForFeature = (root: string, featureId: string): Task[] =>
   readTasks(root)
     .tasks.filter((t) => t.featureId === featureId)
