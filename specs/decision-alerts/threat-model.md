@@ -112,7 +112,9 @@ Open threats: mitigated by the design, but open until the named test passes. The
   omission in `verifyLog` (task d78ae4cf), and the residuals that are open after bugfix 49c078ce (residual 3: tasks
   4d1a4494, f767c2b0 and 3335c1f0, and 515a775e). Bugfix ce914d26 adds a warning when an append is
   refused; the event is still lost (residual 3). Residual 2 now also holds the check-then-open windows of bugfix
-  54b4e811.
+  54b4e811. Bugfix 4624028a (PR 44) makes `readShard` skip lines with a bad `ts` or `data`. Open after it (PM, card
+  c-6bb9ce): a planted `ts` of 8.64e15 passes that check and makes later appends invalid (task 24aa2fae), and a
+  dropped last line lets the next append reuse its seq and id (task 641e0593).
   1. No size limit for a regular file inside the root. Accepted (PM, card c-73ccab).
   2. A window between a check and the read, write or open after it. Only a process that runs as the same user at that
      moment can use a window.

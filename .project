@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-13T15:14:21.214Z",
-  "revision": 677,
+  "updatedAt": "2026-10-13T20:46:42.644Z",
+  "revision": 682,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2311,13 +2311,13 @@
       "id": "be08efcf",
       "title": "Set \"root\": true in .eslintrc.json so lint runs in agent worktrees",
       "description": "Track: Quick, epic repo-upkeep (bundled with the other two chores; PM card c-6e8bb6, 2026-10-10; track confirmed by the PM 2026-10-10). Role: devops-sre (the PM widens its scope to `.eslintrc.json`, card c-b9efd8).\n\nObserved (backend-engineer and qa-engineer, PR 22, 2026-10-10): `npm run lint` fails in every agent worktree under `.claude/worktrees/` with `Plugin \"@next/next\" was conflicted between \".eslintrc.json\" and \"../../../.eslintrc.json\"`. ESLint reads the worktree's config and the main checkout's, because `.eslintrc.json` has no `\"root\": true`. Builders cannot report lint from their own copy; the EM runs it in the main checkout.\nFix: add `\"root\": true` to `.eslintrc.json`.\nVerify: `npm run lint` passes in an agent worktree and in the main checkout.\n\nReplaces task d187f516, which had no epic.\n\nSpec: specs/repo-upkeep/quick.md (d98ceb3), criteria RU-03.1 to RU-03.3; their Verify lines are the task's checks. Estimate: 1 line; starts only after the PM's .claude/harness.json scope PR has merged (card c-b9efd8).",
-      "status": "in_progress",
+      "status": "done",
       "phaseId": "repo-upkeep",
       "kind": "task",
       "role": "devops-sre",
       "createdAt": "2026-10-10T09:01:44.528Z",
-      "updatedAt": "2026-10-13T15:14:21.214Z",
-      "order": 0,
+      "updatedAt": "2026-10-13T15:58:01.781Z",
+      "order": 70,
       "blocked": {
         "reason": "Waits for the PM's 1-line .claude/harness.json pull request that adds .eslintrc.json to the devops-sre write scope (card c-b9efd8). Only the PM edits .claude/.",
         "cause": "decision",
@@ -2572,8 +2572,15 @@
       "title": "Bug: readShard does not check event ts, so one out-of-range ts makes every run read throw (run.ts, also the older runId path)",
       "status": "backlog",
       "createdAt": "2026-10-13T12:55:34.876Z",
-      "updatedAt": "2026-10-13T12:55:34.876Z",
-      "order": 14
+      "updatedAt": "2026-10-13T20:30:53.075Z",
+      "order": 14,
+      "pr": {
+        "number": 44,
+        "url": "https://github.com/QuantumWars/project-companion/pull/44",
+        "state": "OPEN",
+        "headSha": "0908fa44c81e1e2bc2d3f2ea01c2eb7e69b6c175",
+        "syncedAt": "2026-10-13T20:30:53.072Z"
+      }
     },
     {
       "id": "d9ef5e5e",
@@ -2582,6 +2589,22 @@
       "createdAt": "2026-10-13T12:55:34.977Z",
       "updatedAt": "2026-10-13T12:55:34.977Z",
       "order": 15
+    },
+    {
+      "id": "24aa2fae",
+      "title": "Bug: appendEvent takes its clock from an untrusted tail ts; a planted ts of 8.64e15 makes every later event invalid and readShard drops them silently (events.ts appendEvent ~398-426; found in PR 44 review M1, card c-6bb9ce)",
+      "status": "backlog",
+      "createdAt": "2026-10-13T20:46:42.538Z",
+      "updatedAt": "2026-10-13T20:46:42.538Z",
+      "order": 15
+    },
+    {
+      "id": "641e0593",
+      "title": "Bug: when a shard's last line is dropped as malformed, the next append reuses its seq and id with no chain break (events.ts ~394-395; PR 44 review L2)",
+      "status": "backlog",
+      "createdAt": "2026-10-13T20:46:42.644Z",
+      "updatedAt": "2026-10-13T20:46:42.644Z",
+      "order": 16
     }
   ],
   "roadmap": {

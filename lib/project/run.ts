@@ -211,7 +211,7 @@ export const runsFrom = (events: readonly ProjectEvent[]): AgentRun[] => {
 
   for (const event of events) {
     const data = event.data;
-    // A bad timestamp must not make `toISOString()` throw below.
+    // A bad timestamp must not enter the done-time fold after the loop.
     const validTs = Number.isFinite(event.ts) && !Number.isNaN(new Date(event.ts).getTime());
     if (event.kind === "task.moved" && data.to === "done" && typeof data.taskId === "string" && validTs) {
       const list = doneTimes.get(data.taskId) ?? [];
