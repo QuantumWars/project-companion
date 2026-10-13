@@ -8119,3 +8119,7 @@
 {"id":"2d96e8e4849c:8074","ts":1791904406977,"seq":8074,"actor":"2d96e8e4849c","prev":"e700bb75918ad75e","kind":"run.progress","data":{"runId":"de108783","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
 {"id":"2d96e8e4849c:8075","ts":1791904410818,"seq":8075,"actor":"2d96e8e4849c","prev":"4c37b1a822d62d85","kind":"run.progress","data":{"runId":"de108783","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
 {"id":"2d96e8e4849c:8076","ts":1791904418769,"seq":8076,"actor":"2d96e8e4849c","prev":"de587db5ba776fc0","kind":"run.state","data":{"runId":"de108783","state":"awaiting_review","reason":"the subagent finished"}}
+{"id":"2d96e8e4849c:8077","ts":1791904429186,"seq":8077,"actor":"2d96e8e4849c","prev":"6ec5b3092998a951","kind":"run.progress","data":{"runId":"0a4406a9","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
+{"id":"2d96e8e4849c:8078","ts":1791904450666,"seq":8078,"actor":"2d96e8e4849c","prev":"dbe922027949c1de","kind":"run.progress","data":{"runId":"0a4406a9","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
+{"id":"2d96e8e4849c:8079","ts":1791904461238,"seq":8079,"actor":"2d96e8e4849c","prev":"b22a20e1c7b7e76b","kind":"task.updated","data":{"taskId":"be08efcf","changed":["pr"]}}
+{"id":"2d96e8e4849c:8080","ts":1791904461255,"seq":8080,"actor":"2d96e8e4849c","prev":"894a43b7245ba17e","kind":"task.pr_linked","data":{"taskId":"be08efcf","number":43,"url":"https://github.com/QuantumWars/project-companion/pull/43","state":"OPEN","headSha":"77826cca51d3cd942903b1de9da03272a68e5461"}}

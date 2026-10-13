@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-13T15:12:37.003Z",
-  "revision": 676,
+  "updatedAt": "2026-10-13T15:14:21.214Z",
+  "revision": 677,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2316,7 +2316,7 @@
       "kind": "task",
       "role": "devops-sre",
       "createdAt": "2026-10-10T09:01:44.528Z",
-      "updatedAt": "2026-10-13T15:12:37.002Z",
+      "updatedAt": "2026-10-13T15:14:21.214Z",
       "order": 0,
       "blocked": {
         "reason": "Waits for the PM's 1-line .claude/harness.json pull request that adds .eslintrc.json to the devops-sre write scope (card c-b9efd8). Only the PM edits .claude/.",
@@ -2324,7 +2324,14 @@
         "unblocker": "PM",
         "since": "2026-10-10T10:08:10.027Z"
       },
-      "points": 1
+      "points": 1,
+      "pr": {
+        "number": 43,
+        "url": "https://github.com/QuantumWars/project-companion/pull/43",
+        "state": "OPEN",
+        "headSha": "77826cca51d3cd942903b1de9da03272a68e5461",
+        "syncedAt": "2026-10-13T15:14:21.211Z"
+      }
     },
     {
       "id": "1d22facd",
