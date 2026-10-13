@@ -67,7 +67,7 @@ import {
   type ComponentLifecycle,
   type ComponentNode,
 } from "../lib/project/component";
-import { readEvents, warnIfLogPlanted, warnLogRefused } from "../lib/project/events";
+import { LOG_REFUSED_FAILURE, LogRefusedError, readEvents, warnIfLogPlanted, warnLogRefused } from "../lib/project/events";
 import { componentContext } from "../lib/project/component-context";
 import { parseHook } from "../lib/project/ingest";
 import { recordSpawnRequest, runForAgent, startSubagentRun, stopSubagentRun } from "../lib/project/subagent";
@@ -2203,4 +2203,11 @@ const main = () => {
   die(HELP);
 };
 
-main();
+// One plain line for a refused event-log write (bug f6864c33). Any other error goes out unchanged.
+try {
+  main();
+} catch (error) {
+  if (!(error instanceof LogRefusedError)) throw error;
+  process.stderr.write(LOG_REFUSED_FAILURE);
+  process.exit(1);
+}
