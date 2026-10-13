@@ -2,6 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
+  "updatedAt": "2026-10-13T14:44:38.881Z",
+  "revision": 674,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2573,6 +2575,15 @@
       "createdAt": "2026-10-13T12:55:34.977Z",
       "updatedAt": "2026-10-13T12:55:34.977Z",
       "order": 15
+    },
+    {
+      "id": "22fd2041",
+      "title": "Set \"root\": true in .eslintrc.json so lint runs in agent worktrees",
+      "status": "backlog",
+      "phaseId": "eslint-root",
+      "createdAt": "2026-10-13T14:44:38.880Z",
+      "updatedAt": "2026-10-13T14:44:38.880Z",
+      "order": 16
     }
   ],
   "roadmap": {
@@ -2584,7 +2595,5 @@
   "agents": {
     "byComponent": {}
   },
-  "wip": {},
-  "revision": 673,
-  "updatedAt": "2026-10-13T13:22:07.218Z"
+  "wip": {}
 }
