@@ -2,8 +2,8 @@
   "version": 2,
   "name": "Project Companion",
   "createdAt": "2026-08-28T02:30:36.435Z",
-  "updatedAt": "2026-10-13T09:41:20.314Z",
-  "revision": 655,
+  "updatedAt": "2026-10-13T09:46:43.841Z",
+  "revision": 656,
   "prdSource": "docs/prd.md",
   "diagrams": {
     "archboard-architecture": {
@@ -2539,6 +2539,14 @@
       "createdAt": "2026-10-12T15:03:41.554Z",
       "updatedAt": "2026-10-12T15:03:41.554Z",
       "order": 17
+    },
+    {
+      "id": "543d585e",
+      "title": "Bug: run start (and startRun for the MCP tool) prints a Node stack trace when the event log refuses the write",
+      "status": "backlog",
+      "createdAt": "2026-10-13T09:46:43.841Z",
+      "updatedAt": "2026-10-13T09:46:43.841Z",
+      "order": 16
     }
   ],
   "roadmap": {

@@ -7446,3 +7446,4 @@
 {"id":"2d96e8e4849c:7413","ts":1791884785573,"seq":7413,"actor":"2d96e8e4849c","prev":"ff4600638f4b516f","kind":"run.progress","data":{"runId":"704be6f0","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":["docs/qa/f6864c33.md"]}}
 {"id":"2d96e8e4849c:7414","ts":1791884789243,"seq":7414,"actor":"2d96e8e4849c","prev":"1006fbcb6d901f65","kind":"run.progress","data":{"runId":"704be6f0","inputTokens":0,"outputTokens":0,"toolCalls":1,"touched":[]}}
 {"id":"2d96e8e4849c:7415","ts":1791884799060,"seq":7415,"actor":"2d96e8e4849c","prev":"e070996411611f8e","kind":"run.state","data":{"runId":"704be6f0","state":"awaiting_review","reason":"the subagent finished"}}
+{"id":"2d96e8e4849c:7416","ts":1791884803853,"seq":7416,"actor":"2d96e8e4849c","prev":"c32b8f82e4ee6b58","kind":"task.created","data":{"taskId":"543d585e","title":"Bug: run start (and startRun for the MCP tool) prints a Node stack trace when the event log refuses the write","status":"backlog"}}
