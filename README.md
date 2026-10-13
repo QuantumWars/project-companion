@@ -34,7 +34,7 @@ progress. Your agent ticks a box and the board moves; you move a card and the
 document is untouched.
 
 **Commits attribute themselves.** Five signals, strongest first: a recorded sha,
-an agent run that was watched writing those files, a `project-companion: <id>`
+an agent run that was watched writing those files, before its task was done, a `project-companion: <id>`
 trailer, the branch name, then overlap with a component's declared paths. The
 last one only ever names a *component*, never a task — it is an inference, and a
 task is a specific claim. Where two things claim a commit equally well, neither

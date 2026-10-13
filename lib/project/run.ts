@@ -109,6 +109,12 @@ export type AgentRun = {
   touched: string[];
   startedAt?: string;
   endedAt?: string;
+  /**
+   * When the run's task first moved to `done` at or after the run started.
+   * Attribution closes the run's window here. `state`, `endedAt` and
+   * `updatedAt` are not touched by it.
+   */
+  taskDoneAt?: string;
   updatedAt: string;
 };
 
@@ -199,9 +205,17 @@ const num = (value: unknown): number => (typeof value === "number" && Number.isF
  */
 export const runsFrom = (events: readonly ProjectEvent[]): AgentRun[] => {
   const runs = new Map<string, AgentRun>();
+  // `task.moved` carries a taskId, not a runId, so it is read before the
+  // runId check below. Applied after the fold, so log order does not matter.
+  const doneTimes = new Map<string, number[]>();
 
   for (const event of events) {
     const data = event.data;
+    if (event.kind === "task.moved" && data.to === "done" && typeof data.taskId === "string") {
+      const list = doneTimes.get(data.taskId) ?? [];
+      list.push(event.ts);
+      doneTimes.set(data.taskId, list);
+    }
     const id = typeof data.runId === "string" ? data.runId : undefined;
     if (!id) continue;
     const at = new Date(event.ts).toISOString();
@@ -259,6 +273,15 @@ export const runsFrom = (events: readonly ProjectEvent[]): AgentRun[] => {
       if (to === "merged" || to === "abandoned") run.endedAt = at;
       run.updatedAt = at;
     }
+  }
+
+  // The first done at or after the start; a later reopen does not undo it.
+  for (const run of Array.from(runs.values())) {
+    const start = Date.parse(run.startedAt ?? "");
+    const first = (run.taskId ? doneTimes.get(run.taskId) : undefined)
+      ?.filter((ts) => ts >= start)
+      .sort((a, b) => a - b)[0];
+    if (first !== undefined) run.taskDoneAt = new Date(first).toISOString();
   }
 
   return Array.from(runs.values()).sort((a, b) =>

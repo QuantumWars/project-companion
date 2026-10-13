@@ -213,13 +213,14 @@ Verify: npm test -- agent-run
 <!-- id: run-attribution -->
 
 The fifth and second-strongest signal: a commit of files a run was watched writing,
-inside the window it was open. This is what makes attribution work without the trailer.
+inside the window it was open, which ends when the run ends or its task first moves to done, whichever is first. This is what makes attribution work without the trailer.
 
 Paths: lib/project/git-link.ts
 
 Verify: npm test -- agent-run
 
 - [x] A commit matching a run's files and window attributes to that run's task
+- [x] A commit made after the run's task moved to done is not the run's
 - [x] A window without a file overlap is not a match, and neither is the reverse
 - [x] Two runs claiming one commit attribute to neither
 - [x] A recorded sha still outranks it, and it outranks a trailer

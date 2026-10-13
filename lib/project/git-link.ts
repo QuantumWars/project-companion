@@ -5,7 +5,8 @@
  *
  *   1. `task.commits[]`      recorded explicitly by the CLI or MCP
  *   2. an agent run          the files this commit changed were written by a
- *                            run, while it was open, against a known task
+ *                            run, while it was open and before its task moved
+ *                            to done, against a known task
  *   3. a message trailer     `archboard: 978ce4d6`
  *   4. the branch name       `feat/978ce4d6-refunds`
  *   5. path overlap          against a feature's declared `paths` globs
@@ -20,8 +21,9 @@
  * typing the sha. A run observed the edits through the harness's own hooks: it
  * is not reading intent out of a branch name, it is matching a commit against
  * the files an agent was watched writing, inside the window it was writing
- * them. That is also what finally makes attribution work without the trailer
- * convention, which this repository documented for a year and never once used.
+ * them, until the run ends or its task first moves to done. That is also what
+ * finally makes attribution work without the trailer convention, which this
+ * repository documented for a year and never once used.
  */
 
 import { readCommits, readBranches, repoFingerprint, type GitCommit } from "./git";
@@ -129,6 +131,9 @@ export const matchesAny = (path: string, globs: readonly string[]): boolean =>
 /**
  * The run that produced a commit, if exactly one did.
  *
+ * The run's window ends at the earlier of the run ending and its task first
+ * moves to done (`taskDoneAt`); a reopened task does not reopen it.
+ *
  * Two conditions, both required. The commit has to land inside the run's window
  * -- an agent cannot have written something committed before it started -- and
  * it has to touch a file the run was seen writing. Either alone is far too
@@ -148,7 +153,12 @@ const runFor = (commit: GitCommit, runs: readonly AttributableRun[]): Attributab
     const from = Date.parse(run.startedAt ?? "");
     if (Number.isNaN(from) || at < from) return false;
     // An open run has no end; it can still be producing commits right now.
-    const to = run.endedAt ? Date.parse(run.endedAt) : Number.POSITIVE_INFINITY;
+    // The window ends at the earlier of the run ending and its task first
+    // moving to done.
+    const ends = [run.endedAt, run.taskDoneAt]
+      .map((t) => (t ? Date.parse(t) : Number.NaN))
+      .filter((t) => !Number.isNaN(t));
+    const to = ends.length ? Math.min(...ends) : Number.POSITIVE_INFINITY;
     if (at > to) return false;
     return commit.paths.some((path) => run.touched.includes(path));
   });
@@ -163,6 +173,7 @@ export type AttributableRun = {
   touched: string[];
   startedAt?: string;
   endedAt?: string;
+  taskDoneAt?: string;
 };
 
 export const attribute = (
