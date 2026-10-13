@@ -132,7 +132,7 @@ export const matchesAny = (path: string, globs: readonly string[]): boolean =>
  * The run that produced a commit, if exactly one did.
  *
  * The run's window ends at the earlier of the run ending and its task first
- * moves to done (`taskDoneAt`); a reopened task does not reopen it.
+ * moving to done (`taskDoneAt`); a reopened task does not reopen it.
  *
  * Two conditions, both required. The commit has to land inside the run's window
  * -- an agent cannot have written something committed before it started -- and

@@ -205,6 +205,17 @@ test("RW-01.3: a new run after reopen gets its own commits", () => {
   eq(runs.find((r) => r.id === "r2")!.taskDoneAt, undefined);
 });
 
+test("RW-01.1: a done event with a bad ts is ignored and runsFrom does not throw", () => {
+  const badNumber = moved(1e20, "t1", "in_progress", "done"); // outside the Date range
+  const badString = { ...moved(2000, "t1", "in_progress", "done"), ts: "2000" as unknown as number };
+  const [run] = runsFrom([started(1000, "r1", "t1"), badNumber, badString]);
+  eq(run.taskDoneAt, undefined);
+  eq(run.state, "running");
+  // A good event next to the bad ones still counts.
+  const [ok2] = runsFrom([started(1000, "r1", "t1"), badNumber, moved(3000, "t1", "in_progress", "done")]);
+  eq(ok2.taskDoneAt, new Date(3000).toISOString());
+});
+
 /* --------------------------------- RW-01.4 -------------------------------- */
 
 test("RW-01.4: the earlier of endedAt and taskDoneAt ends the window", () => {
