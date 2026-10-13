@@ -316,10 +316,11 @@ const isWellFormed = (e: ProjectEvent | null): e is ProjectEvent =>
  *
  * A malformed line is skipped rather than thrown on. A line is kept only when
  * `kind` is a string, `ts` is a finite number that makes a valid Date, and
- * `data` is a non-null, non-array object (bug 4624028a). The log is append-only and
- * committed, which means a bad merge or a truncated write can leave one broken
- * record in the middle of an otherwise fine history -- refusing to read the
- * whole project because of it would turn a cosmetic problem into an outage.
+ * `data` is a non-null, non-array object (bug 4624028a). The log is
+ * append-only and committed, which means a bad merge or a truncated write can
+ * leave one broken record in the middle of an otherwise fine history --
+ * refusing to read the whole project because of it would turn a cosmetic
+ * problem into an outage.
  *
  * A merge can put a symlink, a device or a FIFO at a shard's name, so a shard
  * that is not a regular file inside the root is never opened: it counts as

@@ -12,9 +12,8 @@ if (parsed && typeof parsed.kind === "string") events.push(parsed);
 It does not check `ts` or `data`. Two kinds of bad line then reach `runsFrom` (`lib/project/run.ts`):
 
 1. `ts` out of range or not a number (`1e20`, a string, null, missing). For any event with a `runId`,
-   `new Date(event.ts).toISOString()` (about line 223) throws `RangeError: Invalid time value`. A null or missing
-   `ts` does not throw in every case, but it sorts first (as 0), so the run's later events apply before its start
-   and the run reads wrong (state `running` instead of `awaiting_review`).
+   `new Date(event.ts).toISOString()` (about line 223) throws `RangeError: Invalid time value`. A missing `ts` also fails the read. A null `ts` sorts first and,
+   in this test's shape, does not change the end state.
 2. `data` missing or not an object (null, a string, an array). `runsFrom` reads `data.to` and `data.runId`
    (about lines 213-218) with no check. `null` and missing `data` throw `TypeError`. A string or array does not
    throw, but the line is still not a valid record. Case 2 was already on master before job 002.
@@ -81,4 +80,4 @@ a good `run.state`, it has two tests:
 - `4624028a: runsFrom still reads the good run when the log holds a line with <case>` (reads
   `runsFrom(readEvents(root))` and expects `run-1` in state `awaiting_review`).
 
-On the current code, all 16 fail (`npm test`: `0/16 passed` for this file). After the fix they must all pass.
+On the current code, 13 of the 16 fail (`3/16 passed`, measured on master's `events.ts`). The 3 that pass are the `runsFrom` tests for `ts` null and for `data` a string or an array: those lines do not make `runsFrom` throw or change the run's end state. The `readShard` tests for the same 3 cases do fail. After the fix they must all pass.
