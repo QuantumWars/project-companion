@@ -71,3 +71,6 @@ next-env.d.ts
 
 # decision alerts notification record; safe to delete at any time
 /.project-notify/
+
+# devolps software factory: local only (devolps 0.7.3); the pull requests carry the record
+/factory/
